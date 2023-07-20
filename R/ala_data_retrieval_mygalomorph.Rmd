@@ -1,0 +1,38 @@
+---
+title: "ALA Data Retrieval"
+author: "Ashley Browse"
+date: "2023-07-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Accessing data from ALA
+
+This document lays out the workflow of getting data for Mygalomorph spiders from the ALA database 
+
+```{r loadpackages}
+install.packages("pacman")
+pacman::p_load(galah, arrow)
+```
+
+## Step 1
+
+<!-- Ashley can you lay out the code in the chunks and describe what you are doing as text. Where possible include comments -->
+
+```{r}
+
+```
+
+## Step X
+
+<!-- Can you time stamp the download so we know when the data was accessed? -->
+
+Save the downloaded data as a `.parquet`
+
+```{r}
+write_parquet(XX, "data/galah/")
+```
+
