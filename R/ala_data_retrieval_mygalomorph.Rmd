@@ -22,17 +22,50 @@ pacman::p_load(galah, arrow)
 
 <!-- Ashley can you lay out the code in the chunks and describe what you are doing as text. Where possible include comments -->
 
-```{r}
+Before downloading data from ALA, we need an email registered with ALA. We can then download ALA occurrence data, filtering to within Australia and using ALA's data cleaning filters.
 
+```{r}
+# Add ALA registered email to access data (register at ala.org.au)
+galah_config(email = "youremail")
+
+Mygalomorphae_occurrences <- 
+  galah_call() |>                               
+  galah_identify("Mygalomorphae") |>   
+  galah_filter(country == "Australia") |>
+  galah_apply_profile(ALA) |> # ALA's set of data cleaning filters
+  atlas_occurrences() 
 ```
 
-## Step X
+## Step 2
+
+In this step we can inspect and clean the data of duplicates 
+
+```{r}
+nrow(Mygalomorphae_occurrences)
+head(Mygalomorphae_occurrences)
+
+Mygalomorphae_clean <- Mygalomorphae_occurrences |> 
+  filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
+  filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
+
+nrow(Mygalomorphae_clean)
+head(Mygalomorphae_clean)
+```
+
+
+## Step 3
 
 <!-- Can you time stamp the download so we know when the data was accessed? -->
+
+```{r}
+Mygalomorphae_clean$timestamp <- Sys.Date()
+head(Mygalomorphae_clean)
+```
+
 
 Save the downloaded data as a `.parquet`
 
 ```{r}
-write_parquet(XX, "data/galah/")
+write_parquet(Mygalomorphae_clean, "data/galah/Mygalomorphae_ALA.paraquet")
 ```
 
