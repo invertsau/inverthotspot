@@ -41,6 +41,7 @@ galah_config(email = Sys.getenv("ALA_EMAIL"),
 
 ### Assertions
 
+<!-- Decide what assertions to filter data by --> 
 <!-- Ashley can you investigate how do we get these from galah -->
 <!-- We want a .csv of these and we can explore as a team which ones are important to filter our data -->
 <!-- See data_cleaning_workflows repository (https://github.com/AtlasOfLivingAustralia/data_cleaning_workflows) -->
@@ -52,6 +53,8 @@ galah_config(email = Sys.getenv("ALA_EMAIL"),
 ### Which data variables do we want from galah?
 
 <!-- AB to check with PB which columns we need  -->
+Higher taxonomy e.g. family, class, genus
+State information (NSW, NT, TAS, WA, SA, QLD, ACT, VIC)
 
 ```{r}
 ?galah_select
