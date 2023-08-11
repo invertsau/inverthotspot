@@ -9,63 +9,74 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Accessing data from ALA
+# Accessing data from ALA
 
 This document lays out the workflow of getting data for Mygalomorph spiders from the ALA database 
 
+## Load dependencies
+
 ```{r loadpackages}
 install.packages("pacman")
-pacman::p_load(galah, arrow)
+pacman::p_load(galah, arrow, usethis)
 ```
 
-## Step 1
-
-<!-- Ashley can you lay out the code in the chunks and describe what you are doing as text. Where possible include comments -->
+## Account Registration and {galah} Configuration 
 
 Before downloading data from ALA, we need an email registered with ALA. We can then download ALA occurrence data, filtering to within Australia and using ALA's data cleaning filters.
 
 ```{r}
 # Add ALA registered email to access data (register at ala.org.au)
-galah_config(email = "youremail")
+edit_r_environ()
+# Paste in R environment ALA_EMAIL="your.email@email.com"
 
+# Retrieve email (secretly)
+Sys.getenv("ALA_EMAIL")
+
+# Configure galah
+galah_config(email = Sys.getenv("ALA_EMAIL"), 
+             atlas = "Australia")
+```
+
+## Download data
+
+### Assertions
+
+<!-- Ashley can you investigate how do we get these from galah -->
+<!-- We want a .csv of these and we can explore as a team which ones are important to filter our data -->
+<!-- See data_cleaning_workflows repository (https://github.com/AtlasOfLivingAustralia/data_cleaning_workflows) -->
+
+```{r}
+
+```
+
+### Which data variables do we want from galah?
+
+<!-- AB to check with PB which columns we need  -->
+
+```{r}
+?galah_select
+```
+
+### Submit query to ALA
+
+```{r}
 Mygalomorphae_occurrences <- 
   galah_call() |>                               
   galah_identify("Mygalomorphae") |>   
-  galah_filter(country == "Australia") |>
-  galah_apply_profile(ALA) |> # ALA's set of data cleaning filters
+  galah_filter() |> # This is where we want to add in assertion filters
+  galah_select() |> # This is where we want to add in which columns we want
   atlas_occurrences() 
 ```
 
-## Step 2
-
-In this step we can inspect and clean the data of duplicates 
-
-```{r}
-nrow(Mygalomorphae_occurrences)
-head(Mygalomorphae_occurrences)
-
-Mygalomorphae_clean <- Mygalomorphae_occurrences |> 
-  filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
-  filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
-
-nrow(Mygalomorphae_clean)
-head(Mygalomorphae_clean)
-```
-
-
-## Step 3
-
-<!-- Can you time stamp the download so we know when the data was accessed? -->
-
-```{r}
-Mygalomorphae_clean$timestamp <- Sys.Date()
-head(Mygalomorphae_clean)
-```
-
+### Save downlaoded data
 
 Save the downloaded data as a `.parquet`
 
 ```{r}
-write_parquet(Mygalomorphae_clean, "data/galah/Mygalomorphae_ALA.paraquet")
+write_parquet(Mygalomorphae_occurrences, paste0("data/galah/Mygalomorphae_", Sys.Date(), "_ALA.paraquet"))
 ```
+
+
+
+
 

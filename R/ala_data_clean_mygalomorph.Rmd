@@ -1,0 +1,100 @@
+---
+title: "Data cleaning"
+author: "Fonti"
+date: "2023-08-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Cleaning data from ALA
+
+This document lays out the workflow of cleaning data for Mygalomorph spiders from the ALA database 
+
+## Load dependencies
+
+```{r loadpackages}
+install.packages("pacman")
+pacman::p_load(galah, arrow, here)
+```
+
+## Read in parquet
+
+```{r}
+myg_spiders <- read_parquet(here("data/galah/Mygalomorphae_ALA.parquet"))
+```
+
+### Data summary
+
+How many species/genus/families in dataset
+across states
+
+<!-- Check out R package janitor (tabyl()) -->
+
+```{r}
+names(myg_spiders)
+```
+
+General map of occurrences
+
+```{r}
+
+```
+
+### Geographic errors
+
+<!-- Clean for geographic errors: missing or invalid lat/long; if data needs to be masked by land/water. There are also R packages like coordinate cleaner and others (you'd know more) to clean occurrence data  -->
+
+```{r}
+
+```
+
+### Taxonomic errors
+
+<!-- Clean for taxonomic errors: misspelt names, incorrect, synonyms.  -->
+Excluding introduced/invasives taxa
+Excluding marines
+
+```{r}
+
+```
+
+
+<!-- Notes from Payal -->
+
+
+<!-- Decide whether to keep morpho-species  -->
+<!-- How do you distinguish these in ALA data? -->
+<!-- FK to check with PB, I don't think these in are ALA data -->
+```{r}
+
+```
+
+### Subspecies
+
+<!-- Decide whether to keep sub-species and if not whether to combine their data with the parent species -->
+ 
+```{r}
+
+```
+
+
+<!-- Check names against a checklist to make sure all species included in the analyses are valid -->
+<!-- Check for duplicates (as the last step) -->
+
+In this step we can inspect and clean the data of duplicates 
+
+```{r}
+nrow(Mygalomorphae_occurrences)
+head(Mygalomorphae_occurrences)
+
+Mygalomorphae_clean <- Mygalomorphae_occurrences |> 
+  filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
+  filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
+
+nrow(Mygalomorphae_clean)
+head(Mygalomorphae_clean)
+```
+
