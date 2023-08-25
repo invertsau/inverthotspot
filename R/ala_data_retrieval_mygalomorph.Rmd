@@ -17,7 +17,7 @@ This document lays out the workflow of getting data for Mygalomorph spiders from
 
 ```{r loadpackages}
 install.packages("pacman")
-pacman::p_load(galah, arrow, usethis)
+pacman::p_load(galah, arrow, usethis, tidyverse, janitor)
 ```
 
 ## Account Registration and {galah} Configuration 
@@ -66,9 +66,17 @@ State information (NSW, NT, TAS, WA, SA, QLD, ACT, VIC)
 Mygalomorphae_occurrences <- 
   galah_call() |>                               
   galah_identify("Mygalomorphae") |>   
-  galah_filter() |> # This is where we want to add in assertion filters
-  galah_select() |> # This is where we want to add in which columns we want
+  #galah_filter(identificationIncorrect == FALSE) |> # This is where we want to add in assertion filters
+  galah_select(group = c("assertions")) |> # This is where we want to add in which columns we want
   atlas_occurrences() 
+  #atlas_counts()
+
+write_parquet(Mygalomorphae_occurrences, "output/mygalomorphae_wassertions.parquet")
+
+Mygalomorphae_occurrences <- example_bg_job_results[["Mygalomorphae_occurrences"]]
+names(Mygalomorphae_occurrences)
+
+Mygalomorphae_occurrences |> pull(identificationIncorrect) |> tabyl()
 ```
 
 ### Save downlaoded data

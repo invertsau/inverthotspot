@@ -1,0 +1,57 @@
+---
+title: "Alpha hulls"
+author: "Fonti and Ashley"
+date: "2023-08-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loadpackages}
+#install.packages("pacman")
+pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf)
+```
+
+## Read in data
+
+```{r}
+myg_spiders <- read_parquet(here("data/galah/Mygalomorphae_ALA.parquet"))
+```
+
+## Precleaning
+
+```{r}
+myg_spiders <- myg_spiders |> 
+  filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
+  filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
+```
+
+## Make a simple map
+
+```{r}
+# Transform projection
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+aus_states <- st_transform(ozmaps::ozmap_states, 4326)
+
+# Base map 
+ggplot() + 
+  geom_sf(data = aus_states) + 
+  theme_minimal()
+
+# Transform spiders into sf objects
+myg_spiders_sf <- myg_spiders |> 
+  select(scientificName, decimalLongitude, decimalLatitude) |> 
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
+           crs = 4326)
+
+# Base map 
+ggplot() + 
+  geom_sf(data = aus_states) + 
+  geom_sf(data = myg_spiders_sf, alpha = 0.25, aes(colour = scientificName)) + 
+  theme_minimal()
+```
+
+
+
