@@ -49,7 +49,7 @@ myg_spiders_sf <- myg_spiders |>
 # Base map 
 ggplot() + 
   geom_sf(data = aus_states) + 
-  geom_sf(data = myg_spiders_sf, alpha = 0.25, aes(colour = scientificName)) + 
+  geom_sf(data = myg_spiders_sf, alpha = 0.25) + 
   theme_minimal()
 ```
 

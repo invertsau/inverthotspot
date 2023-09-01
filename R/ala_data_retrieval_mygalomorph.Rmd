@@ -1,6 +1,6 @@
 ---
 title: "ALA Data Retrieval"
-author: "Ashley Browse"
+author: "Fonti Kar and Ashley Browse"
 date: "2023-07-20"
 output: html_document
 ---
@@ -41,12 +41,10 @@ galah_config(email = Sys.getenv("ALA_EMAIL"),
 
 ### Assertions
 
-<!-- Decide what assertions to filter data by --> 
-<!-- Ashley can you investigate how do we get these from galah -->
-<!-- We want a .csv of these and we can explore as a team which ones are important to filter our data -->
-<!-- See data_cleaning_workflows repository (https://github.com/AtlasOfLivingAustralia/data_cleaning_workflows) -->
+We will exclude any records that are flagged `identificationIncorrect == TRUE`
 
 ```{r}
+# Ashley can you add in code here for downloading assertions and saving them output/ please?
 
 ```
 
@@ -57,34 +55,53 @@ Higher taxonomy e.g. family, class, genus
 State information (NSW, NT, TAS, WA, SA, QLD, ACT, VIC)
 
 ```{r}
-?galah_select
+show_all_fields() |> 
+  print(n = Inf)
+
+fields_we_want <- c("phylum", "class",  "order", "family",  "genus", "species", "taxonRank",
+  "raw_scientificName", "raw_vernacularName", 
+  "stateProvince", "locality", "coordinatePrecision",  "coordinateUncertaintyInMeters", "decimalLatitude", "decimalLongitude",
+  "basisOfRecord", "institutionCode", "datasetName", "collectionCode")
 ```
 
 ### Submit query to ALA
 
 ```{r}
-Mygalomorphae_occurrences <- 
+mygalomorphae_occurrences <- 
   galah_call() |>                               
   galah_identify("Mygalomorphae") |>   
-  #galah_filter(identificationIncorrect == FALSE) |> # This is where we want to add in assertion filters
-  galah_select(group = c("assertions")) |> # This is where we want to add in which columns we want
+  #galah_filter(identificationIncorrect == FALSE) |> 
+  galah_select(group = c("basic"), all_of(fields_we_want)) |> 
   atlas_occurrences() 
   #atlas_counts()
 
-write_parquet(Mygalomorphae_occurrences, "output/mygalomorphae_wassertions.parquet")
-
-Mygalomorphae_occurrences <- example_bg_job_results[["Mygalomorphae_occurrences"]]
-names(Mygalomorphae_occurrences)
-
-Mygalomorphae_occurrences |> pull(identificationIncorrect) |> tabyl()
+mygalomorphae_assertions <- 
+  galah_call() |>                               
+  galah_identify("Mygalomorphae") |>   
+  #galah_filter(identificationIncorrect == FALSE) |> 
+  galah_select(group = c("assertions")) |> 
+  atlas_occurrences() 
+  #atlas_counts()
 ```
 
-### Save downlaoded data
+### Join the assertions and occurrence together
+
+```{r}
+mygalomorphae_occurrences |> names()
+mygalomorphae_occurrences |> nrow()
+
+mygalomorphae_assertions |> names()
+mygalomorphae_assertions |> nrow()
+
+joined_data <- left_join(mygalomorphae_occurrences, mygalomorphae_assertions, by = "recordID")
+```
+
+### Save downloaded data
 
 Save the downloaded data as a `.parquet`
 
 ```{r}
-write_parquet(Mygalomorphae_occurrences, paste0("data/galah/Mygalomorphae_", Sys.Date(), "_ALA.paraquet"))
+write_parquet(joined_data, paste0("data/galah/Mygalomorphae_withassertions", Sys.Date(), "_ALA.paraquet"))
 ```
 
 

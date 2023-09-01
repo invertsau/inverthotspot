@@ -1,6 +1,6 @@
 ---
 title: "Data cleaning"
-author: "Fonti"
+author: "Fonti Kar"
 date: "2023-08-11"
 output: html_document
 ---
@@ -16,25 +16,46 @@ This document lays out the workflow of cleaning data for Mygalomorph spiders fro
 ## Load dependencies
 
 ```{r loadpackages}
-install.packages("pacman")
-pacman::p_load(galah, arrow, here)
+# install.packages("pacman")
+pacman::p_load(galah, arrow, here, tidyverse)
 ```
 
 ## Read in parquet
 
 ```{r}
-myg_spiders <- read_parquet(here("data/galah/Mygalomorphae_ALA.parquet"))
+myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions2023-09-01_ALA.paraquet"))
 ```
 
-### Data summary
-
-How many species/genus/families in dataset
-across states
-
-<!-- Check out R package janitor (tabyl()) -->
+## Subset columns we want
 
 ```{r}
-names(myg_spiders)
+myg_spiders <- myg_spiders_all |> 
+  select(decimalLatitude:collectionCode) |> 
+  collect()
+```
+
+### Data Overview
+
+How many species/genus in dataset
+
+```{r}
+myg_spiders |> 
+  group_by(taxonRank) |> 
+  summarise(n = n())
+
+# Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
+myg_spiders |> 
+  filter(taxonRank == "unranked") |> 
+  select(scientificName, collectionCode) |> 
+  distinct()
+```
+
+Across states
+
+<!-- AB to do this -->
+
+```{r}
+
 ```
 
 General map of occurrences
@@ -63,8 +84,6 @@ Excluding marines
 
 
 <!-- Notes from Payal -->
-
-
 <!-- Decide whether to keep morpho-species  -->
 <!-- How do you distinguish these in ALA data? -->
 <!-- FK to check with PB, I don't think these in are ALA data -->
@@ -81,7 +100,8 @@ Excluding marines
 ```
 
 
-<!-- Check names against a checklist to make sure all species included in the analyses are valid -->
+<!-- Check names against a naming authority to make sure all species included in the analyses are valid -->
+
 <!-- Check for duplicates (as the last step) -->
 
 In this step we can inspect and clean the data of duplicates 
