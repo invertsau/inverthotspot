@@ -16,7 +16,7 @@ This document lays out the workflow of getting data for Mygalomorph spiders from
 ## Load dependencies
 
 ```{r loadpackages}
-install.packages("pacman")
+# install.packages("pacman")
 pacman::p_load(galah, arrow, usethis, tidyverse, janitor)
 ```
 
@@ -58,7 +58,7 @@ State information (NSW, NT, TAS, WA, SA, QLD, ACT, VIC)
 show_all_fields() |> 
   print(n = Inf)
 
-fields_we_want <- c("phylum", "class",  "order", "family",  "genus", "species", "taxonRank",
+fields_we_want <- c("phylum", "class",  "order", "family",  "genus", "species", "taxonRank", "taxonID",
   "raw_scientificName", "raw_vernacularName", 
   "stateProvince", "locality", "coordinatePrecision",  "coordinateUncertaintyInMeters", "decimalLatitude", "decimalLongitude",
   "basisOfRecord", "institutionCode", "datasetName", "collectionCode")
@@ -101,7 +101,7 @@ joined_data <- left_join(mygalomorphae_occurrences, mygalomorphae_assertions, by
 Save the downloaded data as a `.parquet`
 
 ```{r}
-write_parquet(joined_data, paste0("data/galah/Mygalomorphae_withassertions", Sys.Date(), "_ALA.paraquet"))
+write_parquet(joined_data, paste0("data/galah/Mygalomorphae_withassertions", Sys.Date(), "_ALA.parquet"))
 ```
 
 
