@@ -17,7 +17,8 @@ This document lays out the workflow of cleaning data for Mygalomorph spiders fro
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse)
+pacman::p_load(galah, arrow, here, tidyverse, janitor)
+
 ```
 
 ## Read in parquet
@@ -42,6 +43,18 @@ How many species/genus in dataset
 myg_spiders |> 
   group_by(taxonRank) |> 
   summarise(n = n())
+
+# how many records for each species
+myg_spp <- myg_spiders |>
+  group_by(species) |>
+  filter(n() > 2) |>
+  tabyl(species, show_na = FALSE) |>
+  arrange(desc(n))
+myg_spp
+  
+x <- as.data.frame(myg_spp)
+barplot(x$n)
+
 
 # Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
 myg_spiders |> 
