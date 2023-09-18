@@ -55,9 +55,9 @@ ggplot() +
 
 ggplot() +
   geom_sf(data = ozmap_country, fill = NA) + 
-  geom_sf(data = pb2_genus_1_2pb_sp_1_3130_sf, colour = 'red') +
+  geom_sf(data = pb2_genus_1_2pb_sp_1_3130_sf, colour = 'red', fill = 'red') +
   coord_sf(xlim = c(114, 120), 
-           ylim = c(-38, -32)) +
+           ylim = c(-36, -32)) +
   theme_minimal()
 ```
 
