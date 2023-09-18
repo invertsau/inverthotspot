@@ -31,8 +31,10 @@ edit_r_environ()
 
 # Retrieve email (secretly)
 Sys.getenv("ALA_EMAIL")
+```
 
-# Configure galah
+## Configure galah
+```{r}
 galah_config(email = Sys.getenv("ALA_EMAIL"), 
              atlas = "Australia")
 ```
@@ -41,7 +43,7 @@ galah_config(email = Sys.getenv("ALA_EMAIL"),
 
 ### Assertions
 
-We will exclude any records that are flagged `identificationIncorrect == TRUE`
+We will exclude any records that are flagged `identificationIncorrect == TRUE`, for spiders there are none apparrently
 
 ```{r}
 # Ashley can you add in code here for downloading assertions and saving them output/ please?
@@ -58,10 +60,15 @@ State information (NSW, NT, TAS, WA, SA, QLD, ACT, VIC)
 show_all_fields() |> 
   print(n = Inf)
 
-fields_we_want <- c("phylum", "class",  "order", "family",  "genus", "species", "taxonRank", "taxonID",
-  "raw_scientificName", "raw_vernacularName", 
-  "stateProvince", "locality", "coordinatePrecision",  "coordinateUncertaintyInMeters", "decimalLatitude", "decimalLongitude",
-  "basisOfRecord", "institutionCode", "datasetName", "collectionCode")
+search_fields("contentTypes")
+
+fields_we_want <- c(
+  "phylum", "class",  "order", "family",  "genus", "species", "taxonRank", "taxonID",
+  "raw_scientificName", "raw_vernacularName", "raw_geodeticDatum",
+  "stateProvince", "locality", "coordinatePrecision",  "coordinateUncertaintyInMeters", 
+  "decimalLatitude", "decimalLongitude",
+  "basisOfRecord", "institutionCode", "datasetName", "collectionCode", "recordedBy", "catalogNumber",
+  "isDuplicateOf", "outlierLayerCount", "outlierLayer")
 ```
 
 ### Submit query to ALA
@@ -101,7 +108,7 @@ joined_data <- left_join(mygalomorphae_occurrences, mygalomorphae_assertions, by
 Save the downloaded data as a `.parquet`
 
 ```{r}
-write_parquet(joined_data, paste0("data/galah/Mygalomorphae_withassertions", Sys.Date(), "_ALA.parquet"))
+write_parquet(joined_data, paste0("data/galah/Mygalomorphae_withassertions_", Sys.Date(), "_ALA.parquet"))
 ```
 
 
