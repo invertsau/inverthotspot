@@ -1,6 +1,6 @@
 ---
 title: "Alpha hulls"
-author: "Fonti and Ashley"
+author: "Fonti"
 date: "2023-08-25"
 output: html_document
 ---
@@ -10,48 +10,123 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r loadpackages}
+# Install the package
+#install.packages("remotes")
+# remotes::install_github("beatrizpateiro/alphahull", ref="WIP-ahull.IUCN-feature")
+# remotes::install_github("babichmorrowc/hull2spatial")
+
+# Load packages
 #install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf)
+pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf, ggplot2, skimr, alphahull, hull2spatial, sp)
 ```
 
 ## Read in data
 
 ```{r}
-myg_spiders <- read_parquet(here("data/galah/Mygalomorphae_ALA.parquet"))
+myg_spiders <- read_parquet(here("data/galah/Mygalomorphae_withassertions2023-09-01_ALA.paraquet"))
 ```
 
 ## Precleaning
 
 ```{r}
-myg_spiders <- myg_spiders |> 
+myg_spiders_cleaned <- myg_spiders |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
   filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
 ```
 
+## Narrow down to species with enough observations
+
+```{r}
+# Filter down to species
+myg_cleaned_sp <- myg_spiders_cleaned |> 
+  filter(taxonRank == "species")
+
+# Summarise number of observations by taxon
+myg_cleaned_sp |> 
+  group_by(scientificName) |> 
+  summarise(n = n()) |> 
+  arrange(-n)
+
+# Which ones have less than or equal 3 
+less_than_3_obs <- myg_cleaned_sp |> 
+  group_by(scientificName) |> 
+  summarise(n = n()) |> 
+  filter(n <= 3) |> 
+  pull(scientificName)
+
+myg_sp_enoughobs <- myg_cleaned_sp |> 
+  filter(!scientificName %in% less_than_3_obs)
+
+# How many species
+myg_sp_enoughobs |>
+  select(scientificName) |> 
+  distinct() |> 
+  nrow()
+```
+
+## Select a random taxa 
+
+```{r}
+set.seed(987)
+choosen <- myg_sp_enoughobs |> 
+  slice_sample(n = 1) |> 
+  pull(scientificName)
+
+g_cooperi <- myg_sp_enoughobs |> 
+  filter(scientificName == choosen)
+
+g_cooperi |> skim()
+```
 ## Make a simple map
 
 ```{r}
 # Transform projection
 aus <- st_transform(ozmaps::ozmap_country, 4326)
-aus_states <- st_transform(ozmaps::ozmap_states, 4326)
 
 # Base map 
-ggplot() + 
-  geom_sf(data = aus_states) + 
+base_map <- ggplot() + 
+  geom_sf(data = aus, fill = NA) + 
   theme_minimal()
 
 # Transform spiders into sf objects
-myg_spiders_sf <- myg_spiders |> 
+g_cooperi_sf <- g_cooperi |> 
   select(scientificName, decimalLongitude, decimalLatitude) |> 
   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
            crs = 4326)
 
 # Base map 
-ggplot() + 
-  geom_sf(data = aus_states) + 
-  geom_sf(data = myg_spiders_sf, alpha = 0.25) + 
+base_map  + 
+  geom_sf(data = g_cooperi_sf, alpha = 0.5) + 
   theme_minimal()
 ```
 
+## Try make an alphahull
 
+### Original version
+
+```{r}
+# Create alphaull
+g_cooper_ahull <- g_cooperi |> 
+  select(decimalLongitude, decimalLatitude) |> 
+  ahull(alpha = 2)
+
+plot(g_cooper_ahull)
+
+# Transform to sf object
+g_cooper_ahull_sf <- ahull2poly(g_cooper_ahull) |>
+  st_as_sf() |>
+  st_set_crs(4326)  # This method is not working not sure why
+
+g_cooperi_ahull_2 <- hull2spatial:::ahull2lines(g_cooper_ahull) |> st_as_sf() |> st_cast(to = "MULTIPOLYGON")  |> st_set_crs(4326)
+
+# Add to our map
+base_map  + 
+  geom_sf(data = g_cooperi_sf, alpha = 0.5) + 
+  geom_sf(data = g_cooperi_ahull_2, fill = 'orange', alpha = 0.2) +
+  coord_sf(ylim = c(-35, -31), 
+           xlim = c(116, 120)) + 
+  theme_minimal()
+```
+### IUCN version
+ 
 
