@@ -1,0 +1,63 @@
+---
+title: "NESP data overview"
+author: "Fonti and Payal"
+date: "2023-09-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+pacman::p_load(arrow, tidyverse, here, skimr, sp, sf, ozmaps, ggplot2)
+```
+
+This document will lay out the steps to getting an overview of NESP data inputs to the endemic analysis. 
+
+
+### Read in data
+
+```{r}
+# Occurrence data
+nesp_data <- read_csv(here("ignore/nesp/data_ALAnonALA_wgs84_corrected.csv"))
+
+skim(nesp_data)
+
+nesp_data
+```
+
+```{r}
+# Alpha hull data
+nesp_ahulls <- readRDS(here("ignore/nesp/species_ahullspdf.rds"))
+
+# This is a giant list
+nesp_ahulls |> str()
+
+# Example of a species' hull
+nesp_ahulls[1] |> str() # Looks empty for this species
+nesp_ahulls[3] |> str() # Here's one that is not empty
+
+# Deeper dive
+nesp_ahulls[3][[1]]@data
+nesp_ahulls[3][[1]]@polygons # I assume there are multiple hulls for this taxon
+
+# Try plot this
+plot(nesp_ahulls[3][[1]])
+
+
+# Try plot this nicer
+ozmap_country
+pb2_genus_1_2pb_sp_1_3130_sf <- st_as_sf(nesp_ahulls[3][[1]])
+
+ggplot() +
+  geom_sf(data = ozmap_country, fill = NA) + 
+  geom_sf(data = pb2_genus_1_2pb_sp_1_3130_sf, colour = 'red') +
+  theme_minimal()
+
+ggplot() +
+  geom_sf(data = ozmap_country, fill = NA) + 
+  geom_sf(data = pb2_genus_1_2pb_sp_1_3130_sf, colour = 'red') +
+  coord_sf(xlim = c(114, 120), 
+           ylim = c(-38, -32)) +
+  theme_minimal()
+```
+
