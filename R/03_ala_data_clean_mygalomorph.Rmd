@@ -35,47 +35,6 @@ myg_spiders <- myg_spiders_all |>
   collect()
 ```
 
-### Data Overview
-
-How many species/genus in dataset
-
-```{r}
-myg_spiders |> 
-  group_by(taxonRank) |> 
-  summarise(n = n())
-
-# how many records for each species
-myg_spp <- myg_spiders |>
-  group_by(species) |>
-  filter(n() > 2) |>
-  tabyl(species, show_na = FALSE) |>
-  arrange(desc(n))
-myg_spp
-  
-x <- as.data.frame(myg_spp)
-barplot(x$n)
-
-
-# Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
-myg_spiders |> 
-  filter(taxonRank == "unranked") |> 
-  select(scientificName, collectionCode) |> 
-  distinct()
-```
-
-Across states
-
-<!-- AB to do this -->
-
-```{r}
-
-```
-
-General map of occurrences
-
-```{r}
-
-```
 
 ### Geographic errors
 

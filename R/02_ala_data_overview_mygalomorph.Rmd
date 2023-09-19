@@ -1,0 +1,105 @@
+---
+title: "02_ala_data_overview_mygalomorph"
+author: "Josh Nitschke"
+date: "2023-09-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load dependencies
+
+```{r loadpackages}
+# install.packages("pacman")
+pacman::p_load(galah, arrow, here, tidyverse, janitor)
+
+```
+
+## Read in parquet
+
+```{r}
+myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions2023-09-01_ALA.paraquet"))
+```
+
+## Subset columns we want
+
+```{r}
+myg_spiders <- myg_spiders_all |> 
+  select(decimalLatitude:collectionCode) |> 
+  collect()
+```
+
+### Data Overview
+
+How many species/genus in dataset
+
+```{r}
+myg_spiders |> 
+  group_by(taxonRank) |> 
+  summarise(n = n())
+
+# how many records for each species with at least three records
+myg_spp <- myg_spiders |>
+  filter(!is.na(species)) |>
+  group_by(species) |>
+  filter(n() > 2) |>
+  tabyl(species) |>
+  arrange(desc(n))
+myg_spp
+
+# Plot of records for each species
+myg_spp_df <- as.data.frame(myg_spp)
+barplot(myg_spp_df$n, xlab = "species", ylab = "records")
+
+# How many species have at least three records
+nrow(myg_spp)
+
+
+# Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
+myg_spiders |> 
+  filter(taxonRank == "unranked") |> 
+  select(scientificName, collectionCode) |> 
+  distinct()
+
+```
+
+### Species overview by state
+
+```{r}
+# number of records by state, for species with at least three overall records
+myg_spp_by_state <- myg_spiders |>
+  filter(!is.na(species)) |>
+  group_by(species) |>
+  filter(n() > 2) |>
+  group_by(stateProvince, species) |>
+  summarise(n()) 
+myg_spp_by_state
+
+# number of species by state, for species with at least three overall records
+myg_spp_by_state |> 
+  tabyl(stateProvince) |>
+  arrange(desc(n))
+
+# number of species recorded in only one state (species with at least three overall records)
+myg_spp_by_state |> 
+  tabyl(species) |>
+  filter(n == 1) |>
+  nrow()
+
+# number of species recorded in more than one state (species with at least three overall records)
+myg_spp_by_state |> 
+  tabyl(species) |>
+  filter(n > 1) |>
+  nrow()
+
+```
+
+General map of occurrences
+
+```{r}
+
+```
+
+
