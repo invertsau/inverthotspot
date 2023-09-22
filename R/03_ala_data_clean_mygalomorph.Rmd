@@ -17,43 +17,132 @@ This document lays out the workflow of cleaning data for Mygalomorph spiders fro
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr)
 
 ```
 
 ## Read in parquet
 
 ```{r}
-myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions2023-09-01_ALA.paraquet"))
+myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-09-18_ALA.parquet"))
 ```
 
 ## Subset columns we want
 
 ```{r}
 myg_spiders <- myg_spiders_all |> 
-  select(decimalLatitude:collectionCode) |> 
+  select(decimalLatitude:outlierLayer) |> 
   collect()
-```
-
-
-### Geographic errors
-
-<!-- Clean for geographic errors: missing or invalid lat/long; if data needs to be masked by land/water. There are also R packages like coordinate cleaner and others (you'd know more) to clean occurrence data  -->
-
-```{r}
-
 ```
 
 ### Taxonomic errors
 
 <!-- Clean for taxonomic errors: misspelt names, incorrect, synonyms.  -->
-Excluding introduced/invasives taxa
-Excluding marines
+
+### Filter down to species level data
+
+Are species and scientificName not the same thing?? 
+
+`species` and `scientificName` are the same for Mygalomorphae download
 
 ```{r}
+myg_spiders |> 
+  count(taxonRank) 
+
+myg_species <- myg_spiders |> 
+  filter(taxonRank == "species")
+
+# Checking with new variable
+myg_species |> 
+  select(species, scientificName)  |> 
+  mutate(exact_match = species == scientificName) |> 
+  count(exact_match)
+```
+
+### Read in Australian Faunal Directory (AFD) data to cross check out taxa
+
+The [Australian Faunal Directory (AFD)](https://biodiversity.org.au/afd/home) is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories.
+
+The AFD can provide information on:
+
+- nomenclature and taxonomy of species (including valid names [= what a species is currently called], synonyms, and changes to names over time);
+- type data information;
+- bibliographic information for species;
+- distribution of species.
+
+<!-- Check names against a naming authority to make sure all species included in the analyses are valid -->
+
+```{r}
+# afd <- read_csv(here("data/afd_May2023_clean.csv"))
+# afd |> write_parquet(here("data/afd_05-2023_clean.parquet"))
+afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
+
+# Filter down to Arachnida 
+arachnids <- afd |> 
+  filter(CLASS == "ARACHNIDA") |> 
+  collect()
+```
+
+Where is Mygalomorphae in the AFD?
+
+There in no infraorder column in the AFD, can filter down to Mygalomorphae using `HIGHER_CLASSIFICATION`
+ 
+```{r}
+arachnids |> 
+  pull(HIGHER_CLASSIFICATION) |> 
+  str_subset(pattern = "MYGALOMORPH")
+
+names(arachnids)
+```
+
+How many matches in ALA data, do we have in the AFD?
+
+```{r}
+x <- c(1, 2, 3, 6,7, 8, 8, 9)
+y <- c(1, 2, 5, 4, 9)
+
+
+setdiff(y, x)
+x %in% y
+
+# 488 species in AA data matched in the AFD
+myg_species |> 
+  filter(scientificName %in% arachnids$FULL_NAME) |> 
+  pull(scientificName) |> 
+  unique() |> 
+  length()
+
+# How many and which ones are the species in ALA data that DID NOT match with the AFD
+myg_species |> 
+  filter(! scientificName %in% arachnids$FULL_NAME) |> 
+  pull(scientificName) |> 
+  unique() |> 
+  length()
+
+# Why are these species not in the AFD? These might be synonyms! 
+unmatched_ala_sp <- myg_species |> 
+  filter(! scientificName %in% arachnids$FULL_NAME) |> 
+  pull(scientificName) |> 
+  unique() 
+```
+
+```{r}
+arachnids$SYNONYMS
+
+# Pull out the species name from Synonyms without the Authority
+# "Austrammo monteithi Platnick, 2002"     -> "Austrammo monteithi"
+# word(), str_split()
+
+# Using similar methods above try cross match unmatched_ala_sp to synonyms
+
 
 ```
 
+
+
+<!-- Excluding introduced/invasives taxa -->
+
+<!-- Excluding marines -->
 
 <!-- Notes from Payal -->
 <!-- Decide whether to keep morpho-species  -->
@@ -72,7 +161,13 @@ Excluding marines
 ```
 
 
-<!-- Check names against a naming authority to make sure all species included in the analyses are valid -->
+### Geographic errors
+
+<!-- Clean for geographic errors: missing or invalid lat/long; if data needs to be masked by land/water. There are also R packages like coordinate cleaner and others (you'd know more) to clean occurrence data  -->
+
+```{r}
+
+```
 
 <!-- Check for duplicates (as the last step) -->
 
