@@ -44,7 +44,7 @@ myg_spiders |>
 myg_spp <- myg_spiders |>
   filter(!is.na(species)) |>
   group_by(species) |>
-  filter(n() > 2) |>
+  #filter(n() > 2) |>
   tabyl(species) |>
   arrange(desc(n))
 myg_spp
@@ -95,6 +95,11 @@ myg_spp_by_state |>
   nrow()
 
 ```
+#next steps
+investigate NA states
+Orders represented by how many species - barplot
+investigate some of the other variables, e.g. basis of record
+
 
 General map of occurrences
 
