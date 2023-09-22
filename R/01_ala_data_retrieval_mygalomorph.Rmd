@@ -46,8 +46,8 @@ galah_config(email = Sys.getenv("ALA_EMAIL"),
 We will exclude any records that are flagged `identificationIncorrect == TRUE`, for spiders there are none apparrently
 
 ```{r}
-# Ashley can you add in code here for downloading assertions and saving them output/ please?
-
+show_all_assertions() |> 
+  write_csv(here("output/ala_assertions.csv"))
 ```
 
 ### Which data variables do we want from galah?
