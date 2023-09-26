@@ -46,7 +46,7 @@ myg_spiders |>
 myg_spp <- myg_spiders |>
   filter(!is.na(species)) |>
   group_by(species) |>
-  #filter(n() > 2) |>
+  filter(n() > 2) |>
   tabyl(species) |>
   arrange(desc(n))
 myg_spp
@@ -77,7 +77,7 @@ as.data.frame(myg_fams)|>
   theme(axis.text.x = element_text(angle = 90, colour = "black"),
         axis.text.y = element_text(colour = "black"),
         axis.line = element_line(colour = "black"))
-
+#which families are not represented?
 
 # Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
 myg_spiders |> 
@@ -94,7 +94,7 @@ myg_spiders |>
 myg_spp_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
   group_by(species) |>
-  filter(n() > 2) |>
+ # filter(n() > 2) |>
   group_by(stateProvince, species) |>
   summarise(n()) 
 myg_spp_by_state
