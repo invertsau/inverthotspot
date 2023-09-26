@@ -3,6 +3,8 @@ title: "02_ala_data_overview_mygalomorph"
 author: "Josh Nitschke"
 date: "2023-09-19"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -13,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2)
 
 ```
 
@@ -81,6 +83,27 @@ myg_spp_by_state
 myg_spp_by_state |> 
   tabyl(stateProvince) |>
   arrange(desc(n))
+
+#checking records where stateProvince = NA but still have lat/long
+myg_spiders_na_state <- myg_spiders |>
+  filter(is.na(stateProvince)) |>
+  filter(!is.na(decimalLatitude))
+
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+
+ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = myg_spiders_na_state, 
+             mapping = aes(decimalLongitude, decimalLatitude), 
+             colour = "red", size = 0.8) + 
+  # coord_sf(xlim=c(135, 155), 
+  #          ylim=c(-10, -32)) +
+  labs(title = "myg_spiders: stateProvince = NA", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw()
 
 # number of species recorded in only one state (species with at least three overall records)
 myg_spp_by_state |> 
