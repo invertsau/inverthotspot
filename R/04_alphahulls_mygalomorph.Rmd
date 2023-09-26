@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Load packages
 #install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf, ggplot2, skimr, alphahull, hull2spatial, sp)
+pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf, ggplot2, skimr, alphahull, hull2spatial, sp, purrr)
 ```
 
 ## Read in data
@@ -116,7 +116,7 @@ After sharing the [IUCN documentation, page 51](https://nc.iucnredlist.org/redli
 
 After discussing the potential impact of the IUCN alpha hull for the conservation/biodiversity community, Bea agreed to implement a function to estimate alpha hulls using the Burgman and Fox method. [This work](https://github.com/beatrizpateiro/alphahull/tree/WIP-ahull.IUCN-feature) is a work in progress and not yet released to public. 
 
-### Bea's version from {alphahull} package
+## Bea's version from {alphahull} package
 
 ```{r}
 # Create alphaull
@@ -140,7 +140,122 @@ base_map  +
   geom_sf(data = b_aurea_ahull_sf, fill = 'orange', alpha = 0.2) +
   theme_minimal()
 ```
-### IUCN version
+### Extroplate across all taxa
+
+```{r}
+create_ahull_sf <- function(data, 
+                            lat, long, 
+                            alpha = 2){
+  
+# browser()
+ahull_obj <- data |> 
+  dplyr::select({{long}},  {{lat}}) |> 
+  alphahull::ahull(alpha = alpha)
+
+# Convert to sp then sf
+ahull_sf <- hull2spatial::ahull2poly(ahull_obj) |>
+  sf::st_as_sf() |>
+  sf::st_set_crs(4326)
+
+return(ahull_sf)
+
+}
+# Test this out
+create_ahull_sf(b_aurea, decimalLatitude, decimalLongitude)
+
+
+
+```
+### Nest data and try apply function across all taxa
+
+```{r}
+myg_nested_sp <- myg_sp_enoughobs |> 
+  select(scientificName, decimalLongitude, decimalLatitude) |> 
+  nest(occ = c(decimalLongitude, decimalLatitude))
+
+myg_nested_ahull <- myg_nested_sp |> 
+  mutate(points_sf = map(.x = occ,
+                           ~ st_as_sf(.x, coords = c("decimalLongitude", "decimalLatitude"), # Set as sf object
+                                      crs = 4326) |> 
+                             rename(points = geometry)), # Rename geometry variable to something intuitive
+         ahulls_sf = map(myg_nested_sp$occ, 
+    possibly(~create_ahull_sf(.x, decimalLatitude, decimalLongitude))
+  )
+  )
+
+# This throws an error
+myg_unnested <- myg_nested_ahull |> 
+  select(scientificName, points_sf, ahulls_sf) |> 
+  unnest(cols = c(points_sf, ahulls_sf)) 
+
+# Bind manually
+ahull_bound <- list_rbind(myg_nested_ahull$ahulls_sf) |> 
+  rename(ahull = geometry)
+
+# Identify which ones are null
+null_hulls_taxa <- which(lengths(myg_nested_ahull$ahulls_sf) == 0)
+
+# Investigate NULL taxa 
+# Not sure why these are NULL for ahulls, some dups and some very similar values
+myg_nested_ahull |> 
+  slice(null_hulls_taxa) |> 
+  pluck("occ")
+
+problem_taxa <- myg_nested_ahull |> 
+  slice(null_hulls_taxa) |> 
+  pull(scientificName)
+
+# Left join in other taxonomic info
+with_taxonomic_info <- myg_nested_ahull |> left_join(myg_sp_enoughobs |> 
+  select(scientificName, genus, family)) |> 
+  distinct()
+
+# Exclude these for now
+myg_hull_plot <- with_taxonomic_info |> 
+  filter(!scientificName %in% problem_taxa) |> 
+  select(-occ) |>
+  unnest(c(points_sf, ahulls_sf)) 
+
+
+# Cropping data to mainland Australia
+myg_hull_plot |> 
+   filter(latitude < -10, latitude >= -45,
+         longitude >= 113, longitude <= 155) |> 
+  st_as_sf(crs = 4326) 
+
+
+```
+
+### Plot the ahulls
+
+```{r}
+base_map + # There are offshore points need to crop these
+    geom_sf(data = myg_hull_plot, aes(geometry = points), colour = "black", 
+              alpha = 0.1)
+
+base_map + # There are offshore points need to crop these
+    geom_sf(data = myg_hull_plot, aes(geometry = points), colour = "black", 
+              alpha = 0.2) + 
+  geom_sf(data = myg_hull_plot, aes(geometry = geometry), fill = "#023E50",
+          alpha = 0.01) +
+  coord_sf(ylim=c(-10,-45),
+         xlim=c(113,155)) 
+
+base_map + # There are offshore points need to crop these
+    geom_sf(data = myg_hull_plot, aes(geometry = points), colour = "black", 
+              alpha = 0.2) + 
+  geom_sf(data = myg_hull_plot, aes(geometry = geometry, fill = family),
+          alpha = 0.01) +
+  guides(fill = guide_legend(override.aes = list(alpha = 0.5))) + 
+  coord_sf(ylim=c(-10,-45),
+         xlim=c(113,155)) + 
+  theme(legend.position = "bottom")
+```
+
+
+
+
+## IUCN version
 
 We need to install alphahull from the [IUCN branch](https://github.com/beatrizpateiro/alphahull/tree/WIP-ahull.IUCN-feature) to use these in code
 
