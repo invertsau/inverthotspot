@@ -25,7 +25,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2)
 myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions2023-09-01_ALA.paraquet"))
 ```
 
-## Subset columns we want
+## Subset columns we want for ALA data overview
 
 ```{r}
 myg_spiders <- myg_spiders_all |> 
@@ -146,8 +146,36 @@ myg_spiders |>
   tabyl(basisOfRecord) |>
   arrange(desc(n))
 
+# Exclude, can't trace back to source
+myg_spiders |> 
+  filter(basisOfRecord == "OCCURRENCE") |> 
+  select(ends_with("code"
+  ))
+
+
+myg_spiders |> 
+  filter(basisOfRecord == "OBSERVATION") |> 
+    select(ends_with("code"
+  ))
+
+# Machine observe keep the one with spatial data
+myg_spiders |> 
+  filter(basisOfRecord == "MACHINE_OBSERVATION", 
+         taxonRank == "species") |> 
+  select(scientificName, recordID, starts_with("decimal"))
+
 ```
 
+### Overview of assertions
+
+```{r}
+myg_assertions <- myg_spiders_all |> 
+  select(scientificName, taxonRank, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
+  collect()
+
+
+myg_assertions
+```
 
 
 General map of occurrences
