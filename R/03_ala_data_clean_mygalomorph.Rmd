@@ -185,10 +185,12 @@ introduced_taxa_wfullname$scientific_name %in% myg_species$scientificName |> tab
 myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> table()
 ```
 
-### Global Register of Invasive and Introduced Species
+### Global Register of Invasive and Introduced Species (GRIIS)
 
 ```{r}
+# Join distrubtion.txt and taxon-edit.txt
 
+# Cross match with ALA data
 
 ```
 
