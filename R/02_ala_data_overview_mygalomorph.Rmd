@@ -173,8 +173,17 @@ myg_assertions <- myg_spiders_all |>
   select(scientificName, taxonRank, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
   collect()
 
-
 myg_assertions
+
+myg_assertions_long <- myg_assertions |>
+  pivot_longer(cols = c(AMBIGUOUS_COLLECTION:ZERO_COORDINATE), names_to = "assertion_type", values_to = "value") 
+
+myg_assertions_long |>
+  filter(value == TRUE) |>
+  tabyl(assertion_type)
+
+myg_assertions |>
+  filter(all(AMBIGUOUS_COLLECTION, AMBIGUOUS_INSTITUTION))
 ```
 
 
