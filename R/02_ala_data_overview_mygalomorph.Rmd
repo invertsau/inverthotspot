@@ -182,8 +182,9 @@ myg_assertions_long |>
   filter(value == TRUE) |>
   tabyl(assertion_type)
 
+#Filtering observations where all assertions are false
 myg_assertions |>
-  filter(all(AMBIGUOUS_COLLECTION, AMBIGUOUS_INSTITUTION))
+  filter(!if_any(AMBIGUOUS_COLLECTION:ZERO_COORDINATE))
 ```
 
 
