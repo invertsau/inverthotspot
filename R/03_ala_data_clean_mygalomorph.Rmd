@@ -17,7 +17,7 @@ This document lays out the workflow of cleaning data for Mygalomorph spiders fro
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah)
 
 ```
 
@@ -90,7 +90,7 @@ There in no infraorder column in the AFD, can filter down to Mygalomorphae using
 ```{r}
 arachnids |> 
   pull(HIGHER_CLASSIFICATION) |> 
-  str_subset(pattern = "MYGALOMORPH")
+  str_subset(pattern = "MYGALOMORPH") |> head()
 
 names(arachnids)
 ```
@@ -98,11 +98,11 @@ names(arachnids)
 How many matches in ALA data, do we have in the AFD?
 
 ```{r}
-x <- c(1, 2, 3, 6,7, 8, 8, 9)
-y <- c(1, 2, 5, 4, 9)
+#x <- c(1, 2, 3, 6, 7, 8, 8, 9)
+#y <- c(1, 2, 5, 4, 9)
 
-setdiff(x, y)
-x %in% y
+#setdiff(x, y)
+#x %in% y
 
 # 488 species in ALA data matched in the AFD
 myg_species |> 
@@ -150,9 +150,65 @@ unmatched_ala_sp[issynonym]
 
 ```
 
-
-
 <!-- Excluding introduced/invasives taxa -->
+
+### Use World Spider Catalog and GRIIS to exclude introduced spiders from dataset
+
+
+```{r}
+# Read in spider data
+wsc <- read_csv(here("data/wsc/species_export_20230929.csv"))
+```
+
+Have a look at distribution variable
+```{r}
+# `distribution` values that contain "Australia"
+str_subset(wsc$distribution, "Australia")
+
+# Return unique values of `distribution` for those that have "Introduced to Australia" in distribution
+wsc |> 
+  pull(distribution) |> str_subset(pattern = "Introduced to Australia") |>  
+  unique()
+
+wsc |> 
+  pull(distribution) |> str_subset(pattern = "Australia") |>  
+  unique
+
+# We want to capture all observations where "Introduced to" and "Australia" occurs together
+str_subset(wsc$distribution, pattern = "Introduced to.*Australia")
+str_detect(wsc$distribution, pattern = "Introduced to.*Australia")
+str_which(wsc$distribution, pattern = "Introduced to.*Australia")
+
+introduced_taxa <- wsc |> 
+  filter(str_detect(distribution, pattern = "Introduced to.*Australia")) 
+
+# We need to join genus and species together manually
+introduced_taxa_wfullname <- introduced_taxa |> 
+  mutate(scientific_name = paste(genus, species)) 
+
+introduced_taxa_wfullname |> 
+  select(scientific_name)
+```
+
+Cross match if introduced taxa from WSC with ALA data to exclude introduced spiders
+
+There are no introduced species of spiders in ALA data according to WSC data
+
+```{r}
+introduced_taxa_wfullname$scientific_name %in% myg_species$scientificName |> table()
+myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> table()
+```
+
+### Global Register of Invasive and Introduced Species (GRIIS)
+
+```{r}
+# Join distrubtion.txt and taxon-edit.txt
+
+# Cross match with ALA data
+
+```
+
+
 
 <!-- Excluding marines -->
 

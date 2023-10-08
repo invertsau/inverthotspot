@@ -3,6 +3,8 @@ title: "02_ala_data_overview_mygalomorph"
 author: "Josh Nitschke"
 date: "2023-09-19"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -13,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2)
 
 ```
 
@@ -23,7 +25,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor)
 myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions2023-09-01_ALA.paraquet"))
 ```
 
-## Subset columns we want
+## Subset columns we want for ALA data overview
 
 ```{r}
 myg_spiders <- myg_spiders_all |> 
@@ -33,7 +35,7 @@ myg_spiders <- myg_spiders_all |>
 
 ### Data Overview
 
-How many species/genus in dataset
+How many species in dataset
 
 ```{r}
 myg_spiders |> 
@@ -44,7 +46,7 @@ myg_spiders |>
 myg_spp <- myg_spiders |>
   filter(!is.na(species)) |>
   group_by(species) |>
-  #filter(n() > 2) |>
+  filter(n() > 2) |>
   tabyl(species) |>
   arrange(desc(n))
 myg_spp
@@ -56,6 +58,26 @@ barplot(myg_spp_df$n, xlab = "species", ylab = "records")
 # How many species have at least three records
 nrow(myg_spp)
 
+# number of species in each family
+myg_fams <- myg_spiders |>
+  filter(!is.na(species)) |>
+  group_by(species) |>
+  #filter(n() > 2) |>
+  group_by(family, species) |>
+  summarise(n = n()) |>
+  tabyl(family) |>
+  arrange(desc(n))
+
+as.data.frame(myg_fams)|>
+  mutate(family = factor(family, levels = family))|>
+  ggplot(aes(x = family, y = n)) +
+  geom_bar(stat = "identity") +
+  labs(y = "number of species") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+#which families are not represented?
 
 # Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
 myg_spiders |> 
@@ -72,7 +94,7 @@ myg_spiders |>
 myg_spp_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
   group_by(species) |>
-  filter(n() > 2) |>
+ # filter(n() > 2) |>
   group_by(stateProvince, species) |>
   summarise(n()) 
 myg_spp_by_state
@@ -81,6 +103,27 @@ myg_spp_by_state
 myg_spp_by_state |> 
   tabyl(stateProvince) |>
   arrange(desc(n))
+
+#checking records where stateProvince = NA but still have lat/long
+myg_spiders_na_state <- myg_spiders |>
+  filter(is.na(stateProvince)) |>
+  filter(!is.na(decimalLatitude))
+
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+
+ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = myg_spiders_na_state, 
+             mapping = aes(decimalLongitude, decimalLatitude), 
+             colour = "red", size = 0.8) + 
+  # coord_sf(xlim=c(135, 155), 
+  #          ylim=c(-10, -32)) +
+  labs(title = "myg_spiders: stateProvince = NA", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw()
 
 # number of species recorded in only one state (species with at least three overall records)
 myg_spp_by_state |> 
@@ -95,10 +138,54 @@ myg_spp_by_state |>
   nrow()
 
 ```
-#next steps
-investigate NA states
-Orders represented by how many species - barplot
-investigate some of the other variables, e.g. basis of record
+
+## Basis of record
+```{r}
+myg_spiders |>
+  filter(!is.na(species)) |>
+  tabyl(basisOfRecord) |>
+  arrange(desc(n))
+
+# Exclude, can't trace back to source
+myg_spiders |> 
+  filter(basisOfRecord == "OCCURRENCE") |> 
+  select(ends_with("code"
+  ))
+
+
+myg_spiders |> 
+  filter(basisOfRecord == "OBSERVATION") |> 
+    select(ends_with("code"
+  ))
+
+# Machine observe keep the one with spatial data
+myg_spiders |> 
+  filter(basisOfRecord == "MACHINE_OBSERVATION", 
+         taxonRank == "species") |> 
+  select(scientificName, recordID, starts_with("decimal"))
+
+```
+
+### Overview of assertions
+
+```{r}
+myg_assertions <- myg_spiders_all |> 
+  select(scientificName, taxonRank, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
+  collect()
+
+myg_assertions
+
+myg_assertions_long <- myg_assertions |>
+  pivot_longer(cols = c(AMBIGUOUS_COLLECTION:ZERO_COORDINATE), names_to = "assertion_type", values_to = "value") 
+
+myg_assertions_long |>
+  filter(value == TRUE) |>
+  tabyl(assertion_type)
+
+#Filtering observations where all assertions are false
+myg_assertions |>
+  filter(!if_any(AMBIGUOUS_COLLECTION:ZERO_COORDINATE))
+```
 
 
 General map of occurrences
