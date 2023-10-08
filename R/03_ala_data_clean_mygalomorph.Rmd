@@ -101,11 +101,10 @@ How many matches in ALA data, do we have in the AFD?
 x <- c(1, 2, 3, 6,7, 8, 8, 9)
 y <- c(1, 2, 5, 4, 9)
 
-
-setdiff(y, x)
+setdiff(x, y)
 x %in% y
 
-# 488 species in AA data matched in the AFD
+# 488 species in ALA data matched in the AFD
 myg_species |> 
   filter(scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
@@ -124,10 +123,13 @@ unmatched_ala_sp <- myg_species |>
   filter(! scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
   unique() 
+unmatched_ala_sp
 ```
 
+
+Which of the ALA species not matched to AFD occur in the list of AFD arachnid species synonyms
+
 ```{r}
-arachnids$SYNONYMS
 
 # Pull out the species name from Synonyms without the Authority
 # "Austrammo monteithi Platnick, 2002"     -> "Austrammo monteithi"
@@ -135,6 +137,16 @@ arachnids$SYNONYMS
 
 # Using similar methods above try cross match unmatched_ala_sp to synonyms
 
+arachnids$SYNONYMS |> head()
+#remove Authority, keep species name
+word(arachnids$SYNONYMS, 1, 2) |> head()
+
+#check if unmatched species occur in list of synonyms
+issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
+issynonym
+
+#One species occurs in synonyms list. Which one?
+unmatched_ala_sp[issynonym]
 
 ```
 
