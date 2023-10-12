@@ -3,4 +3,8 @@
 .RData
 .Ruserdata
 output/
+data/shapesIUCN/
+IUCN_results.xlsx
+*.html
+
 
