@@ -202,7 +202,7 @@ myg_spiders |>
 
 ```{r}
 myg_assertions <- myg_spiders_all |> 
-  select(scientificName, taxonRank, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
+  select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
   collect()
 
 myg_assertions
@@ -218,6 +218,45 @@ myg_assertions_long |>
 myg_assertions |>
   filter(!if_any(AMBIGUOUS_COLLECTION:ZERO_COORDINATE))
 ```
+
+### Checking coordinate-related assertions
+```{r}
+myg_assertions |>
+  filter(!is.na(species),
+         !is.na(decimalLatitude),
+         !is.na(decimalLongitude)) |>
+  filter(if_any(starts_with("COORDINATE"))) |>
+  group_by(species) |>
+  tabyl(species) |>
+  arrange(desc(n))
+
+# plotting spp. with the most flagged records for coordinate-based assertions
+myg_spp_coordinate_assertions <- myg_assertions |>
+  filter(!is.na(species),
+         !is.na(decimalLatitude),
+         !is.na(decimalLongitude)) |>
+  filter(if_any(starts_with("COORDINATE"))) |>
+  group_by(species) |>
+  filter(n() > 100)
+
+aus <- st_transform(ozmaps::ozmap_states, 4326)
+
+ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = myg_coordinate_assertions, 
+             mapping = aes(decimalLongitude, decimalLatitude, colour = species), 
+             size = 0.8) + 
+  # coord_sf(xlim=c(135, 155), 
+  #          ylim=c(-10, -32)) +
+  labs(title = "myg_spiders: assertions starting with 'COORDINATE' = TRUE", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw()
+
+```
+
 
 
 General map of occurrences
