@@ -74,7 +74,9 @@ as.data.frame(myg_fams)|>
   geom_bar(stat = "identity") +
   labs(y = "number of species") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, colour = "black"),
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
         axis.text.y = element_text(colour = "black"),
         axis.line = element_line(colour = "black"))
 #which families are not represented?
@@ -91,18 +93,48 @@ myg_spiders |>
 
 ```{r}
 # number of records by state, for species with at least three overall records
-myg_spp_by_state <- myg_spiders |>
+myg_records_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
   group_by(species) |>
  # filter(n() > 2) |>
   group_by(stateProvince, species) |>
   summarise(n()) 
-myg_spp_by_state
+myg_records_by_state
 
 # number of species by state, for species with at least three overall records
-myg_spp_by_state |> 
+myg_spp_by_state <- myg_records_by_state |> 
   tabyl(stateProvince) |>
   arrange(desc(n))
+
+# number of families by state
+myg_fam_by_state <- myg_spiders |>
+  filter(!is.na(species)) |>
+  group_by(species) |>
+ # filter(n() > 2) |>
+  group_by(stateProvince, family) |>
+  summarise(n()) |>
+  tabyl(stateProvince) |>
+  arrange(desc(n))
+
+#plotting numbers of species and families by state
+myg_spp_fam_by_state <- left_join(myg_spp_by_state, myg_fam_by_state, by = "stateProvince")
+
+scale_right <- max(myg_spp_fam_by_state$n.y)/max(myg_spp_fam_by_state$n.x)
+
+as.data.frame(myg_spp_fam_by_state)|>
+  mutate(stateProvince = factor(stateProvince, levels = stateProvince))|>
+  ggplot(aes(x = stateProvince)) +
+  geom_bar(stat = "identity", aes(y = n.x, fill = "species")) +
+  geom_bar(stat = "identity", aes(y = n.y/scale_right, fill = "families"), colour = "black", alpha = 0.5) +
+  scale_y_continuous(sec.axis = sec_axis(~.*scale_right, name = "number of families")) + 
+  scale_fill_manual(values = c("grey30", "lightgreen")) +
+  labs(y = "number of species") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
 
 #checking records where stateProvince = NA but still have lat/long
 myg_spiders_na_state <- myg_spiders |>
