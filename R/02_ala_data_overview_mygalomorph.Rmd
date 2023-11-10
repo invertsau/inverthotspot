@@ -245,7 +245,7 @@ ggplot() +
   geom_sf(data = aus, 
           colour = "black", 
           fill = "white")  + 
-   geom_point(data = myg_coordinate_assertions, 
+   geom_point(data = myg_spp_coordinate_assertions, 
              mapping = aes(decimalLongitude, decimalLatitude, colour = species), 
              size = 0.8) + 
   # coord_sf(xlim=c(135, 155), 
@@ -258,10 +258,60 @@ ggplot() +
 ```
 
 
-
-General map of occurrences
-
 ```{r}
+coord_invalid <- myg_assertions |>
+  select(species, decimalLatitude, decimalLongitude, COORDINATE_INVALID)
+
+coord_invalid_spp <- coord_invalid |>
+  group_by(species) |>
+  summarise(num_true = sum(COORDINATE_INVALID)) |>
+  filter(num_true > 0) |>
+  pull(species)
+
+coord_invalid_spp_no_na <- myg_assertions |>
+  filter(species %in% coord_invalid_spp,
+         !is.na(species))
+
+  ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = coord_invalid_spp_no_na, mapping = aes(decimalLongitude, decimalLatitude, colour = COORDINATE_INVALID), 
+             size = 0.8, alpha = 0.5) + 
+  # coord_sf(xlim=c(135, 155), 
+  #          ylim=c(-10, -32)) +
+  labs(title = "myg_spiders: coordinate_invalid", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw() +
+    facet_wrap(~species)
+  
+coord_invalid_spp_no_na |>
+  filter(COORDINATE_INVALID == TRUE)
+```
+
+get verbatum coordinates
+```{r}
+miss_occ_coord_flagged <- myg_assertions |>
+  filter(species == "Missulena occatoria") |>
+  select(species, decimalLatitude, decimalLongitude, contains("COORDINATE")) |>
+  pivot_longer(cols = contains("COORDINATE"), names_to = "assertion_type", values_to = "assertion_flag") |>
+  filter(assertion_flag == TRUE) 
+
+ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = miss_occ_coord_flagged, mapping = aes(decimalLongitude, decimalLatitude, colour = assertion_type), 
+             size = 1.5) + 
+  scale_colour_manual(values = wes_palette("BottleRocket2")) +
+  # coord_sf(xlim=c(135, 155), 
+  #          ylim=c(-10, -32)) +
+  labs(title = "myg_spiders: miss_occ_coord_flagged", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw() +
+  facet_wrap(~assertion_type)
 
 ```
 
