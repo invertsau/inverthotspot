@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr)
 
 ```
 
@@ -159,13 +159,11 @@ ggplot() +
 
 # number of species recorded in only one state (species with at least three overall records)
 myg_spp_by_state |> 
-  tabyl(species) |>
   filter(n == 1) |>
   nrow()
 
 # number of species recorded in more than one state (species with at least three overall records)
 myg_spp_by_state |> 
-  tabyl(species) |>
   filter(n > 1) |>
   nrow()
 
@@ -202,7 +200,7 @@ myg_spiders |>
 
 ```{r}
 myg_assertions <- myg_spiders_all |> 
-  select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
+  dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
   collect()
 
 myg_assertions
@@ -210,9 +208,13 @@ myg_assertions
 myg_assertions_long <- myg_assertions |>
   pivot_longer(cols = c(AMBIGUOUS_COLLECTION:ZERO_COORDINATE), names_to = "assertion_type", values_to = "value") 
 
-myg_assertions_long |>
+assertion_counts <- myg_assertions_long |>
   filter(value == TRUE) |>
   tabyl(assertion_type)
+
+# Join with ala_assertions.csv so we have summary of counts
+asserts <- read_csv("output/ala_assertions.csv")
+asserts |> left_join(assertion_counts, by = join_by(id == assertion_type)) |> write_csv("output/ala_assertions_with_counts.csv")
 
 #Filtering observations where all assertions are false
 myg_assertions |>

@@ -46,7 +46,9 @@ galah_config(email = Sys.getenv("ALA_EMAIL"),
 We will exclude any records that are flagged `identificationIncorrect == TRUE`, for spiders there are none apparrently
 
 ```{r}
-show_all_assertions() |> 
+assertions <- show_all_assertions()
+
+assertions |> 
   write_csv(here("output/ala_assertions.csv"))
 ```
 
