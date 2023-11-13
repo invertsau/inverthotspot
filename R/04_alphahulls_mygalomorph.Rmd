@@ -367,7 +367,7 @@ map(.x = myg_conr_nest$occ,
 )
 
 
-
+# With Buffer
 myg_concr_output_withbuffer <- map(.x = myg_conr_nest$occ, 
     possibly(~IUCN.eval(DATA =.x, 
                         method.range = "alpha.hull",
@@ -379,6 +379,7 @@ myg_concr_output_withbuffer <- map(.x = myg_conr_nest$occ,
 
 write_rds(myg_concr_output_withbuffer, here("output/myg_concr_output_withbuffer_0.1.rds"))
 
+# No buffer
 myg_concr_output <- map(.x = myg_conr_nest$occ, 
     possibly(~IUCN.eval(DATA =.x, 
                         method.range = "alpha.hull",
@@ -405,25 +406,6 @@ names(myg_concr_output) <- myg_conr_nest$species
 
 myg_concr_output
 
-# Try plot the hulls
-myg_concr_output |> pluck("Trittame loki", "spatialPoly_EOO") |> plot()
-myg_concr_output |> pluck("Trittame loki", "spatialPoly_subpop") |> plot()
-
-# Can we convert sp to sf? YES WE CAN
-b_au_conf_sf <- myg_concr_output |>
-  pluck("Blakistonia aurea", "spatialPoly_EOO")  |> 
-  st_as_sf() |> 
-  mutate(species = "Blakistonia aurea") |> 
-  dplyr::select(-dummy) 
-
-row.names(b_au_conf_sf) <- NULL
-
-b_au_conf_sf |> plot()
-
-# Just keep the spatialPoly_EOO
-map(myg_conr_nest$species, 
-    ~myg_concr_output |> pluck(.x, "spatialPoly_EOO"))
-
 # A function to pull spatialPoly_EOO, change it to sf and add in species name
 get_ahull_sf <- function(sp_name){
   output <- myg_concr_output |> 
@@ -439,6 +421,8 @@ get_ahull_sf <- function(sp_name){
 
 myg_spiders_conr_sf <- map_df(.x = myg_conr_nest$species,
      ~get_ahull_sf(.x))
+
+write_rds(myg_spiders_conr_sf, "output/myg_sf_alphahulls.rds")
 ```
 
 ### Plot these all at once
