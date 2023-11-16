@@ -1,0 +1,193 @@
+---
+title: "myg assertions overview"
+author: "Josh Nitschke"
+date: "2023-11-16"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load dependencies
+
+```{r loadpackages}
+# install.packages("pacman")
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr)
+
+```
+
+## Read in parquet
+
+```{r}
+myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions2023-09-01_ALA.paraquet"))
+```
+
+## Subset columns we want for ALA data overview
+
+```{r}
+myg_spiders <- myg_spiders_all |> 
+  select(decimalLatitude:collectionCode) |> 
+  collect()
+```
+
+### Overview of assertions
+
+```{r}
+myg_assertions <- myg_spiders_all |> 
+  dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode, AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
+  collect()
+
+myg_assertions
+
+myg_assertions_long <- myg_assertions |>
+  pivot_longer(cols = c(AMBIGUOUS_COLLECTION:ZERO_COORDINATE), names_to = "assertion_type", values_to = "value") 
+
+assertion_counts <- myg_assertions_long |>
+  filter(value == TRUE) |>
+  tabyl(assertion_type)
+
+# Join with ala_assertions.csv so we have summary of counts
+asserts <- read_csv("output/ala_assertions.csv")
+asserts |> 
+  left_join(assertion_counts, by = join_by(id == assertion_type)) |>
+  arrange(-n) |> 
+  write_csv("output/ala_assertions_with_counts.csv")
+
+#Filtering observations where all assertions are false
+myg_assertions |>
+  filter(!if_any(AMBIGUOUS_COLLECTION:ZERO_COORDINATE))
+```
+
+## read in assertion counts
+
+```{r}
+asserts <- read_csv("data/ala_assertions_with_counts.csv")
+
+asserts |>
+  filter(to_investigate == 1) |>
+  arrange(type...8) |>
+  print(n = Inf)
+  
+```
+
+### Checking coordinate-related assertions
+```{r}
+myg_assertions |>
+  filter(!is.na(species),
+         !is.na(decimalLatitude),
+         !is.na(decimalLongitude)) |>
+  filter(if_any(starts_with("COORDINATE"))) |>
+  group_by(species) |>
+  tabyl(species) |>
+  arrange(desc(n))
+
+# plotting spp. with the most flagged records for coordinate-based assertions
+myg_spp_coordinate_assertions <- myg_assertions |>
+  filter(!is.na(species),
+         !is.na(decimalLatitude),
+         !is.na(decimalLongitude)) |>
+  filter(if_any(starts_with("COORDINATE"))) |>
+  group_by(species) |>
+  filter(n() > 100)
+
+aus <- st_transform(ozmaps::ozmap_states, 4326)
+
+ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = myg_spp_coordinate_assertions, 
+             mapping = aes(decimalLongitude, decimalLatitude, colour = species), 
+             size = 0.8) + 
+  # coord_sf(xlim=c(135, 155), 
+  #          ylim=c(-10, -32)) +
+  labs(title = "myg_spiders: assertions starting with 'COORDINATE' = TRUE", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw()
+
+```
+
+## Investigating spatial assertions
+
+Coordinate uncertainty meters invalid
+```{r}
+coord_uncertainty_m_invalid <- myg_assertions |>
+  select(species, decimalLatitude, decimalLongitude, COORDINATE_UNCERTAINTY_METERS_INVALID)
+
+coord_uncertainty_m_invalid_spp <- coord_uncertainty_m_invalid |>
+  group_by(species) |>
+  summarise(num_true = sum(COORDINATE_UNCERTAINTY_METERS_INVALID)) |>
+  filter(num_true > 0) |>
+  pull(species)
+
+coord_uncertainty_m_invalid_spp_no_na <- myg_spiders_all |>
+  filter(species %in% coord_uncertainty_m_invalid_spp,
+         !is.na(species))
+
+coord_uncertainty_m_invalid_spp_no_na |> 
+  filter(COORDINATE_UNCERTAINTY_METERS_INVALID == TRUE)|>
+  select(species, decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters)
+
+```
+
+Coordinate invalid
+```{r}
+coord_invalid <- myg_assertions |>
+  select(species, decimalLatitude, decimalLongitude, COORDINATE_INVALID)
+
+coord_invalid_spp <- coord_invalid |>
+  group_by(species) |>
+  summarise(num_true = sum(COORDINATE_INVALID)) |>
+  filter(num_true > 0) |>
+  pull(species)
+
+coord_invalid_spp_no_na <- myg_assertions |>
+  filter(species %in% coord_invalid_spp,
+         !is.na(species))
+
+  ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = coord_invalid_spp_no_na, mapping = aes(decimalLongitude, decimalLatitude, colour = COORDINATE_INVALID), 
+             size = 0.8, alpha = 0.5) + 
+  # coord_sf(xlim=c(135, 155), 
+  #          ylim=c(-10, -32)) +
+  labs(title = "myg_spiders: coordinate_invalid", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw() +
+    facet_wrap(~species)
+  
+coord_invalid_spp_no_na |>
+  filter(COORDINATE_INVALID == TRUE)
+```
+
+get verbatum coordinates
+```{r}
+miss_occ_coord_flagged <- myg_assertions |>
+  filter(species == "Missulena occatoria") |>
+  select(species, decimalLatitude, decimalLongitude, contains("COORDINATE")) |>
+  pivot_longer(cols = contains("COORDINATE"), names_to = "assertion_type", values_to = "assertion_flag") |>
+  filter(assertion_flag == TRUE) 
+
+ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = miss_occ_coord_flagged, mapping = aes(decimalLongitude, decimalLatitude, colour = assertion_type), 
+             size = 1.5) + 
+  scale_colour_manual(values = wes_palette("BottleRocket2")) +
+  # coord_sf(xlim=c(135, 155), 
+  #          ylim=c(-10, -32)) +
+  labs(title = "myg_spiders: miss_occ_coord_flagged", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw() +
+  facet_wrap(~assertion_type)
+
+```
