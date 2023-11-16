@@ -213,11 +213,11 @@ assertion_counts <- myg_assertions_long |>
   tabyl(assertion_type)
 
 # Join with ala_assertions.csv so we have summary of counts
-asserts <- read_csv("output/ala_assertions.csv")
-asserts |> 
-  left_join(assertion_counts, by = join_by(id == assertion_type)) |>
-  arrange(-n) |> 
-  write_csv("output/ala_assertions_with_counts.csv")
+asserts <- read_csv(here("output/ala_assertions.csv"))
+# asserts |> 
+#   left_join(assertion_counts, by = join_by(id == assertion_type)) |>
+#   arrange(-n) |> 
+#   write_csv(here("output/ala_assertions_with_counts.csv"))
 
 #Filtering observations where all assertions are false
 myg_assertions |>
