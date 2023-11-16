@@ -1,0 +1,115 @@
+id,description,category,type
+AMBIGUOUS_COLLECTION,Ambiguous collection,Warning,assertions
+AMBIGUOUS_INSTITUTION,Ambiguous institution,Warning,assertions
+BASIS_OF_RECORD_INVALID,Basis of record badly formed,Warning,assertions
+biosecurityIssue,Biosecurity issue,Error,assertions
+COLLECTION_MATCH_FUZZY,Collection match fuzzy,Warning,assertions
+COLLECTION_MATCH_NONE,Collection not matched,Warning,assertions
+CONTINENT_COUNTRY_MISMATCH,Continent country mismatch,Warning,assertions
+CONTINENT_DERIVED_FROM_COORDINATES,Continent derived from coordinates,Warning,assertions
+CONTINENT_INVALID,Continent invalid,Warning,assertions
+COORDINATE_INVALID,Coordinate invalid,Warning,assertions
+COORDINATE_OUT_OF_RANGE,Coordinates are out of range for species,Warning,assertions
+COORDINATE_PRECISION_INVALID,Coordinate precision invalid,Warning,assertions
+COORDINATE_REPROJECTED,Coordinates converted to WGS84,Comment,assertions
+COORDINATE_REPROJECTION_FAILED,Decimal latitude/longitude conversion failed,Warning,assertions
+COORDINATE_REPROJECTION_SUSPICIOUS,Coordinate reprojection suspicious,Warning,assertions
+COORDINATE_ROUNDED,Coordinate rounded,Comment,assertions
+COORDINATE_UNCERTAINTY_METERS_INVALID,Coordinate uncertainty meters invalid,Warning,assertions
+COORDINATES_CENTRE_OF_COUNTRY,Coordinates centre of country,Warning,assertions
+COORDINATES_CENTRE_OF_STATEPROVINCE,Supplied coordinates centre of state,Warning,assertions
+COUNTRY_COORDINATE_MISMATCH,Coordinates dont match supplied country,Warning,assertions
+COUNTRY_DERIVED_FROM_COORDINATES,Country inferred from coordinates,Warning,assertions
+COUNTRY_INVALID,Country invalid,Warning,assertions
+COUNTRY_MISMATCH,Country mismatch,Warning,assertions
+DEPTH_MIN_MAX_SWAPPED,Min and max depth reversed,Warning,assertions
+DEPTH_NON_NUMERIC,Depth value non-numeric,Warning,assertions
+DEPTH_NOT_METRIC,Depth value supplied in feet,Warning,assertions
+DEPTH_UNLIKELY,Depth unlikely,Warning,assertions
+detectedOutlier,Suspected outlier,Error,assertions
+DIFFERENT_OWNER_INSTITUTION,Different owner institution,Comment,assertions
+ELEVATION_MIN_MAX_SWAPPED,Min and max altitude reversed,Warning,assertions
+ELEVATION_NON_NUMERIC,Altitude value non-numeric,Warning,assertions
+ELEVATION_NOT_METRIC,Altitude value supplied in feet,Warning,assertions
+ELEVATION_UNLIKELY,Elevation unlikely,Warning,assertions
+FIRST_OF_CENTURY,First of the century,Warning,assertions
+FIRST_OF_MONTH,First of the month,Warning,assertions
+FIRST_OF_YEAR,First of the year,Warning,assertions
+FOOTPRINT_SRS_INVALID,Footprint SRS invalid,Warning,assertions
+FOOTPRINT_WKT_INVALID,Footprint WKT invalid,Warning,assertions
+FOOTPRINT_WKT_MISMATCH,footprint wkt mismatch,Warning,assertions
+GEODETIC_DATUM_ASSUMED_WGS84,Geodetic datum assumed WGS84,Comment,assertions
+GEODETIC_DATUM_INVALID,Unrecognized geodetic datum,Warning,assertions
+GEOREFERENCE_POST_OCCURRENCE,Georeferenced after occurrence date,Warning,assertions
+GEOREFERENCED_DATE_INVALID,Georeferenced date invalid,Warning,assertions
+GEOREFERENCED_DATE_UNLIKELY,Georeferenced date unlikely,Warning,assertions
+geospatialIssue,Geospatial issue,Warning,assertions
+habitatMismatch,Habitat incorrect for species,Error,assertions
+ID_PRE_OCCURRENCE,Identification date before occurrence date,Warning,assertions
+identificationIncorrect,Taxon misidentified,Error,assertions
+IDENTIFIED_DATE_INVALID,Identified date invalid,Warning,assertions
+IDENTIFIED_DATE_UNLIKELY,Identified date unlikely,Warning,assertions
+INDIVIDUAL_COUNT_CONFLICTS_WITH_OCCURRENCE_STATUS,Individual count conflicts with occurrence status,Warning,assertions
+INDIVIDUAL_COUNT_INVALID,Individual count invalid,Warning,assertions
+INSTITUTION_COLLECTION_MISMATCH,Institution and Collection mismatch,Warning,assertions
+INSTITUTION_MATCH_FUZZY,Institution match fuzzy,Warning,assertions
+INSTITUTION_MATCH_NONE,Institution not matched,Warning,assertions
+INTERPRETATION_ERROR,Interpretation error,Error,assertions
+INVALID_SCIENTIFIC_NAME,Invalid scientific name,Warning,assertions
+LOCATION_NOT_SUPPLIED,Location not supplied,Warning,assertions
+MISSING_COLLECTION_DATE,Missing collection date,Warning,assertions
+MISSING_GEODETICDATUM,Missing geodetic datum,Warning,assertions
+MISSING_GEOREFERENCE_DATE,Missing georeference date,Warning,assertions
+MISSING_GEOREFERENCEDBY,Missing georeferenced by,Warning,assertions
+MISSING_GEOREFERENCEPROTOCOL,Missing georeference protocol,Warning,assertions
+MISSING_GEOREFERENCESOURCES,Missing georeference sources,Warning,assertions
+MISSING_GEOREFERENCEVERIFICATIONSTATUS,Missing georeference verification status,Warning,assertions
+MISSING_TAXONRANK,Missing taxon rank,Warning,assertions
+MODIFIED_DATE_INVALID,Modified date invalid,Warning,assertions
+MODIFIED_DATE_UNLIKELY,Modified date unlikely,Warning,assertions
+MULTIMEDIA_DATE_INVALID,Multimedia date invalid,Warning,assertions
+MULTIMEDIA_URI_INVALID,Multimedia uri invalid,Warning,assertions
+NAME_NOT_SUPPLIED,Name not supplied,Warning,assertions
+OCCURRENCE_STATUS_INFERRED_FROM_BASIS_OF_RECORD,Occurrence status inferred from basis of record,Warning,assertions
+OCCURRENCE_STATUS_INFERRED_FROM_INDIVIDUAL_COUNT,Occurrence status inferred from individual count,Warning,assertions
+OCCURRENCE_STATUS_UNPARSABLE,Occurrence status unparsable,Warning,assertions
+PRESUMED_NEGATED_LATITUDE,Latitude is negated,Warning,assertions
+PRESUMED_NEGATED_LONGITUDE,Longitude is negated,Warning,assertions
+PRESUMED_SWAPPED_COORDINATE,Presumed swapped coordinate,Warning,assertions
+RECORDED_DATE_INVALID,Recorded date invalid,Warning,assertions
+RECORDED_DATE_MISMATCH,Recorded date mismatch,Warning,assertions
+RECORDED_DATE_UNLIKELY,Recorded date unlikely,Warning,assertions
+REFERENCES_URI_INVALID,References uri invalid,Warning,assertions
+SENSITIVITY_REPORT_INVALID,Sensitivity report invalid,Error,assertions
+SENSITIVITY_REPORT_NOT_LOADABLE,Sensitivity report not loadable,Error,assertions
+STATE_COORDINATE_MISMATCH,Coordinates dont match supplied state,Warning,assertions
+TAXON_AFFINITY_SPECIES,Taxon affinity species,Warning,assertions
+TAXON_CONFER_SPECIES,Taxon confer species,Warning,assertions
+TAXON_DEFAULT_MATCH,Taxon default match,Warning,assertions
+TAXON_ERROR,Taxon error,Warning,assertions
+TAXON_EXCLUDED,Taxon excluded,Warning,assertions
+TAXON_EXCLUDED_ASSOCIATED,Taxon excluded associated,Warning,assertions
+TAXON_HOMONYM,Taxon homonym,Warning,assertions
+TAXON_INDETERMINATE_SPECIES,Taxon indeterminate species,Warning,assertions
+TAXON_MATCH_AGGREGATE,Taxon match aggregate,Warning,assertions
+TAXON_MATCH_FUZZY,Taxon match fuzzy,Warning,assertions
+TAXON_MATCH_HIGHERRANK,Taxon match higher rank,Warning,assertions
+TAXON_MATCH_NONE,Taxon match none,Warning,assertions
+TAXON_MISAPPLIED,Taxon misapplied,Warning,assertions
+TAXON_MISAPPLIED_MATCHED,Taxon misapplied matched,Warning,assertions
+TAXON_PARENT_CHILD_SYNONYM,Taxon parent child synonym,Warning,assertions
+TAXON_QUESTION_SPECIES,Taxon question species,Warning,assertions
+TAXON_SCOPE_MISMATCH,Resource taxonomic scope mismatch,Warning,assertions
+TAXON_SPECIES_PLURAL,Taxon species plural,Warning,assertions
+taxonomicIssue,Taxonomic issue,Error,assertions
+temporalIssue,Temporal issue,Error,assertions
+TYPE_STATUS_INVALID,Type status invalid,Warning,assertions
+UNCERTAINTY_IN_PRECISION,Coordinate precision and uncertainty transposed,Warning,assertions
+UNCERTAINTY_NOT_SPECIFIED,Uncertainty not specified,Warning,assertions
+UNKNOWN_COUNTRY_NAME,Supplied country not recognised,Warning,assertions
+UNKNOWN_KINGDOM,Kingdom not recognised,Warning,assertions
+UNRECOGNISED_COLLECTION_CODE,Unrecognized collection code,Error,assertions
+UNRECOGNISED_INSTITUTION_CODE,Unrecognized institution code,Error,assertions
+userAssertionOther,Other error,Error,assertions
+userDuplicateRecord,The occurrence appears to be a duplicate,Warning,assertions
+ZERO_COORDINATE,Supplied coordinates are zero,Warning,assertions
