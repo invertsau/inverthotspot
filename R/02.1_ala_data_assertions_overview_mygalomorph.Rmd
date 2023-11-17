@@ -50,11 +50,11 @@ assertion_counts <- myg_assertions_long |>
   tabyl(assertion_type)
 
 # Join with ala_assertions.csv so we have summary of counts
-asserts <- read_csv("output/ala_assertions.csv")
-asserts |> 
-  left_join(assertion_counts, by = join_by(id == assertion_type)) |>
-  arrange(-n) |> 
-  write_csv("output/ala_assertions_with_counts.csv")
+#asserts <- read_csv("output/ala_assertions.csv")
+#asserts |> 
+ # left_join(assertion_counts, by = join_by(id == assertion_type)) |>
+ # arrange(-n) |> 
+ # write_csv("output/ala_assertions_with_counts.csv")
 
 #Filtering observations where all assertions are false
 myg_assertions |>
@@ -114,6 +114,9 @@ ggplot() +
 ## Investigating spatial assertions
 
 Coordinate uncertainty meters invalid
+Keeping NAs and anything = or less than 1000 m uncertainty
+
+spot check 10 records of the 46 flagged for 5 m
 ```{r}
 coord_uncertainty_m_invalid <- myg_assertions |>
   select(species, decimalLatitude, decimalLongitude, COORDINATE_UNCERTAINTY_METERS_INVALID)
@@ -126,12 +129,42 @@ coord_uncertainty_m_invalid_spp <- coord_uncertainty_m_invalid |>
 
 coord_uncertainty_m_invalid_spp_no_na <- myg_spiders_all |>
   filter(species %in% coord_uncertainty_m_invalid_spp,
-         !is.na(species))
+         !is.na(species)) |>
+  collect()
 
 coord_uncertainty_m_invalid_spp_no_na |> 
   filter(COORDINATE_UNCERTAINTY_METERS_INVALID == TRUE)|>
-  select(species, decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters)
+  select(species, decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters)|>
+  tabyl(coordinateUncertaintyInMeters)
 
+coord_uncertainty_m_invalid_spp_no_na |>
+  filter(coordinateUncertaintyInMeters == 5) |>
+  tabyl(species, COORDINATE_UNCERTAINTY_METERS_INVALID) 
+
+coord_uncertainty_m_invalid_spp_no_na |>
+  filter(species == "Atrax robustus",
+         coordinateUncertaintyInMeters == 5) |>
+  ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(mapping = aes(decimalLongitude, decimalLatitude, colour = COORDINATE_UNCERTAINTY_METERS_INVALID), 
+             size = 1.5) + 
+  #scale_colour_manual(values = wes_palette("BottleRocket2")) +
+   coord_sf(xlim=c(150, 152), 
+            ylim=c(-32, -35)) +
+  labs(title = "Atrax robustus: coord uncertainty m = 5", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw()
+  #facet_wrap(~assertion_type)
+
+coord_uncertainty_m_invalid_spp_no_na |>
+  filter(species == "Atrax robustus",
+         coordinateUncertaintyInMeters == 5,
+         COORDINATE_UNCERTAINTY_METERS_INVALID == TRUE) |>
+  select(decimalLatitude:dataResourceName, coordinateUncertaintyInMeters, basisOfRecord:collectionCode, recordID) |>
+  pull(recordID)
 ```
 
 Coordinate invalid

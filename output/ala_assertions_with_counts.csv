@@ -1,0 +1,115 @@
+id,description,category,type,n,percent
+MISSING_GEOREFERENCEVERIFICATIONSTATUS,Missing georeference verification status,Warning,assertions,43390,0.11198748754690879
+MISSING_GEOREFERENCE_DATE,Missing georeference date,Warning,assertions,43348,0.11187908758200973
+MISSING_GEOREFERENCEDBY,Missing georeferenced by,Warning,assertions,43345,0.11187134472737409
+MISSING_GEOREFERENCESOURCES,Missing georeference sources,Warning,assertions,42770,0.11038729758887507
+MISSING_GEOREFERENCEPROTOCOL,Missing georeference protocol,Warning,assertions,41947,0.10826317446716255
+GEODETIC_DATUM_ASSUMED_WGS84,Geodetic datum assumed WGS84,Comment,assertions,35662,0.09204189400548195
+MISSING_GEODETICDATUM,Missing geodetic datum,Warning,assertions,35508,0.09164442746751872
+MISSING_TAXONRANK,Missing taxon rank,Warning,assertions,23117,0.05966385687075111
+COORDINATE_UNCERTAINTY_METERS_INVALID,Coordinate uncertainty meters invalid,Warning,assertions,15490,0.03997893943539104
+NAME_NOT_SUPPLIED,Name not supplied,Warning,assertions,14719,0.03798902579402974
+MULTIMEDIA_URI_INVALID,Multimedia uri invalid,Warning,assertions,8122,0.020962488450241835
+OCCURRENCE_STATUS_INFERRED_FROM_INDIVIDUAL_COUNT,Occurrence status inferred from individual count,Warning,assertions,7645,0.01973137456317395
+MISSING_COLLECTION_DATE,Missing collection date,Warning,assertions,4357,0.011245205882504761
+ID_PRE_OCCURRENCE,Identification date before occurrence date,Warning,assertions,3969,0.010243796682961074
+COORDINATE_ROUNDED,Coordinate rounded,Comment,assertions,3924,0.010127653863426367
+COUNTRY_DERIVED_FROM_COORDINATES,Country inferred from coordinates,Warning,assertions,3452,0.008909444734084563
+INVALID_SCIENTIFIC_NAME,Invalid scientific name,Warning,assertions,2950,0.007613807058386286
+FIRST_OF_YEAR,First of the year,Warning,assertions,2901,0.007487340432670717
+TAXON_MATCH_HIGHERRANK,Taxon match higher rank,Warning,assertions,2509,0.006475607426946166
+FIRST_OF_MONTH,First of the month,Warning,assertions,2172,0.005605826756208479
+RECORDED_DATE_INVALID,Recorded date invalid,Warning,assertions,2000,0.00516190309043138
+LOCATION_NOT_SUPPLIED,Location not supplied,Warning,assertions,1362,0.00351525600458377
+TYPE_STATUS_INVALID,Type status invalid,Warning,assertions,646,0.0016672946982093358
+STATE_COORDINATE_MISMATCH,Coordinates dont match supplied state,Warning,assertions,424,0.0010943234551714525
+FIRST_OF_CENTURY,First of the century,Warning,assertions,325,8.388092521950993e-4
+COUNTRY_INVALID,Country invalid,Warning,assertions,314,8.104187851977267e-4
+GEODETIC_DATUM_INVALID,Unrecognized geodetic datum,Warning,assertions,154,3.9746653796321626e-4
+TAXON_MATCH_FUZZY,Taxon match fuzzy,Warning,assertions,151,3.897236833275692e-4
+MULTIMEDIA_DATE_INVALID,Multimedia date invalid,Warning,assertions,135,3.484284586041182e-4
+UNCERTAINTY_IN_PRECISION,Coordinate precision and uncertainty transposed,Warning,assertions,113,2.91647524609373e-4
+COORDINATE_REPROJECTED,Coordinates converted to WGS84,Comment,assertions,96,2.4777134834070625e-4
+BASIS_OF_RECORD_INVALID,Basis of record badly formed,Warning,assertions,74,1.9099041434596106e-4
+INDIVIDUAL_COUNT_INVALID,Individual count invalid,Warning,assertions,73,1.8840946280074538e-4
+ZERO_COORDINATE,Supplied coordinates are zero,Warning,assertions,67,1.7292375352945125e-4
+COUNTRY_COORDINATE_MISMATCH,Coordinates dont match supplied country,Warning,assertions,61,1.574380442581571e-4
+PRESUMED_NEGATED_LATITUDE,Latitude is negated,Warning,assertions,54,1.3937138344164725e-4
+GEOREFERENCE_POST_OCCURRENCE,Georeferenced after occurrence date,Warning,assertions,18,4.645712781388242e-5
+TAXON_EXCLUDED,Taxon excluded,Warning,assertions,15,3.871427317823535e-5
+FOOTPRINT_SRS_INVALID,Footprint SRS invalid,Warning,assertions,13,3.355237008780397e-5
+RECORDED_DATE_UNLIKELY,Recorded date unlikely,Warning,assertions,9,2.322856390694121e-5
+COORDINATE_OUT_OF_RANGE,Coordinates are out of range for species,Warning,assertions,7,1.8066660816509832e-5
+COORDINATE_INVALID,Coordinate invalid,Warning,assertions,6,1.548570927129414e-5
+INDIVIDUAL_COUNT_CONFLICTS_WITH_OCCURRENCE_STATUS,Individual count conflicts with occurrence status,Warning,assertions,6,1.548570927129414e-5
+TAXON_QUESTION_SPECIES,Taxon question species,Warning,assertions,5,1.2904757726078451e-5
+SENSITIVITY_REPORT_INVALID,Sensitivity report invalid,Error,assertions,4,1.032380618086276e-5
+SENSITIVITY_REPORT_NOT_LOADABLE,Sensitivity report not loadable,Error,assertions,4,1.032380618086276e-5
+TAXON_SPECIES_PLURAL,Taxon species plural,Warning,assertions,4,1.032380618086276e-5
+COORDINATE_PRECISION_INVALID,Coordinate precision invalid,Warning,assertions,3,7.74285463564707e-6
+COORDINATES_CENTRE_OF_STATEPROVINCE,Supplied coordinates centre of state,Warning,assertions,3,7.74285463564707e-6
+PRESUMED_SWAPPED_COORDINATE,Presumed swapped coordinate,Warning,assertions,3,7.74285463564707e-6
+RECORDED_DATE_MISMATCH,Recorded date mismatch,Warning,assertions,3,7.74285463564707e-6
+TAXON_HOMONYM,Taxon homonym,Warning,assertions,3,7.74285463564707e-6
+ELEVATION_NON_NUMERIC,Altitude value non-numeric,Warning,assertions,1,2.58095154521569e-6
+PRESUMED_NEGATED_LONGITUDE,Longitude is negated,Warning,assertions,1,2.58095154521569e-6
+AMBIGUOUS_COLLECTION,Ambiguous collection,Warning,assertions,NA,NA
+AMBIGUOUS_INSTITUTION,Ambiguous institution,Warning,assertions,NA,NA
+biosecurityIssue,Biosecurity issue,Error,assertions,NA,NA
+COLLECTION_MATCH_FUZZY,Collection match fuzzy,Warning,assertions,NA,NA
+COLLECTION_MATCH_NONE,Collection not matched,Warning,assertions,NA,NA
+CONTINENT_COUNTRY_MISMATCH,Continent country mismatch,Warning,assertions,NA,NA
+CONTINENT_DERIVED_FROM_COORDINATES,Continent derived from coordinates,Warning,assertions,NA,NA
+CONTINENT_INVALID,Continent invalid,Warning,assertions,NA,NA
+COORDINATE_REPROJECTION_FAILED,Decimal latitude/longitude conversion failed,Warning,assertions,NA,NA
+COORDINATE_REPROJECTION_SUSPICIOUS,Coordinate reprojection suspicious,Warning,assertions,NA,NA
+COORDINATES_CENTRE_OF_COUNTRY,Coordinates centre of country,Warning,assertions,NA,NA
+COUNTRY_MISMATCH,Country mismatch,Warning,assertions,NA,NA
+DEPTH_MIN_MAX_SWAPPED,Min and max depth reversed,Warning,assertions,NA,NA
+DEPTH_NON_NUMERIC,Depth value non-numeric,Warning,assertions,NA,NA
+DEPTH_NOT_METRIC,Depth value supplied in feet,Warning,assertions,NA,NA
+DEPTH_UNLIKELY,Depth unlikely,Warning,assertions,NA,NA
+detectedOutlier,Suspected outlier,Error,assertions,NA,NA
+DIFFERENT_OWNER_INSTITUTION,Different owner institution,Comment,assertions,NA,NA
+ELEVATION_MIN_MAX_SWAPPED,Min and max altitude reversed,Warning,assertions,NA,NA
+ELEVATION_NOT_METRIC,Altitude value supplied in feet,Warning,assertions,NA,NA
+ELEVATION_UNLIKELY,Elevation unlikely,Warning,assertions,NA,NA
+FOOTPRINT_WKT_INVALID,Footprint WKT invalid,Warning,assertions,NA,NA
+FOOTPRINT_WKT_MISMATCH,footprint wkt mismatch,Warning,assertions,NA,NA
+GEOREFERENCED_DATE_INVALID,Georeferenced date invalid,Warning,assertions,NA,NA
+GEOREFERENCED_DATE_UNLIKELY,Georeferenced date unlikely,Warning,assertions,NA,NA
+geospatialIssue,Geospatial issue,Warning,assertions,NA,NA
+habitatMismatch,Habitat incorrect for species,Error,assertions,NA,NA
+identificationIncorrect,Taxon misidentified,Error,assertions,NA,NA
+IDENTIFIED_DATE_INVALID,Identified date invalid,Warning,assertions,NA,NA
+IDENTIFIED_DATE_UNLIKELY,Identified date unlikely,Warning,assertions,NA,NA
+INSTITUTION_COLLECTION_MISMATCH,Institution and Collection mismatch,Warning,assertions,NA,NA
+INSTITUTION_MATCH_FUZZY,Institution match fuzzy,Warning,assertions,NA,NA
+INSTITUTION_MATCH_NONE,Institution not matched,Warning,assertions,NA,NA
+INTERPRETATION_ERROR,Interpretation error,Error,assertions,NA,NA
+MODIFIED_DATE_INVALID,Modified date invalid,Warning,assertions,NA,NA
+MODIFIED_DATE_UNLIKELY,Modified date unlikely,Warning,assertions,NA,NA
+OCCURRENCE_STATUS_INFERRED_FROM_BASIS_OF_RECORD,Occurrence status inferred from basis of record,Warning,assertions,NA,NA
+OCCURRENCE_STATUS_UNPARSABLE,Occurrence status unparsable,Warning,assertions,NA,NA
+REFERENCES_URI_INVALID,References uri invalid,Warning,assertions,NA,NA
+TAXON_AFFINITY_SPECIES,Taxon affinity species,Warning,assertions,NA,NA
+TAXON_CONFER_SPECIES,Taxon confer species,Warning,assertions,NA,NA
+TAXON_DEFAULT_MATCH,Taxon default match,Warning,assertions,NA,NA
+TAXON_ERROR,Taxon error,Warning,assertions,NA,NA
+TAXON_EXCLUDED_ASSOCIATED,Taxon excluded associated,Warning,assertions,NA,NA
+TAXON_INDETERMINATE_SPECIES,Taxon indeterminate species,Warning,assertions,NA,NA
+TAXON_MATCH_AGGREGATE,Taxon match aggregate,Warning,assertions,NA,NA
+TAXON_MATCH_NONE,Taxon match none,Warning,assertions,NA,NA
+TAXON_MISAPPLIED,Taxon misapplied,Warning,assertions,NA,NA
+TAXON_MISAPPLIED_MATCHED,Taxon misapplied matched,Warning,assertions,NA,NA
+TAXON_PARENT_CHILD_SYNONYM,Taxon parent child synonym,Warning,assertions,NA,NA
+TAXON_SCOPE_MISMATCH,Resource taxonomic scope mismatch,Warning,assertions,NA,NA
+taxonomicIssue,Taxonomic issue,Error,assertions,NA,NA
+temporalIssue,Temporal issue,Error,assertions,NA,NA
+UNCERTAINTY_NOT_SPECIFIED,Uncertainty not specified,Warning,assertions,NA,NA
+UNKNOWN_COUNTRY_NAME,Supplied country not recognised,Warning,assertions,NA,NA
+UNKNOWN_KINGDOM,Kingdom not recognised,Warning,assertions,NA,NA
+UNRECOGNISED_COLLECTION_CODE,Unrecognized collection code,Error,assertions,NA,NA
+UNRECOGNISED_INSTITUTION_CODE,Unrecognized institution code,Error,assertions,NA,NA
+userAssertionOther,Other error,Error,assertions,NA,NA
+userDuplicateRecord,The occurrence appears to be a duplicate,Warning,assertions,NA,NA
