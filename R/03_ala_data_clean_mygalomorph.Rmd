@@ -17,11 +17,11 @@ This document lays out the workflow of cleaning data for Mygalomorph spiders fro
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms)
 
 ```
 
-## Read in parquet
+## Read in parquet (observations retrieved from ALA)
 
 ```{r}
 myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-09-18_ALA.parquet"))
@@ -172,7 +172,7 @@ wsc |>
 
 wsc |> 
   pull(distribution) |> str_subset(pattern = "Australia") |>  
-  unique
+  unique()
 
 # We want to capture all observations where "Introduced to" and "Australia" occurs together
 str_subset(wsc$distribution, pattern = "Introduced to.*Australia")
@@ -203,8 +203,24 @@ myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> tab
 
 ```{r}
 # Join distrubtion.txt and taxon-edit.txt
+griis_distrib <- read.delim(here("data/griis-australia-v1.6/distribution.txt"))
+griis_taxon <- read.delim(here("data/griis-australia-v1.6/taxon-edited.txt"))
+summary(griis_distrib) #length = 2984
+summary(griis_taxon) #length = 2960
+#which IDs are missed? (What is in Distribution that is not in Taxon?)
+setdiff(griis_distrib$id, griis_taxon$id)
+#is there anything missing from Distribution?
+setdiff(griis_taxon$id, griis_distrib$id) # no there isn't
+
+griis_all <- left_join(griis_distrib, griis_taxon, by = "id")                 # Apply left_join dplyr function 
+
+#filter by class = arachnida
+str_subset(griis_all$class, "Arachnida")
+griis_all$class |> unique() #there are no arachnids in this list
+
 
 # Cross match with ALA data
+
 
 ```
 
@@ -225,7 +241,40 @@ myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> tab
 <!-- Decide whether to keep sub-species and if not whether to combine their data with the parent species -->
  
 ```{r}
+#look for subspecies
+myg_spiders$taxonRank |> unique() #what is "unranked" and "NA"
+myg_spiders |> filter(taxonRank == "unranked") #no species IDs
+myg_spiders |> filter(taxonRank == "NA") #nothing
+#look at unique species
+myg_spiders$species |> unique() #no subspecies here
 
+
+
+```
+
+### Excluding Marine Species
+
+
+
+```{r}
+wm_records_taxamatch("Teranodes")
+Myg_species <- myg_spiders$species |> unique()
+
+
+
+
+job({
+  output_df <- map(Myg_species,
+                   possibly(~wm_records_taxamatch(.x, marine = FALSE)  |>
+                              pluck(1)  |>
+                              mutate(search_term = .x) |>
+                              discard(.p = ~is.null(.x))
+                   )
+  ) |>
+    list_rbind()
+
+  saveRDS(output_df, "output/worrms_myg_wm_records_taxamatch.rds")
+})
 ```
 
 
@@ -234,6 +283,10 @@ myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> tab
 <!-- Clean for geographic errors: missing or invalid lat/long; if data needs to be masked by land/water. There are also R packages like coordinate cleaner and others (you'd know more) to clean occurrence data  -->
 
 ```{r}
+summary(myg_species)
+summary(myg_species$decimalLatitude) #-51 to + 41 (maybe missing '-'), 347 NAs to remove
+summary(myg_species$decimalLongitude)
+myg_species |> plot(decimalLongitude)
 
 ```
 
