@@ -132,7 +132,7 @@ coord_uncertainty_m_invalid_spp_no_na <- myg_spiders_all |>
          !is.na(species)) |>
   collect()
 
-coord_uncertainty_m_invalid_spp_no_na |> 
+coord_uncertainty_m_invalid_spp_no_na |>
   filter(COORDINATE_UNCERTAINTY_METERS_INVALID == TRUE)|>
   select(species, decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters)|>
   tabyl(coordinateUncertaintyInMeters)
@@ -163,8 +163,34 @@ coord_uncertainty_m_invalid_spp_no_na |>
   filter(species == "Atrax robustus",
          coordinateUncertaintyInMeters == 5,
          COORDINATE_UNCERTAINTY_METERS_INVALID == TRUE) |>
-  select(decimalLatitude:dataResourceName, coordinateUncertaintyInMeters, basisOfRecord:collectionCode, recordID) |>
+  select(decimalLatitude:dataResourceName, COORDINATE_UNCERTAINTY_METERS_INVALID, 
+         coordinateUncertaintyInMeters, coordinatePrecision,
+         basisOfRecord:collectionCode, recordID) |> #tabyl(coordinatePrecision)
   pull(recordID)
+
+coord_uncertainty_m_invalid_spp_no_na |>
+  filter(species == "Hadronyche versuta",
+         coordinateUncertaintyInMeters == 5,
+         COORDINATE_UNCERTAINTY_METERS_INVALID == TRUE) |>
+  select(decimalLatitude:dataResourceName, COORDINATE_UNCERTAINTY_METERS_INVALID, 
+         coordinateUncertaintyInMeters, coordinatePrecision,
+         basisOfRecord:collectionCode, recordID) |> #tabyl(coordinatePrecision)
+  pull(recordID)
+
+coord_uncertainty_m_invalid_spp_no_na |>
+  filter(COORDINATE_UNCERTAINTY_METERS_INVALID == TRUE)|>
+  select(species, decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters, UNCERTAINTY_IN_PRECISION)|>
+  tabyl(coordinateUncertaintyInMeters, UNCERTAINTY_IN_PRECISION)
+
+myg_spiders_all |> 
+  filter(!is.na(species)) |>
+  #filter(COORDINATE_UNCERTAINTY_METERS_INVALID == TRUE)|>
+  select(species, decimalLatitude, decimalLongitude, coordinateUncertaintyInMeters, UNCERTAINTY_IN_PRECISION)|>
+  collect() |>
+  tabyl(UNCERTAINTY_IN_PRECISION)
+
+# seems that COORDINATE_UNCERTAINTY_METERS_INVALID == TRUE when UNCERTAINTY_IN_PRECISION == TRUE, and I think 
+# UNCERTAINTY_IN_PRECISION == TRUE when coordinateUncertaintyInMeters is inferred from coordinatePrecision...
 ```
 
 Coordinate invalid
