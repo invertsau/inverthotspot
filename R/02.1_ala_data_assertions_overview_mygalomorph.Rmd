@@ -22,7 +22,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesa
 ## Read in parquet
 
 ```{r}
-myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions2023-09-01_ALA.paraquet"))
+myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-11-23_ALA.parquet"))
 ```
 
 ## Subset columns we want for ALA data overview
@@ -278,3 +278,73 @@ ggplot() +
   facet_wrap(~assertion_type)
 
 ```
+
+### For rounded coordinates, investigate the raw ones
+
+```{r}
+# Configure display settings
+old <- options(pillar.sigfig = 4)
+
+myg_spiders_coordinate_rounded <- myg_spiders_all |> 
+  select(contains("decimal"), contains("coord"), ends_with("Name"), recordID,
+         starts_with("raw"), starts_with("verbatim"), COORDINATE_ROUNDED, COORDINATE_INVALID, UNCERTAINTY_IN_PRECISION, COORDINATE_UNCERTAINTY_METERS_INVALID) |> 
+  collect()
+
+myg_spiders_coordinate_rounded |> 
+  filter(COORDINATE_ROUNDED == TRUE) |> 
+  select(verbatimCoordinates, raw_decimalLatitude, raw_decimalLongitude, decimalLatitude, decimalLongitude) |> 
+  print(n = 20)
+
+rounde_myg <- myg_spiders_coordinate_rounded |> 
+  filter(COORDINATE_ROUNDED == TRUE) 
+
+rounde_myg$decimalLatitude 
+
+# Trying to find those pesky rounded values
+library(stringr)
+
+# Match cases following decimal point with 000 after.
+str_subset(as.character(rounde_myg$decimalLatitude), regex("(?<=\\.\\d{2})000")) 
+
+examples <- rounde_myg |> 
+  filter(recordID %in% c("6e0df496-ce6a-430c-a068-e68fe8c7f1e9",
+                       "5f5cc21a-bace-425c-82cb-97d346b6d353",
+                       "432e290b-67c5-4b0c-b5bb-9549c047be8d")) 
+
+examples$decimalLatitude
+examples$raw_decimalLatitude
+
+# Early conclusion, some species are just truncated to 1 dp, there is also the setting you can adjust to display more dps/sfs
+
+# Counts the number of digits in decimalLatitude
+str_count(as.character(rounde_myg$decimalLatitude), "\\d") |> 
+  tabyl()
+
+# Add counts to tibble
+rounde_myg |> 
+  mutate(digit_counts = str_count(as.character(rounde_myg$decimalLatitude), "\\d")) |> 
+  filter(digit_counts %in% c(2,3)) |> 
+  select(decimalLatitude, raw_decimalLatitude, digit_counts, COORDINATE_ROUNDED, UNCERTAINTY_IN_PRECISION) |> 
+  View()
+
+# Conclusion: Can't replace rounded values with the raw_ coords, as they were already rounded.
+```
+
+Spatial assertions that are safe:
+
+- COORDINATE_UNCERTAINTY_METERS_INVALID 
+- COORDINATE_ROUNDED
+- COORDINATE_OUT_OF_RANGE
+
+Spatial assertions that we can use to exclude data:
+- PRESUMED_NEGATED_LONGITUDE
+- PRESUMED_SWAPPED_COORDINATE
+- ZERO_COORDINATE
+
+JM to investigate
+- COORDINATES_CENTRE_OF_STATEPROVINCE (Likely to be excluded)
+- COUNTRY_COORDINATE_MISMATCH (Likely to be excluded)
+- STATE_COORDINATE_MISMATCH (Are these in borderlines, have they then been corrected by ALA, is there conflict between stateProvince an decimLat and decimLong, try redownloading with raw_stateProvince) 
+
+
+

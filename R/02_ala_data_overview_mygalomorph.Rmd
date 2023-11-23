@@ -320,4 +320,11 @@ ggplot() +
 
 ```
 
+# Put taxonomic assertions here for experts to review
+
+<!-- TAXON_MATCH_FUZZY                     Taxon match f… Warning  asserti…   151 3.897237e-4              1 t        -->
+<!-- 19 TAXON_EXCLUDED                        Taxon excluded Warning  asserti…    15 3.871427e-5              1 t        -->
+<!-- 20 TAXON_QUESTION_SPECIES                Taxon questio… Warning  asserti…     5 1.290476e-5              1 t        -->
+<!-- 21 TAXON_SPECIES_PLURAL                  Taxon species… Warning  asserti…     4 1.032381e-5              1 t        -->
+<!-- 22 TAXON_HOMONYM    -->
 

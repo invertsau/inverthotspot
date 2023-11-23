@@ -107,7 +107,7 @@ mygalomorphae_occurrences_nm_fixed |> nrow()
 mygalomorphae_assertions |> names()
 mygalomorphae_assertions |> nrow()
 
-joined_data <- left_join(mygalomorphae_occurrences, mygalomorphae_assertions, by = "recordID")
+joined_data <- left_join(mygalomorphae_occurrences_nm_fixed, mygalomorphae_assertions, by = "recordID")
 ```
 
 ### Save downloaded data
