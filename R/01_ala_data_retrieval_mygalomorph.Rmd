@@ -68,7 +68,7 @@ fields_we_want <- c(
   "phylum", "class",  "order", "family",  "genus", "species", "taxonRank", "taxonID",
   "raw_scientificName", "raw_vernacularName", "raw_geodeticDatum",
   "stateProvince", "locality", "coordinatePrecision",  "coordinateUncertaintyInMeters", 
-  "decimalLatitude", "decimalLongitude",
+  "decimalLatitude", "decimalLongitude", "raw_decimalLatitude", "raw_decimalLongitude", "verbatimCoordinates",
   "basisOfRecord", "institutionCode", "datasetName", "collectionCode", "recordedBy", "catalogNumber",
   "isDuplicateOf", "outlierLayerCount", "outlierLayer")
 ```
@@ -84,6 +84,11 @@ mygalomorphae_occurrences <-
   atlas_occurrences() 
   #atlas_counts()
 
+# Fix strange scientificName cols
+mygalomorphae_occurrences_nm_fixed <- mygalomorphae_occurrences |> 
+  rename(scientificName = scientificName...4,
+         raw_scientificName = scientificName...17)
+
 mygalomorphae_assertions <- 
   galah_call() |>                               
   galah_identify("Mygalomorphae") |>   
@@ -96,8 +101,8 @@ mygalomorphae_assertions <-
 ### Join the assertions and occurrence together
 
 ```{r}
-mygalomorphae_occurrences |> names()
-mygalomorphae_occurrences |> nrow()
+mygalomorphae_occurrences_nm_fixed |> names()
+mygalomorphae_occurrences_nm_fixed |> nrow()
 
 mygalomorphae_assertions |> names()
 mygalomorphae_assertions |> nrow()
