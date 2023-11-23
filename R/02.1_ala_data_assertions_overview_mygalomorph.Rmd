@@ -193,6 +193,34 @@ myg_spiders_all |>
 # UNCERTAINTY_IN_PRECISION == TRUE when coordinateUncertaintyInMeters is inferred from coordinatePrecision...
 ```
 
+Coordinate rounded
+```{r}
+coord_rounded <- myg_assertions |>
+  select(species, decimalLatitude, decimalLongitude, COORDINATE_ROUNDED)
+
+coord_rounded |>
+  group_by(species) |>
+  tabyl(species, COORDINATE_ROUNDED) |>
+  arrange(desc(eval(as.name("TRUE"))))
+
+coord_rounded_spp <- coord_rounded |>
+  group_by(species) |>
+  summarise(num_true = sum(COORDINATE_ROUNDED)) |>
+  filter(num_true > 0) |>
+  pull(species)
+
+coord_rounded_spp_no_na <- myg_spiders_all |>
+  filter(species %in% coord_rounded_spp,
+         !is.na(species)) |>
+  collect()
+
+coord_rounded_spp_no_na |>
+  filter(COORDINATE_ROUNDED == TRUE)|>
+  select(species, decimalLatitude, decimalLongitude, recordID)|>
+  view()
+```
+
+
 Coordinate invalid
 ```{r}
 coord_invalid <- myg_assertions |>
