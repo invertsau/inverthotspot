@@ -347,4 +347,157 @@ JM to investigate
 - STATE_COORDINATE_MISMATCH (Are these in borderlines, have they then been corrected by ALA, is there conflict between stateProvince an decimLat and decimLong, try redownloading with raw_stateProvince) 
 
 
+COORDINATES_CENTRE_OF_STATEPROVINCE
+```{r}
+coord_centre_state <- myg_assertions |>
+  select(species, decimalLatitude, decimalLongitude, COORDINATES_CENTRE_OF_STATEPROVINCE)
 
+coord_centre_state |>
+  filter(COORDINATES_CENTRE_OF_STATEPROVINCE == TRUE) |>
+  tabyl(species)
+
+coord_centre_state_spp <- coord_centre_state |>
+  group_by(species) |>
+  summarise(num_true = sum(COORDINATES_CENTRE_OF_STATEPROVINCE)) |>
+  filter(num_true > 0) |>
+  pull(species)
+
+coord_centre_state_spp_no_na <- myg_assertions |>
+  filter(species %in% coord_centre_state_spp,
+         !is.na(species))
+
+ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = coord_centre_state_spp_no_na, mapping = aes(decimalLongitude, decimalLatitude, colour = COORDINATES_CENTRE_OF_STATEPROVINCE), 
+             size = 1.5, alpha = 0.5) + 
+   coord_sf(xlim=c(110, 160), 
+            ylim=c(-10, -45)) +
+  labs(title = "myg_spiders: coord_centre_state", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw() +
+    facet_wrap(~species)
+  
+# Only two species (one record each) and within the range of other records for those species, so probably not an issue
+
+```
+
+COUNTRY_COORDINATE_MISMATCH
+```{r}
+country_coord_mismatch <- myg_assertions |>
+  select(species, decimalLatitude, decimalLongitude, COUNTRY_COORDINATE_MISMATCH)
+
+country_coord_mismatch |>
+  filter(COUNTRY_COORDINATE_MISMATCH == TRUE) |>
+  tabyl(species)
+
+country_coord_mismatch_spp <- country_coord_mismatch |>
+  group_by(species) |>
+  summarise(num_true = sum(COUNTRY_COORDINATE_MISMATCH)) |>
+  filter(num_true > 0) |>
+  pull(species)
+
+country_coord_mismatch_spp_no_na <- myg_spiders_all |>
+  filter(species %in% country_coord_mismatch_spp,
+         !is.na(species)) |>
+  collect()
+
+  ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = country_coord_mismatch_spp_no_na, 
+              mapping = aes(decimalLongitude, decimalLatitude, colour = COUNTRY_COORDINATE_MISMATCH), 
+              size = 1.5, alpha = 0.5) + 
+   coord_sf(xlim=c(110, 160), 
+            ylim=c(-10, -45)) +
+  labs(title = "myg_spiders: country_coord_mismatch", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw() +
+    facet_wrap(~species)
+
+country_coord_mismatch_spp_no_na |> 
+  select(species, decimalLatitude, decimalLongitude, country, COUNTRY_COORDINATE_MISMATCH)
+```
+
+STATE_COORDINATE_MISMATCH
+```{r}
+state_coord_mismatch <- myg_assertions |>
+  select(species, decimalLatitude, decimalLongitude, STATE_COORDINATE_MISMATCH)
+
+state_coord_mismatch |>
+  filter(STATE_COORDINATE_MISMATCH == TRUE) |>
+  tabyl(species) |>
+  arrange(desc(n))
+
+state_coord_mismatch_spp <- state_coord_mismatch |>
+  group_by(species) |>
+  summarise(num_true = sum(STATE_COORDINATE_MISMATCH)) |>
+  filter(num_true > 0) |>
+  pull(species)
+
+state_coord_mismatch_spp_no_na <- myg_spiders_all |>
+  filter(species %in% state_coord_mismatch_spp,
+         !is.na(species)) |>
+  collect()
+
+ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(data = state_coord_mismatch_spp_no_na, 
+              mapping = aes(decimalLongitude, decimalLatitude, colour = STATE_COORDINATE_MISMATCH), 
+              size = 1.5, alpha = 0.5) + 
+   #coord_sf(xlim=c(110, 160), 
+   #         ylim=c(-10, -45)) +
+  labs(title = "myg_spiders: state_coord_mismatch", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw() +
+    facet_wrap(~species)
+
+# filtering most flagged species
+state_coord_mismatch_spp_no_na |>
+  filter(species == "Bymainiella terraereginae") |>
+  ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(mapping = aes(decimalLongitude, decimalLatitude, colour = STATE_COORDINATE_MISMATCH), 
+              size = 1.5, alpha = 0.5) + 
+   coord_sf(xlim=c(150, 155), 
+            ylim=c(-27, -30)) +
+  labs(title = "Bymainiella terraereginae: state_coord_mismatch", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw()
+
+# filtering species with at least 5 records where STATE_COORDINATE_MISMATCH == TRUE
+state_coord_mismatch_spp_five_or_more_true <- state_coord_mismatch |>
+  group_by(species) |>
+  summarise(num_true = sum(STATE_COORDINATE_MISMATCH)) |>
+  filter(num_true > 4) |>
+  pull(species)
+
+state_coord_mismatch_spp_no_na |>
+  filter(species %in% state_coord_mismatch_spp_five_or_more_true,
+         STATE_COORDINATE_MISMATCH == TRUE) |>
+  ggplot() + 
+  geom_sf(data = aus, 
+          colour = "black", 
+          fill = "white")  + 
+   geom_point(mapping = aes(decimalLongitude, decimalLatitude, colour = stateProvince), 
+              size = 1.5, alpha = 0.5) + 
+   coord_sf(xlim=c(110, 160), 
+            ylim=c(-10, -45)) +
+  labs(title = "myg_spiders: state_coord_mismatch", 
+       x = "Longtitude (DD)", 
+       y = "Latitude (DD)") +
+  theme_bw() +
+  facet_wrap(~species)
+
+# TRUEs are mixed in with FALSEs and stateProvince seems to align with coordinates, so probably not an issue. Maybe the issue is with raw_stateProvince
+```
