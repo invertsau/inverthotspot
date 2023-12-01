@@ -18,7 +18,7 @@ rm(x)
 ## Load species polygons (as spdf) ####
 
 ### Fonti's output ####
-x <- readRDS("./output/myg_concr_output.rds")
+species_polys <- readRDS("output/myg_spiders_conr_sp.rds")
 
 ## Extract spdf from list
 species_polys <- x[1:5]
@@ -78,7 +78,7 @@ m1.poly <- m1.poly[!is.na(m1.poly$WE),]
 # (weighted endemism tally per cell divided by the species richness of that cell)
 m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
 
-
+plot(m1.poly)
 
 ## Plotting ####
 library(tmap)
