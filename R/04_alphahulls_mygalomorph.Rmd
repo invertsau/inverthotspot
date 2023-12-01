@@ -390,7 +390,7 @@ myg_concr_output <- map(.x = myg_conr_nest$occ,
     )
 )
 
-write_rds(myg_concr_output, here("output/myg_concr_output.rds"))
+# write_rds(myg_concr_output, here("output/myg_concr_output.rds"))
 
 myg_concr_output <- read_rds(here("output/myg_concr_output.rds"))
 
@@ -405,6 +405,22 @@ length(myg_concr_output) == nrow(myg_conr_nest)
 names(myg_concr_output) <- myg_conr_nest$species
 
 myg_concr_output
+
+# Extract spatialPoly_EOO only for endemism workflow
+get_EOO_sp <- function(sp_name){
+  output <- myg_concr_output |> 
+  pluck(sp_name, "spatialPoly_EOO") 
+}
+
+myg_spiders_conr_sp <- map(.x = myg_conr_nest$species,
+     ~get_EOO_sp(.x))
+
+length(myg_spiders_conr_sp) == nrow(myg_conr_nest)
+
+names(myg_spiders_conr_sp) <- myg_conr_nest$species
+
+write_rds(myg_spiders_conr_sp, "output/myg_spiders_conr_sp.rds")
+
 
 # A function to pull spatialPoly_EOO, change it to sf and add in species name
 get_ahull_sf <- function(sp_name){
