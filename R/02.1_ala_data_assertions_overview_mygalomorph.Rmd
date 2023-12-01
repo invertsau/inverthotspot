@@ -522,3 +522,6 @@ state_coord_mismatch_spp_no_na |>
 
 # TRUEs are mixed in with FALSEs and stateProvince seems to align with coordinates, so probably not an issue. Maybe the issue is with raw_stateProvince
 ```
+
+Taxon match fuzzy: original and matched names next to each other
+printing other taxon assertions (species and rawScientific name) in own chunk
