@@ -22,7 +22,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesa
 ## Read in parquet
 
 ```{r}
-myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-11-23_ALA.parquet"))
+myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-12-01_ALA.parquet"))
 ```
 
 ## Subset columns we want for ALA data overview
@@ -411,8 +411,8 @@ country_coord_mismatch_spp_no_na <- myg_spiders_all |>
    geom_point(data = country_coord_mismatch_spp_no_na, 
               mapping = aes(decimalLongitude, decimalLatitude, colour = COUNTRY_COORDINATE_MISMATCH), 
               size = 1.5, alpha = 0.5) + 
-   coord_sf(xlim=c(110, 160), 
-            ylim=c(-10, -45)) +
+   #coord_sf(xlim=c(110, 160), 
+   #         ylim=c(-10, -45)) +
   labs(title = "myg_spiders: country_coord_mismatch", 
        x = "Longtitude (DD)", 
        y = "Latitude (DD)") +
@@ -422,6 +422,27 @@ country_coord_mismatch_spp_no_na <- myg_spiders_all |>
 country_coord_mismatch_spp_no_na |> 
   select(species, decimalLatitude, decimalLongitude, country, COUNTRY_COORDINATE_MISMATCH)
 ```
+
+Masking Australia mainland and Tas
+```{r}
+ozmaps::ozmap_country
+
+myg_spiders_clean_sf <- myg_spiders |>
+ select(species, decimalLatitude, decimalLongitude, country) |>
+  filter(!is.na(decimalLatitude),
+         !is.na(decimalLongitude),
+         !is.na(species)) |>
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), # Set as sf object
+                                      crs = 4326) |> 
+                             rename(points = geometry)
+
+ozmap_country_reprojected <- st_transform(ozmaps::ozmap_country, 4326)
+
+x <- st_intersection(ozmap_country_reprojected, myg_spiders_clean_sf)
+
+plot(x)
+```
+
 
 STATE_COORDINATE_MISMATCH
 ```{r}
