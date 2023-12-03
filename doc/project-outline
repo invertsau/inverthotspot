@@ -1,0 +1,61 @@
+# Endemism Analysis
+
+## Data download
+- <1000m uncertainty
+- Exclude NA in: date, decimalLatitude, decimalLongtitude, species | scientificName
+- Narrow down to: basisofrecord to specimen, machine observation, material 
+- Exclude assertions: ZERO_COORDINATE, PRESUMED_NEGATED_LATITUDE, PRESUMED_SWAPPED_COORDINATE, PRESUMED_NEGATED_LONGITUDE
+
+## Data overview
+- Download date
+- Query 
+
+## Data clean
+### Coarse clean
+- Exclude NA species
+- Exclude NA decimalLat and decimalLong
+- Exclude NA eventDate
+- Filter down to taxonRank == species
+- Obs greater than 3 obs
+- All in mainland Australia and Tasmania
+
+* Records that were excluded here
+
+### Fine Clean
+- Marine species (WORMS)
+- Coordinate cleaner
+- Introduced species (WSC, GRIIS)
+- Duplicates
+
+* Records that were excluded here
+
+## Dataset overview
+- Number of observations across genus, family represented (plot)
+- Number of species across genus, family represented (plot)
+- Top 5 species and Bottom 5
+
+### Synonyms from AFD
+- Which species? Reassigned?
+
+### Taxonomic assertions that need reviewing: (raw_scientificName, scientificName, species, raw_vernacularName)
+TAXON_MATCH_FUZZY
+TAXON_EXCLUDED
+TAXON_SPECIES_PLURAL
+TAXON_QUESTION_SPECIES
+TAXON_HOMONYM
+
+### Spatial assertions that need reviewing: (Map of assertion by species)
+- COORDINATES_CENTRE_OF_STATEPROVINCE
+- STATE_COORDINATE_MISMATCH
+
+## Generate spatial polygons
+- Alpha-hulls using ConR no buffer or subpopulations
+
+## Endemism analysis using polygons
+- Weighted endemism
+- Corrected weighted endemism
+
+
+
+
+
