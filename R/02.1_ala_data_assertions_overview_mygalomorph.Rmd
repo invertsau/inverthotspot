@@ -525,3 +525,28 @@ state_coord_mismatch_spp_no_na |>
 
 Taxon match fuzzy: original and matched names next to each other
 printing other taxon assertions (species and rawScientific name) in own chunk
+
+TAXON_MATCH_FUZZY
+```{r}
+# Number of raw_scientificName variations for each species with fuzzy taxon matches
+myg_spiders_all |>
+  filter(TAXON_MATCH_FUZZY == TRUE) |>
+  select(species, raw_scientificName, recordID) |>
+  collect() |>
+  group_by(species) |>
+  summarise(num_raw_names = length(unique(raw_scientificName)))
+
+# List of species (adjusted name) and raw names (names given in observation)
+fuzzy_taxa <- myg_spiders_all |>
+  filter(TAXON_MATCH_FUZZY == TRUE) |>
+  select(species, scientificName, raw_scientificName) |> # do we want "species" or "scientificName"?
+  collect() |>
+  unique() |>
+  print(n = Inf)
+```
+
+
+TAXON_EXCLUDED
+TAXON_QUESTION_SPECIES
+TAXON_SPECIES_PLURAL
+TAXON_HOMONYM
