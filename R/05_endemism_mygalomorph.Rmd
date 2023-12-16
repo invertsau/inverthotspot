@@ -1,0 +1,156 @@
+---
+title: "Endemism analysis"
+author: "Fonti Kar, Payal Bal, Aaron Greenfield"
+date: "2023-12-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps)
+```
+
+### Load alpha hull spatial polygons
+
+These are estimated from {ConR}, this is a massive list, each element is a spatial polygon dataframe
+
+```{r}
+species_polys <- readRDS("output/myg_spiders_conr_sp.rds")
+```
+
+### Pre-processing
+
+```{r}
+# Combine into one large spatial dataframe
+combinedShp <- do.call(what = rbind, args=species_polys)
+
+## Assign species names
+combinedShp$dummy <- names(species_polys)
+combinedShp <- terra::vect(combinedShp)
+names(combinedShp) <- "species"
+
+combinedShp
+```
+
+### Calculate Community Matrix
+
+Convert raw input distribution data to community at 0.5 decimal degrees
+`trace = 1` is passed to `mean_dist()` whichgenerates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces"the function; trace = 2 or higher will be more voluminous
+
+```{r}
+comm.poly <- phyloregion::polys2comm(dat = combinedShp, species = "species", trace=1, res = 0.5)
+str(comm.poly)
+plot(comm.poly$map)
+```
+
+### Calulate weighed endemism 
+
+```{r}
+Endm.mygalomorph.poly <- phyloregion::weighted_endemism(comm.poly$comm_dat)
+str(Endm.mygalomorph.poly)
+
+## Join results back to spatial community data matrix
+m1.poly <- merge(comm.poly$map, data.frame(grids=names(Endm.mygalomorph.poly), WE=Endm.mygalomorph.poly), by="grids")
+
+# Drop NA in WE
+m1.poly <- m1.poly[!is.na(m1.poly$WE),]
+
+m1.poly
+```
+
+
+### Calulate corrected weighted endemism
+
+Weighted endemism tally per cell divided by the species richness of that cell
+
+```{r}
+m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
+
+plot(m1.poly)
+```
+
+### Create a endemism map
+
+Convert to `sf` 
+
+```{r}
+m1_sf <- 
+  sf::st_as_sf(m1.poly) |> 
+  sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = m1_sf, fill = NA, colour = "black") + 
+  geom_sf(data = ozmap_country, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  theme_minimal()
+```
+
+### Reproducing Aaron's original maps
+
+Species richness
+
+```{r}
+library(tmap)
+
+aust_WGS84 <- st_transform(ozmaps::ozmap_country, crs(comm.poly$map))
+
+# Adjusting the axes
+bbox_new <- st_bbox(m1_sf)
+xrange <- bbox_new$xmax - bbox_new$xmin # range of x values
+yrange <- bbox_new$ymax - bbox_new$ymin
+
+bbox_new[1] <- bbox_new[1] + (0.62 * xrange) # xmin - left
+bbox_new[3] <- bbox_new[3] - (0.1 * xrange) # xmax - right
+bbox_new[2] <- bbox_new[2] - (0.01 * yrange) # ymin - bottom
+bbox_new[4] <- bbox_new[4] - (0.1 * yrange) # ymax - top
+
+spRh.poly <- tm_shape(m1_sf, 
+                      bbox = bbox_new
+                      ) +
+  tm_polygons("richness", 
+              style="quantile", 
+              title="Species Richness",
+              palette="YlGnBu") +
+  tm_shape(aust_WGS84) +
+  tm_polygons("NAME", 
+              alpha = 0,
+              legend.show = F,
+              lwd = 2, border.col = 1)
+
+spRh.poly
+```
+
+```{r}
+weighted.endemism.poly <- tm_shape(m1_sf, bbox = bbox_new) +
+  tm_polygons("WE", 
+              style="quantile", 
+              title="Weighted endemism",
+              palette="YlGnBu")+
+  tm_shape(aust_WGS84)+
+  tm_polygons("NAME", 
+              alpha = 0,
+              legend.show = F,
+              lwd = 2, border.col = 1)
+
+weighted.endemism.poly
+```
+
+
+```{r}
+Corrected.weighted.endemism.poly <- tm_shape(m1_sf, bbox = bbox_new) +
+  tm_polygons("corrected_endemism", 
+              style="quantile", 
+              title="Polygons: Corrected weighted endemism",
+              lwd = 0.5,
+              palette="YlGnBu")+
+  tm_shape(aust_WGS84)+
+  tm_polygons("NAME", 
+              alpha = 0,
+              legend.show = F,
+              lwd = 2, border.col = 1)
+
+Corrected.weighted.endemism.poly
+```
+
