@@ -567,7 +567,7 @@ TAXON_QUESTION_SPECIES
 # List of species (adjusted name) and raw names (names given in observation)
 taxa_question <- myg_spiders_all |>
   filter(TAXON_QUESTION_SPECIES == TRUE) |>
-  select(species, scientificName, raw_scientificName, recordID) |>
+  select(species, scientificName, raw_scientificName) |>
   collect() |>
   unique() |>
   print(n = Inf)
@@ -579,4 +579,34 @@ myg_assertions |>
 ```
 
 TAXON_SPECIES_PLURAL
+```{r}
+# List of species (adjusted name) and raw names (names given in observation)
+taxa_question <- myg_spiders_all |>
+  filter(TAXON_SPECIES_PLURAL == TRUE) |>
+  select(species, scientificName, raw_scientificName) |>
+  collect() |>
+  unique() |>
+  print(n = Inf)
+
+# counts of TAXON_SPECIES_PLURAL == TRUE 
+myg_assertions |>
+  filter(TAXON_SPECIES_PLURAL == TRUE) |>
+  tabyl(scientificName)
+```
+
 TAXON_HOMONYM
+```{r}
+# List of species (adjusted name) and raw names (names given in observation)
+taxa_question <- myg_spiders_all |>
+  filter(TAXON_HOMONYM == TRUE) |>
+  select(species, scientificName, raw_scientificName, recordID) |>
+  collect() |>
+  unique() |>
+  print(n = Inf)
+# these records are from Spain?...
+
+# counts of TAXON_HOMONYM == TRUE 
+myg_assertions |>
+  filter(TAXON_HOMONYM == TRUE) |>
+  tabyl(scientificName)
+```
