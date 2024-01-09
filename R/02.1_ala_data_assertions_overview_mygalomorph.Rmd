@@ -539,14 +539,44 @@ myg_spiders_all |>
 # List of species (adjusted name) and raw names (names given in observation)
 fuzzy_taxa <- myg_spiders_all |>
   filter(TAXON_MATCH_FUZZY == TRUE) |>
-  select(species, scientificName, raw_scientificName) |> # do we want "species" or "scientificName"?
+  select(species, scientificName, raw_scientificName) |>
   collect() |>
   unique() |>
   print(n = Inf)
 ```
 
-
 TAXON_EXCLUDED
+```{r}
+# List of species (adjusted name) and raw names (names given in observation)
+taxa_excluded <- myg_spiders_all |>
+  filter(TAXON_EXCLUDED == TRUE) |>
+  select(species, scientificName, raw_scientificName) |>
+  collect() |>
+  unique() |>
+  print(n = Inf)
+# seems that species has been made NA and scientificName reduced to genus
+
+# counts of TAXON_EXCLUDED == TRUE 
+myg_assertions |>
+  filter(TAXON_EXCLUDED == TRUE) |>
+  tabyl(scientificName)
+```
+
 TAXON_QUESTION_SPECIES
+```{r}
+# List of species (adjusted name) and raw names (names given in observation)
+taxa_question <- myg_spiders_all |>
+  filter(TAXON_QUESTION_SPECIES == TRUE) |>
+  select(species, scientificName, raw_scientificName, recordID) |>
+  collect() |>
+  unique() |>
+  print(n = Inf)
+
+# counts of TAXON_QUESTION_SPECIES == TRUE 
+myg_assertions |>
+  filter(TAXON_QUESTION_SPECIES == TRUE) |>
+  tabyl(scientificName)
+```
+
 TAXON_SPECIES_PLURAL
 TAXON_HOMONYM
