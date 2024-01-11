@@ -1,5 +1,5 @@
 ---
-title: "02_ala_data_overview_mygalomorph"
+title: "Overview of ALA data"
 author: "Josh Nitschke"
 date: "2023-09-19"
 output: html_document
@@ -22,7 +22,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesa
 ## Read in parquet
 
 ```{r}
-myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions2023-12-01_ALA.paraquet"))
+myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-12-01_ALA.parquet"))
 ```
 
 ## Subset columns we want for ALA data overview
