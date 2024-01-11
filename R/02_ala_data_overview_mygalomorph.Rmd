@@ -11,23 +11,17 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Load dependencies
+```{r loadpackages, include=FALSE}
+## Setting up
 
-```{r loadpackages}
 # install.packages("pacman")
 pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr)
 
-```
-
 ## Read in parquet
 
-```{r}
 myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-12-01_ALA.parquet"))
-```
 
 ## Subset columns we want for ALA data overview
-
-```{r}
 myg_spiders <- myg_spiders_all |> 
   select(decimalLatitude:collectionCode) |> 
   collect()
@@ -35,29 +29,18 @@ myg_spiders <- myg_spiders_all |>
 
 ### Data Overview
 
-How many species in dataset
+#### Higher taxonomy
 
-```{r}
+Descriptive statistics for species, family and class.
+Below shows the bar charts for X, Y, Z
+
+```{rm, messages=FALSE}
 myg_spiders |> 
   group_by(taxonRank) |> 
   summarise(n = n())
 
-# how many records for each species with at least three records
-myg_spp <- myg_spiders |>
-  filter(!is.na(species)) |>
-  group_by(species) |>
-  filter(n() > 2) |>
-  tabyl(species) |>
-  arrange(desc(n))
-myg_spp
-
-# Plot of records for each species
-myg_spp_df <- as.data.frame(myg_spp)
-barplot(myg_spp_df$n, xlab = "species", ylab = "records")
-
-# How many species have at least three records
-nrow(myg_spp)
-
+# N species, total number of species (bar chart or alike, or tabset)
+# N species per family
 # number of species in each family
 myg_fams <- myg_spiders |>
   filter(!is.na(species)) |>
@@ -81,6 +64,38 @@ as.data.frame(myg_fams)|>
         axis.line = element_line(colour = "black"))
 #which families are not represented?
 
+# N species per class
+```
+
+#### Adequate number of data points for analysis
+
+For this analysis we need at least 3 observations to create alphahulls. 
+
+
+```{r}
+# how many records for each species with at least three records
+myg_spp <- myg_spiders |>
+  filter(!is.na(species)) |>
+  group_by(species) |>
+  filter(n() > 2) |>
+  tabyl(species) |>
+  arrange(desc(n))
+
+# How many species have at least three records
+# nrow(myg_spp)
+
+# Total species
+total_myg <- myg_spiders |> 
+  filter(!is.na(species)) |> 
+  distinct(species) |> 
+  nrow()
+
+# Plot of records for each species
+myg_spp_df <- as.data.frame(myg_spp)
+barplot(myg_spp_df$n, xlab = "species", ylab = "records")
+
+
+
 # Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
 myg_spiders |> 
   filter(taxonRank == "unranked") |> 
@@ -88,6 +103,10 @@ myg_spiders |>
   distinct()
 
 ```
+
+`r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) that have 3 or more obs
+XX species (XX%) did not have 3 or more obs 
+
 
 ### Species overview by state
 
