@@ -18,7 +18,7 @@ This document lays out the workflow of cleaning data for Mygalomorph spiders fro
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner)
 
 ```
 
@@ -288,19 +288,33 @@ job::job({
 
 <!-- Clean for geographic errors: missing or invalid lat/long; if data needs to be masked by land/water. There are also R packages like coordinate cleaner and others (you'd know more) to clean occurrence data  -->
 
+Remove NA is decimalLat and decimalLong
+
 ```{r}
-myg_species_aus <- myg_species |> filter(decimalLatitude != "NA") #remove NA coordinates
+myg_species_aus <- myg_species |> 
+  filter(decimalLatitude != "NA",
+         decimalLongitude != "NA") #remove NA coordinates
 
+summary(myg_species_aus$decimalLatitude)
 summary(myg_species_aus$decimalLongitude) #NAs gone
+```
 
-pacman::p_load(ozmaps, sf, CoordinateCleaner)
+Restricting data to Australia mainland + Tasmania
+
+```{r}
+myg_species_mainland <- myg_species_aus |> 
+  filter(decimalLatitude > -45, 
+         decimalLatitude < -8, 
+         decimalLongitude > 112, 
+         decimalLongitude < 154) 
+
+# Transform into sf object
+myg_species_mainland_sf <- myg_species_mainland |> 
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
+           crs = 4326)
 
 
-#clean using Coordinate Cleaner
-
-myg_species_aus <- clean_coordinates(x = myg_species)
-
-
+# Verified that we have cropped the data
 # Map data
 aus <- st_transform(ozmaps::ozmap_country, 4326)
 
@@ -308,16 +322,58 @@ base_map <- ggplot() +
   geom_sf(data = aus, fill = NA) + 
   theme_minimal()
 
-myg_species_sf <- myg_species_aus |> 
-  select(scientificName, decimalLongitude, decimalLatitude) |> 
-  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
-           crs = 4326)
-
 base_map  + 
-  geom_sf(data = myg_species_sf, alpha = 0.5) + 
+  geom_sf(data = myg_species_mainland_sf) + 
   theme_minimal()
+```
+
+What are the species we've excluded from the mainland? 
+
+```{r}
 
 ```
+
+Coordinate Cleaner
+
+https://docs.ropensci.org/CoordinateCleaner/
+
+`.equ` = Equal longitude and latitude
+`.sea` = XXX 
+
+```{r}
+flagged <- clean_coordinates(x = myg_species_mainland, 
+                                     "decimalLongitude",
+                                     "decimalLatitude")
+
+# Summary of how many flagged records found for each category
+summary(flagged)
+
+plot(flagged, lon = "decimalLongitude", lat = "decimalLatitude")
+```
+
+### Visualise .sea values
+
+FALSE are values that are flagged to occur in sea and therefore will be eventually excluded
+
+
+```{r}
+flagged_sf <- flagged |> 
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
+           crs = 4326) 
+
+base_map  + 
+  geom_sf(data = flagged_sf, aes(color = .sea), alpha = 0.3) + 
+  theme_minimal()
+```
+
+### Visualise .cap values
+
+### Visualise .otl values
+
+### Visualise .inst values
+
+
+
 
 <!-- Check for duplicates (as the last step) -->
 
