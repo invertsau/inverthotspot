@@ -1,6 +1,6 @@
 ---
 title: "Data cleaning"
-author: "Fonti Kar"
+author: "Ashley Browse"
 date: "2023-08-11"
 output: html_document
 ---
@@ -24,7 +24,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms)
 ## Read in parquet (observations retrieved from ALA)
 
 ```{r}
-myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-09-18_ALA.parquet"))
+myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-12-01_ALA.parquet"))
 ```
 
 ## Subset columns we want
@@ -254,9 +254,7 @@ myg_spiders$species |> unique() #no subspecies here
 
 ### Excluding Marine Species
 
-
-
-```{r}
+```{r, eval=FALSE}
 wm_records_taxamatch("Teranodes")
 Myg_species <- myg_spiders$species |> unique()
 
@@ -283,11 +281,9 @@ job::job({
 <!-- Clean for geographic errors: missing or invalid lat/long; if data needs to be masked by land/water. There are also R packages like coordinate cleaner and others (you'd know more) to clean occurrence data  -->
 
 ```{r}
-summary(myg_species)
-summary(myg_species$decimalLatitude) #-51 to + 41 (maybe missing '-'), 347 NAs to remove
-summary(myg_species$decimalLongitude)
-myg_species |> plot(decimalLongitude)
-
+summary(myg_spiders)
+summary(myg_spiders$decimalLatitude) #-51 to + 41 (maybe missing '-'), 347 NAs to remove
+summary(myg_spiders$decimalLongitude)
 ```
 
 <!-- Check for duplicates (as the last step) -->
@@ -295,10 +291,10 @@ myg_species |> plot(decimalLongitude)
 In this step we can inspect and clean the data of duplicates 
 
 ```{r}
-nrow(Mygalomorphae_occurrences)
-head(Mygalomorphae_occurrences)
+nrow(myg_spiders)
+head(myg_spiders)
 
-Mygalomorphae_clean <- Mygalomorphae_occurrences |> 
+Mygalomorphae_clean <- myg_spiders |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
   filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
 
