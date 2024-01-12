@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 # Cleaning data from ALA
 
 This document lays out the workflow of cleaning data for Mygalomorph spiders from the ALA database 
@@ -21,11 +22,13 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms)
 
 ```
 
+
 ## Read in parquet (observations retrieved from ALA)
 
 ```{r}
 myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-12-01_ALA.parquet"))
 ```
+
 
 ## Subset columns we want
 
@@ -34,6 +37,7 @@ myg_spiders <- myg_spiders_all |>
   select(decimalLatitude:outlierLayer) |> 
   collect()
 ```
+
 
 ### Taxonomic errors
 
@@ -58,6 +62,7 @@ myg_species |>
   mutate(exact_match = species == scientificName) |> 
   count(exact_match)
 ```
+
 
 ### Read in Australian Faunal Directory (AFD) data to cross check out taxa
 
@@ -150,10 +155,10 @@ unmatched_ala_sp[issynonym]
 
 ```
 
+
 <!-- Excluding introduced/invasives taxa -->
 
 ### Use World Spider Catalog and GRIIS to exclude introduced spiders from dataset
-
 
 ```{r}
 # Read in spider data
@@ -199,6 +204,7 @@ introduced_taxa_wfullname$scientific_name %in% myg_species$scientificName |> tab
 myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> table()
 ```
 
+
 ### Global Register of Invasive and Introduced Species (GRIIS)
 
 ```{r}
@@ -236,6 +242,7 @@ griis_all$class |> unique() #there are no arachnids in this list
 
 ```
 
+
 ### Subspecies
 
 <!-- Decide whether to keep sub-species and if not whether to combine their data with the parent species -->
@@ -251,6 +258,7 @@ myg_spiders$species |> unique() #no subspecies here
 
 
 ```
+
 
 ### Excluding Marine Species
 
@@ -281,9 +289,34 @@ job::job({
 <!-- Clean for geographic errors: missing or invalid lat/long; if data needs to be masked by land/water. There are also R packages like coordinate cleaner and others (you'd know more) to clean occurrence data  -->
 
 ```{r}
-summary(myg_spiders)
-summary(myg_spiders$decimalLatitude) #-51 to + 41 (maybe missing '-'), 347 NAs to remove
-summary(myg_spiders$decimalLongitude)
+myg_species_aus <- myg_species |> filter(decimalLatitude != "NA") #remove NA coordinates
+
+summary(myg_species_aus$decimalLongitude) #NAs gone
+
+pacman::p_load(ozmaps, sf, CoordinateCleaner)
+
+
+#clean using Coordinate Cleaner
+
+myg_species_aus <- clean_coordinates(x = myg_species)
+
+
+# Map data
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+
+base_map <- ggplot() + 
+  geom_sf(data = aus, fill = NA) + 
+  theme_minimal()
+
+myg_species_sf <- myg_species_aus |> 
+  select(scientificName, decimalLongitude, decimalLatitude) |> 
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
+           crs = 4326)
+
+base_map  + 
+  geom_sf(data = myg_species_sf, alpha = 0.5) + 
+  theme_minimal()
+
 ```
 
 <!-- Check for duplicates (as the last step) -->
