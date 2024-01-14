@@ -18,7 +18,7 @@ This document lays out the workflow of cleaning data for Mygalomorph spiders fro
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner, maps)
 
 ```
 
@@ -295,8 +295,13 @@ myg_species_aus <- myg_species |>
   filter(decimalLatitude != "NA",
          decimalLongitude != "NA") #remove NA coordinates
 
-summary(myg_species_aus$decimalLatitude)
-summary(myg_species_aus$decimalLongitude) #NAs gone
+myg_species_aus <- myg_species_aus |> 
+  filter(decimalLatitude != "0",
+         decimalLongitude != "0") #remove empty coordinates
+
+summary(myg_species$decimalLatitude)
+summary(myg_species_aus$decimalLatitude) #347 NA records removed
+nrow(myg_species) - nrow(myg_species_aus) # total of 373 records removed
 ```
 
 Restricting data to Australia mainland + Tasmania
@@ -308,11 +313,11 @@ myg_species_mainland <- myg_species_aus |>
          decimalLongitude > 112, 
          decimalLongitude < 154) 
 
+# Plot:
 # Transform into sf object
 myg_species_mainland_sf <- myg_species_mainland |> 
   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
            crs = 4326)
-
 
 # Verified that we have cropped the data
 # Map data
@@ -330,6 +335,9 @@ base_map  +
 What are the species we've excluded from the mainland? 
 
 ```{r}
+myg_species_mainland_removed <- anti_join(myg_species_aus, myg_species_mainland)
+myg_species_mainland_removed
+count(myg_species_mainland_removed)
 
 ```
 
@@ -362,15 +370,45 @@ flagged_sf <- flagged |>
            crs = 4326) 
 
 base_map  + 
-  geom_sf(data = flagged_sf, aes(color = .sea), alpha = 0.3) + 
+  geom_sf(data = flagged_sf, aes(color = .sea), alpha = 0.5) +
   theme_minimal()
 ```
 
 ### Visualise .cap values
 
+```{r}
+flagged_sf <- flagged |> 
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
+           crs = 4326) 
+
+base_map  + 
+  geom_sf(data = flagged_sf, aes(color = .cap), alpha = 0.5) + 
+  theme_minimal()
+```
+
 ### Visualise .otl values
 
+```{r}
+flagged_sf <- flagged |> 
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
+           crs = 4326) 
+
+base_map  + 
+  geom_sf(data = flagged_sf, aes(color = .otl), alpha = 0.5) + 
+  theme_minimal()
+```
+
 ### Visualise .inst values
+
+```{r}
+flagged_sf <- flagged |> 
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
+           crs = 4326) 
+
+base_map  + 
+  geom_sf(data = flagged_sf, aes(color = .inst), alpha = 0.5) + 
+  theme_minimal()
+```
 
 
 
