@@ -27,9 +27,9 @@ myg_spiders <- myg_spiders_all |>
   collect()
 ```
 
-### Data Overview
+# Data Overview
 
-#### Higher taxonomy
+## Higher taxonomy
 
 Descriptive statistics for species, family and class.
 Below shows the bar charts for X, Y, Z
@@ -46,7 +46,10 @@ myg_spiders |>
   filter(taxonRank == "unranked") |> 
   select(scientificName, collectionCode) |> 
   distinct()
+```
 
+### Species
+```{r}
 # Total number of species
 total_myg <- myg_spiders |> 
   filter(!is.na(species)) |> 
@@ -67,7 +70,10 @@ barplot(myg_records_df$n, xlab = "species", ylab = "records")
 head(myg_records, n = 5)
 # bottom 5 species by number of records
 tail(myg_records, n = 5)
+```
 
+### Family
+```{r}
 # N species, total number of species (bar chart or alike, or tabset)
 # N species per family
 # number of species in each family
@@ -94,6 +100,262 @@ as.data.frame(myg_fams)|>
 #which families are not represented?
 
 ```
+
+#### Top species by family {.tabset}
+##### Idiopidae
+```{r, echo=FALSE}
+Idiopidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Idiopidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Idiopidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Idiopidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+
+```
+
+##### Barychelidae
+```{r, echo=FALSE}
+Barychelidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Barychelidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Barychelidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Barychelidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Nemesiidae
+```{r, echo=FALSE}
+Nemesiidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Nemesiidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Nemesiidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Nemesiidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Atracidae
+```{r, echo=FALSE}
+Atracidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Atracidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Atracidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Atracidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Dipluridae
+```{r, echo=FALSE}
+Dipluridae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Dipluridae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Dipluridae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Dipluridae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Hexathelidae
+```{r, echo=FALSE}
+Hexathelidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Hexathelidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Hexathelidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Hexathelidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Actinopodidae
+```{r, echo=FALSE}
+Actinopodidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Actinopodidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Actinopodidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Actinopodidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Migidae
+```{r, echo=FALSE}
+Migidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Migidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Migidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Migidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Theraphosidae
+```{r, echo=FALSE}
+Theraphosidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Theraphosidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Theraphosidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Theraphosidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Pycnothelidae
+```{r, echo=FALSE}
+Pycnothelidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Pycnothelidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Pycnothelidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Pycnothelidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Cyrtaucheniidae
+```{r, echo=FALSE}
+Cyrtaucheniidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Cyrtaucheniidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Cyrtaucheniidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Cyrtaucheniidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
 
 #### Adequate number of data points for analysis
 
