@@ -34,10 +34,39 @@ myg_spiders <- myg_spiders_all |>
 Descriptive statistics for species, family and class.
 Below shows the bar charts for X, Y, Z
 
-```{rm, messages=FALSE}
+taxonRank = NA where the supplied scientific name is dubious and cannot be assigned with certainty to any taxonomic group
+
+```{r, messages=FALSE}
 myg_spiders |> 
   group_by(taxonRank) |> 
   summarise(n = n())
+
+# Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
+myg_spiders |> 
+  filter(taxonRank == "unranked") |> 
+  select(scientificName, collectionCode) |> 
+  distinct()
+
+# Total number of species
+total_myg <- myg_spiders |> 
+  filter(!is.na(species)) |> 
+  distinct(species) |> 
+  nrow()
+
+# number of records for each species
+myg_records <- myg_spiders |>
+  filter(!is.na(species)) |>
+  group_by(species) |>
+  tabyl(species) |>
+  arrange(desc(n))
+
+myg_records_df <- as.data.frame(myg_records)
+barplot(myg_records_df$n, xlab = "species", ylab = "records")
+
+# top 5 species by number of records
+head(myg_records, n = 5)
+# bottom 5 species by number of records
+tail(myg_records, n = 5)
 
 # N species, total number of species (bar chart or alike, or tabset)
 # N species per family
@@ -64,7 +93,6 @@ as.data.frame(myg_fams)|>
         axis.line = element_line(colour = "black"))
 #which families are not represented?
 
-# N species per class
 ```
 
 #### Adequate number of data points for analysis
@@ -84,28 +112,10 @@ myg_spp <- myg_spiders |>
 # How many species have at least three records
 # nrow(myg_spp)
 
-# Total species
-total_myg <- myg_spiders |> 
-  filter(!is.na(species)) |> 
-  distinct(species) |> 
-  nrow()
-
-# Plot of records for each species
-myg_spp_df <- as.data.frame(myg_spp)
-barplot(myg_spp_df$n, xlab = "species", ylab = "records")
-
-
-
-# Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
-myg_spiders |> 
-  filter(taxonRank == "unranked") |> 
-  select(scientificName, collectionCode) |> 
-  distinct()
-
 ```
 
-`r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) that have 3 or more obs
-XX species (XX%) did not have 3 or more obs 
+`r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) have 3 or more obs
+`r total_myg - nrow(myg_spp)` species (`r ((total_myg - nrow(myg_spp))/total_myg)*100`%) do not have 3 or more obs 
 
 
 ### Species overview by state
