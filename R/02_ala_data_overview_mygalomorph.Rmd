@@ -433,27 +433,6 @@ as.data.frame(myg_spp_fam_by_state)|>
         axis.text.y = element_text(colour = "black"),
         axis.line = element_line(colour = "black"))
 
-#checking records where stateProvince = NA but still have lat/long
-myg_spiders_na_state <- myg_spiders |>
-  filter(is.na(stateProvince)) |>
-  filter(!is.na(decimalLatitude))
-
-aus <- st_transform(ozmaps::ozmap_country, 4326)
-
-ggplot() + 
-  geom_sf(data = aus, 
-          colour = "black", 
-          fill = "white")  + 
-   geom_point(data = myg_spiders_na_state, 
-             mapping = aes(decimalLongitude, decimalLatitude), 
-             colour = "red", size = 0.8) + 
-  # coord_sf(xlim=c(135, 155), 
-  #          ylim=c(-10, -32)) +
-  labs(title = "myg_spiders: stateProvince = NA", 
-       x = "Longtitude (DD)", 
-       y = "Latitude (DD)") +
-  theme_bw()
-
 # number of species recorded in only one state (species with at least three overall records)
 one_state_spp <- myg_records_by_state |> 
   tabyl(species) |>
