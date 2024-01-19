@@ -386,11 +386,16 @@ myg_spp <- myg_spiders |>
 # number of records by state, for species with at least three overall records
 myg_records_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
-  group_by(species) |>
+  filter(stateProvince %in% c("Queensland", "Western Australia", "New South Wales", "South Australia", 
+                              "Victoria", "Northern Territory", "Tasmania", "Australian Capital Territory")) |>
+ # group_by(species) |>
  # filter(n() > 2) |>
   group_by(stateProvince, species) |>
-  summarise(n()) 
-myg_records_by_state
+  summarise(n = n()) |>
+  arrange(stateProvince, desc(n))
+# Top 3 most recorded species in each state
+slice_head(myg_records_by_state, n = 3) |>
+  print(n = Inf)
 
 # number of species by state, for species with at least three overall records
 myg_spp_by_state <- myg_records_by_state |> 
