@@ -382,7 +382,7 @@ myg_spp <- myg_spiders |>
 
 ### Species overview by state
 
-```{r}
+```{r, echo = FALSE}
 # number of records by state, for species with at least three overall records
 myg_records_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
