@@ -22,7 +22,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesa
 ## Read in parquet
 
 ```{r}
-myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions2023-12-01_ALA.paraquet"))
+myg_spiders_all <- open_dataset(get_latest_download())
 ```
 
 ## Subset columns we want for ALA data overview

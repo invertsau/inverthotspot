@@ -26,7 +26,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozm
 ## Read in parquet (observations retrieved from ALA)
 
 ```{r}
-myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-12-01_ALA.parquet"))
+myg_spiders_all <-open_dataset(get_latest_download())
 ```
 
 
