@@ -17,14 +17,14 @@ This document lays out the workflow of getting data for Mygalomorph spiders from
 
 ```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, usethis, tidyverse, janitor)
+pacman::p_load(galah, arrow, usethis, tidyverse, janitor, here)
 ```
 
 ## Account Registration and {galah} Configuration 
 
 Before downloading data from ALA, we need an email registered with ALA. We can then download ALA occurrence data, filtering to within Australia and using ALA's data cleaning filters.
 
-```{r}
+```{r, eval=FALSE}
 # Add ALA registered email to access data (register at ala.org.au)
 edit_r_environ()
 # Paste in R environment ALA_EMAIL="your.email@email.com"
@@ -45,7 +45,7 @@ galah_config(email = Sys.getenv("ALA_EMAIL"),
 
 We will exclude any records that are flagged `identificationIncorrect == TRUE`, for spiders there are none apparrently
 
-```{r}
+```{r, eval=FALSE}
 assertions <- show_all_assertions()
 
 assertions |> 
@@ -77,22 +77,30 @@ fields_we_want <- c(
 
 ```{r}
 mygalomorphae_occurrences <- 
-  galah_call() |>                               
+galah_call() |>                               
   galah_identify("Mygalomorphae") |>   
-  #galah_filter(identificationIncorrect == FALSE) |> 
+  galah_filter(scientificName != "",
+               decimalLatitude != "",
+               decimalLongitude !="",
+               basisOfRecord == c("HUMAN_OBSERVATION", "PRESERVED_SPECIMEN", "MATERIAL_SAMPLE", "MACHINE_OBSERVATION"),
+               decimalLatitude > -45, decimalLatitude < -8,  # Limit to mainland of Australia and Tasmania
+               decimalLongitude > 112, decimalLongitude < 154, # Limit to mainland of Australia and Tasmania
+               taxonRank == "species") |> 
   galah_select(group = c("basic"), all_of(fields_we_want)) |> 
   atlas_occurrences() 
   #atlas_counts()
 
-# Fix strange scientificName cols
-mygalomorphae_occurrences_nm_fixed <- mygalomorphae_occurrences |> 
-  rename(scientificName = scientificName...4,
-         raw_scientificName = scientificName...17)
-
 mygalomorphae_assertions <- 
-  galah_call() |>                               
+galah_call() |>                               
   galah_identify("Mygalomorphae") |>   
-  #galah_filter(identificationIncorrect == FALSE) |> 
+  galah_filter(scientificName != "",
+               decimalLatitude != "",
+               decimalLongitude !="",
+               basisOfRecord == c("HUMAN_OBSERVATION", "PRESERVED_SPECIMEN", "MATERIAL_SAMPLE", "MACHINE_OBSERVATION"),
+               decimalLatitude > -45, decimalLatitude < -8,  # Limit to mainland of Australia and Tasmania
+               decimalLongitude > 112, decimalLongitude < 154, # Limit to mainland of Australia and Tasmania
+               taxonRank == "species") |> 
+  galah_select(group = c("basic"), all_of(fields_we_want)) |> 
   galah_select(group = c("assertions")) |> 
   atlas_occurrences() 
   #atlas_counts()
@@ -101,13 +109,13 @@ mygalomorphae_assertions <-
 ### Join the assertions and occurrence together
 
 ```{r}
-mygalomorphae_occurrences_nm_fixed |> names()
-mygalomorphae_occurrences_nm_fixed |> nrow()
+mygalomorphae_occurrences |> names()
+mygalomorphae_occurrences |> nrow()
 
 mygalomorphae_assertions |> names()
 mygalomorphae_assertions |> nrow()
 
-joined_data <- left_join(mygalomorphae_occurrences_nm_fixed, mygalomorphae_assertions, by = "recordID")
+joined_data <- left_join(mygalomorphae_occurrences, mygalomorphae_assertions, by = "recordID")
 ```
 
 ### Save downloaded data
