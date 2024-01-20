@@ -100,7 +100,6 @@ galah_call() |>
                decimalLatitude > -45, decimalLatitude < -8,  # Limit to mainland of Australia and Tasmania
                decimalLongitude > 112, decimalLongitude < 154, # Limit to mainland of Australia and Tasmania
                taxonRank == "species") |> 
-  galah_select(group = c("basic"), all_of(fields_we_want)) |> 
   galah_select(group = c("assertions")) |> 
   atlas_occurrences() 
   #atlas_counts()
@@ -118,12 +117,23 @@ mygalomorphae_assertions |> nrow()
 joined_data <- left_join(mygalomorphae_occurrences, mygalomorphae_assertions, by = "recordID")
 ```
 
+### Further coarse removal of occurrences
+
+```{r}
+coarse_cleaned <- joined_data |> 
+  filter(coordinateUncertaintyInMeters <= 1000 | is.na(coordinateUncertaintyInMeters),
+         ZERO_COORDINATE == 0,
+         PRESUMED_SWAPPED_COORDINATE == 0,
+         PRESUMED_NEGATED_LONGITUDE == 0)
+```
+
+
 ### Save downloaded data
 
 Save the downloaded data as a `.parquet`
 
 ```{r}
-write_parquet(joined_data, here(paste0("data/galah/Mygalomorphae_withassertions_", Sys.Date(), "_ALA.parquet")))
+write_parquet(coarse_cleaned, here(paste0("data/galah/Mygalomorphae_withassertions_", Sys.Date(), "_ALA.parquet")))
 ```
 
 
