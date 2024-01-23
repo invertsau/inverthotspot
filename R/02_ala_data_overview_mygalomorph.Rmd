@@ -31,31 +31,39 @@ myg_spiders <- myg_spiders_all |>
 
 ## Higher taxonomy
 
-Descriptive statistics for species, family and class.
-Below shows the bar charts for X, Y, Z
+Descriptive statistics for species and families of Mygalomorphae.
+
+Below shows the total counts of the lowest taxonomic rank provided for each record.
+
+```{r, echo = FALSE, messages=FALSE}
+myg_spiders |> 
+  group_by(taxonRank) |> 
+  summarise(n = n()) |>
+  arrange(desc(n))
+
+# # Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
+# myg_spiders |> 
+#   filter(taxonRank == "unranked") |> 
+#   select(scientificName, collectionCode) |> 
+#   distinct()
+```
 
 taxonRank = NA where the supplied scientific name is dubious and cannot be assigned with certainty to any taxonomic group
 
-```{r, messages=FALSE}
-myg_spiders |> 
-  group_by(taxonRank) |> 
-  summarise(n = n())
-
-# Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
-myg_spiders |> 
-  filter(taxonRank == "unranked") |> 
-  select(scientificName, collectionCode) |> 
-  distinct()
-```
-
 ### Species
-```{r}
+
+```{r, echo=FALSE}
 # Total number of species
 total_myg <- myg_spiders |> 
   filter(!is.na(species)) |> 
   distinct(species) |> 
   nrow()
+```
 
+There are `r total_myg` species in total.
+
+The below barplot shows the distribution of the number of records across species.
+```{r, echo = FALSE}
 # number of records for each species
 myg_records <- myg_spiders |>
   filter(!is.na(species)) |>
@@ -65,15 +73,22 @@ myg_records <- myg_spiders |>
 
 myg_records_df <- as.data.frame(myg_records)
 barplot(myg_records_df$n, xlab = "species", ylab = "records")
+```
 
-# top 5 species by number of records
+Top 5 species by number of records:
+```{r, echo = FALSE}
 head(myg_records, n = 5)
-# bottom 5 species by number of records
+```
+
+Bottom 5 species by number of records:
+```{r, echo = FALSE}
 tail(myg_records, n = 5)
 ```
 
 ### Family
-```{r}
+
+Barplot showing the number of species in each family:
+```{r, echo = FALSE, message=FALSE}
 # N species, total number of species (bar chart or alike, or tabset)
 # N species per family
 # number of species in each family
@@ -102,6 +117,9 @@ as.data.frame(myg_fams)|>
 ```
 
 #### Top species by family {.tabset}
+
+Most recorded species in each family (up to 10 species). Select tabs to see plot for corresponding family.
+
 ##### Idiopidae
 ```{r, echo=FALSE}
 Idiopidae <- myg_spiders |>
@@ -357,12 +375,11 @@ as.data.frame(Cyrtaucheniidae)|>
 ```
 
 
-#### Adequate number of data points for analysis
+### Adequate number of data points for analysis
 
 For this analysis we need at least 3 observations to create alphahulls. 
 
-
-```{r}
+```{r, include = FALSE}
 # how many records for each species with at least three records
 myg_spp <- myg_spiders |>
   filter(!is.na(species)) |>
@@ -376,13 +393,14 @@ myg_spp <- myg_spiders |>
 
 ```
 
-`r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) have 3 or more obs
-`r total_myg - nrow(myg_spp)` species (`r ((total_myg - nrow(myg_spp))/total_myg)*100`%) do not have 3 or more obs 
+`r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) have 3 or more obs.
+`r total_myg - nrow(myg_spp)` species (`r ((total_myg - nrow(myg_spp))/total_myg)*100`%) do not have 3 or more obs. 
 
 
 ### Species overview by state
 
-```{r, echo = FALSE}
+Top 3 most recorded species in each state:
+```{r, echo = FALSE, message=FALSE}
 # number of records by state, for species with at least three overall records
 myg_records_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
@@ -397,7 +415,10 @@ myg_records_by_state <- myg_spiders |>
 # Top 3 most recorded species in each state
 slice_head(myg_records_by_state, n = 3) |>
   print(n = Inf)
+```
 
+Barplot showing the number of species and families by state:
+```{r, echo = FALSE, message=FALSE}
 # number of species by state, for species with at least three overall records
 myg_spp_by_state <- myg_records_by_state |> 
   tabyl(stateProvince) |>
@@ -432,7 +453,9 @@ as.data.frame(myg_spp_fam_by_state)|>
         axis.text.x = element_text(angle = 90, colour = "black"),
         axis.text.y = element_text(colour = "black"),
         axis.line = element_line(colour = "black"))
+```
 
+```{r, include = FALSE}
 # number of species recorded in only one state (species with at least three overall records)
 one_state_spp <- myg_records_by_state |> 
   tabyl(species) |>
@@ -448,32 +471,30 @@ multi_state_spp <- myg_records_by_state |>
 `r nrow(one_state_spp)` species were recorded in only one state.
 `r nrow(multi_state_spp)` species were recorded in multiple states.
 
-## Basis of record
-```{r}
+### Basis of record
+
+Total counts of basis of record types. GBIF definitions are provided underneath the table (https://gbif.github.io/parsers/apidocs/org/gbif/api/vocabulary/BasisOfRecord.html). 
+
+```{r, echo = FALSE}
+# Counts of basis of record types. "OCCURRENCE" and "OBSERVATION" types were excluded as they could not be traced back to a source.
 myg_spiders |>
-  filter(!is.na(species)) |>
+  filter(!is.na(species),
+         !basisOfRecord %in% c("OCCURRENCE", "OBSERVATION")) |>
   tabyl(basisOfRecord) |>
   arrange(desc(n))
 
-# Exclude, can't trace back to source
-myg_spiders |> 
-  filter(basisOfRecord == "OCCURRENCE") |> 
-  select(ends_with("code"
-  ))
-
-
-myg_spiders |> 
-  filter(basisOfRecord == "OBSERVATION") |> 
-    select(ends_with("code"
-  ))
-
-# Machine observe keep the one with spatial data
-myg_spiders |> 
-  filter(basisOfRecord == "MACHINE_OBSERVATION", 
-         taxonRank == "species") |> 
-  select(scientificName, recordID, starts_with("decimal"))
+# # Machine observe keep the one with spatial data
+# myg_spiders |> 
+#   filter(basisOfRecord == "MACHINE_OBSERVATION", 
+#          taxonRank == "species") |> 
+#   select(scientificName, recordID, starts_with("decimal"))
 
 ```
+
+PRESERVED_SPECIMEN: An occurrence record describing a preserved specimen.
+HUMAN_OBSERVATION: An occurrence record describing an observation made by one or more people.
+MATERIAL_SAMPLE: An occurrence record based on samples taken from other specimens or the environment.
+MACHINE OBSERVATION: An occurrence record describing an observation made by a machine.
 
 ### Overview of assertions
 
