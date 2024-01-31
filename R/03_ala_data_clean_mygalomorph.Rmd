@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
 ```
 
 
@@ -16,26 +16,32 @@ This document lays out the workflow of cleaning data for Mygalomorph spiders fro
 
 ## Load dependencies
 
-```{r loadpackages}
+```{r loadpackages, eval=TRUE}
 # install.packages("pacman")
 pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner, maps)
 
+source(here("R/utils.R"))
+
+getwd()
 ```
 
 
 ## Read in parquet (observations retrieved from ALA)
 
-```{r}
-myg_spiders_all <-open_dataset(get_latest_download())
+```{r, eval=TRUE}
+myg_spiders_all <-open_dataset(here(get_latest_download()))
+
 ```
 
 
 ## Subset columns we want
 
-```{r}
+```{r, eval=TRUE}
 myg_spiders <- myg_spiders_all |> 
-  select(decimalLatitude:outlierLayer) |> 
+  select(recordID:outlierLayer) |> 
   collect()
+
+myg_spiders
 ```
 
 
@@ -51,16 +57,16 @@ Are species and scientificName not the same thing??
 
 ```{r}
 myg_spiders |> 
-  count(taxonRank) 
+  dplyr::count(taxonRank) 
 
 myg_species <- myg_spiders |> 
-  filter(taxonRank == "species")
+  dplyr::filter(taxonRank == "species")
 
 # Checking with new variable
 myg_species |> 
-  select(species, scientificName)  |> 
-  mutate(exact_match = species == scientificName) |> 
-  count(exact_match)
+  dplyr::select(species, scientificName)  |> 
+  dplyr::mutate(exact_match = species == scientificName) |> 
+  dplyr::count(exact_match)
 ```
 
 
@@ -410,9 +416,10 @@ base_map  +
   theme_minimal()
 ```
 
+### Exclude records flagged by CoordinateCleaner
 
 
-
+## Deduplication
 <!-- Check for duplicates (as the last step) -->
 
 In this step we can inspect and clean the data of duplicates 
@@ -427,5 +434,13 @@ Mygalomorphae_clean <- myg_spiders |>
 
 nrow(Mygalomorphae_clean)
 head(Mygalomorphae_clean)
+```
+
+## Export cleaned data as a .parquet
+
+
+<!-- Filename should contain the date of the parquet we read in at the start, export to output folder -->
+```{r}
+get_latest_download()
 ```
 
