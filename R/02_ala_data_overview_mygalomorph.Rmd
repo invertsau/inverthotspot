@@ -498,6 +498,10 @@ MACHINE OBSERVATION: An occurrence record describing an observation made by a ma
 
 ### Overview of assertions
 
+Various tests are run on occurrence data in the Atlas of Living Australia, resulting in assertions about the content and quality of the data. These Assertions help users gauge whether data is fit for their purposes and allow for easy data filtering. In the data, Assertions are logical variables (TRUE/FALSE) and take the value TRUE when they apply to the associated occurrence record. Descriptions of Assertions can be found at https://github.com/AtlasOfLivingAustralia/ala-dataquality/wiki
+
+For the analysis of endemism hotspots, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
+
 ```{r}
 myg_assertions <- myg_spiders_all |> 
   dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
