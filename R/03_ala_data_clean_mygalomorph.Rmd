@@ -22,7 +22,6 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozm
 
 source(here("R/utils.R"))
 
-getwd()
 ```
 
 
@@ -41,7 +40,7 @@ myg_spiders <- myg_spiders_all |>
   select(recordID:outlierLayer) |> 
   collect()
 
-myg_spiders
+head(myg_spiders)
 ```
 
 
@@ -106,7 +105,7 @@ arachnids |>
 names(arachnids)
 ```
 
-How many matches in ALA data, do we have in the AFD?
+How many matches in ALA data, do we have in the AFD? How many species did not match? Which species don't match?
 
 ```{r}
 #x <- c(1, 2, 3, 6, 7, 8, 8, 9)
@@ -115,7 +114,7 @@ How many matches in ALA data, do we have in the AFD?
 #setdiff(x, y)
 #x %in% y
 
-# 488 species in ALA data matched in the AFD
+# how many species in ALA data matched species in the AFD?
 myg_species |> 
   filter(scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
@@ -148,9 +147,9 @@ Which of the ALA species not matched to AFD occur in the list of AFD arachnid sp
 
 # Using similar methods above try cross match unmatched_ala_sp to synonyms
 
-arachnids$SYNONYMS |> head()
+# arachnids$SYNONYMS |> head()
 #remove Authority, keep species name
-word(arachnids$SYNONYMS, 1, 2) |> head()
+# word(arachnids$SYNONYMS, 1, 2) |> head()
 
 #check if unmatched species occur in list of synonyms
 issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
@@ -171,24 +170,21 @@ unmatched_ala_sp[issynonym]
 wsc <- read_csv(here("data/wsc/species_export_20230929.csv"))
 ```
 
-Have a look at distribution variable
+Have a look at distribution variable: How many contain "Australia"? Which ones are "Introduced to Australia"? 
 ```{r}
 # `distribution` values that contain "Australia"
-str_subset(wsc$distribution, "Australia")
+str_subset(wsc$distribution, "Australia") |> length()
 
 # Return unique values of `distribution` for those that have "Introduced to Australia" in distribution
-wsc |> 
-  pull(distribution) |> str_subset(pattern = "Introduced to Australia") |>  
-  unique()
+#wsc |> pull(distribution) |> str_subset(pattern = "Introduced to Australia") |> unique()
 
-wsc |> 
-  pull(distribution) |> str_subset(pattern = "Australia") |>  
-  unique()
+#wsc |> pull(distribution) |> str_subset(pattern = "Australia") |>  unique()  # shows all unique distribution variables containing "Australia"
 
 # We want to capture all observations where "Introduced to" and "Australia" occurs together
-str_subset(wsc$distribution, pattern = "Introduced to.*Australia")
-str_detect(wsc$distribution, pattern = "Introduced to.*Australia")
-str_which(wsc$distribution, pattern = "Introduced to.*Australia")
+# Example:
+#str_subset(wsc$distribution, pattern = "Introduced to.*Australia")
+#str_detect(wsc$distribution, pattern = "Introduced to.*Australia")
+#str_which(wsc$distribution, pattern = "Introduced to.*Australia")
 
 introduced_taxa <- wsc |> 
   filter(str_detect(distribution, pattern = "Introduced to.*Australia")) 
@@ -217,18 +213,20 @@ myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> tab
 # Join distrubtion.txt and taxon-edit.txt
 griis_distrib <- read.delim(here("data/griis-australia-v1.6/distribution.txt"))
 griis_taxon <- read.delim(here("data/griis-australia-v1.6/taxon-edited.txt"))
-summary(griis_distrib) #length = 2984
-summary(griis_taxon) #length = 2960
-#which IDs are missed? (What is in Distribution that is not in Taxon?)
-setdiff(griis_distrib$id, griis_taxon$id)
-#is there anything missing from Distribution?
-setdiff(griis_taxon$id, griis_distrib$id) # no there isn't
+# check if both lists are the same length
+count(griis_distrib) #length = 2984
+count(griis_taxon) #length = 2960
+# which IDs are missed? (What is in Distribution that is not in Taxon?)
+setdiff(griis_distrib$id, griis_taxon$id) |> length() # 24 missing
+# What's in Taxon that is not in Distribution?
+setdiff(griis_taxon$id, griis_distrib$id) # none missing
 
-griis_all <- left_join(griis_distrib, griis_taxon, by = "id")                 # Apply left_join dplyr function 
+griis_all <- left_join(griis_distrib, griis_taxon, by = "id")  # Apply left_join dplyr function 
 
-#filter by class = arachnida
-str_subset(griis_all$class, "Arachnida")
-griis_all$class |> unique() #there are no arachnids in this list
+# filter by class = arachnida
+str_subset(griis_all$class, "Arachnida") # no results
+# show unique values to double check there are no arachnids
+griis_all$class |> unique() # there are no arachnids in this list
 
 
 # Cross match with ALA data
