@@ -498,7 +498,7 @@ MACHINE OBSERVATION: An occurrence record describing an observation made by a ma
 
 ### Overview of assertions
 
-Various tests are run on occurrence data in the Atlas of Living Australia, resulting in assertions about the content and quality of the data. These Assertions help users gauge whether data is fit for their purposes and allow for easy data filtering. In the data, Assertions are logical variables (TRUE/FALSE) and take the value TRUE when they apply to the associated occurrence record. Descriptions of Assertions can be found at https://github.com/AtlasOfLivingAustralia/ala-dataquality/wiki
+Various tests are run on occurrence data in the Atlas of Living Australia, resulting in assertions about the content and quality of the data. These Assertions help users gauge whether data is fit for their purposes and allow for easy data filtering. In the data, Assertions are logical variables (TRUE/FALSE) and take the value TRUE when they apply to the associated occurrence record. Descriptions of Assertions can be found at https://github.com/AtlasOfLivingAustralia/ala-dataquality/wiki.
 
 For the analysis of endemism hotspots, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
 
@@ -528,101 +528,17 @@ myg_assertions |>
   filter(!if_any(AMBIGUOUS_COLLECTION:ZERO_COORDINATE))
 ```
 
-### Checking coordinate-related assertions
-```{r}
-myg_assertions |>
-  filter(!is.na(species),
-         !is.na(decimalLatitude),
-         !is.na(decimalLongitude)) |>
-  filter(if_any(starts_with("COORDINATE"))) |>
-  group_by(species) |>
-  tabyl(species) |>
-  arrange(desc(n))
+We investigated a range of spatial assertions and deemed the following safe to bypass when refining the data download:
 
-# plotting spp. with the most flagged records for coordinate-based assertions
-myg_spp_coordinate_assertions <- myg_assertions |>
-  filter(!is.na(species),
-         !is.na(decimalLatitude),
-         !is.na(decimalLongitude)) |>
-  filter(if_any(starts_with("COORDINATE"))) |>
-  group_by(species) |>
-  filter(n() > 100)
+- COORDINATE_UNCERTAINTY_METERS_INVALID - 
+- COORDINATE_ROUNDED - the original coordinates were rounded to six decimals (~ 1 m precision) to simplify processing.
+- COORDINATE_OUT_OF_RANGE - 
 
-aus <- st_transform(ozmaps::ozmap_states, 4326)
+The following will be used to refine the data download as they indicate coordinates outside of the given country (records flagged as TRUE will be excluded):
 
-ggplot() + 
-  geom_sf(data = aus, 
-          colour = "black", 
-          fill = "white")  + 
-   geom_point(data = myg_spp_coordinate_assertions, 
-             mapping = aes(decimalLongitude, decimalLatitude, colour = species), 
-             size = 0.8) + 
-  # coord_sf(xlim=c(135, 155), 
-  #          ylim=c(-10, -32)) +
-  labs(title = "myg_spiders: assertions starting with 'COORDINATE' = TRUE", 
-       x = "Longtitude (DD)", 
-       y = "Latitude (DD)") +
-  theme_bw()
-
-```
-
-
-```{r}
-coord_invalid <- myg_assertions |>
-  select(species, decimalLatitude, decimalLongitude, COORDINATE_INVALID)
-
-coord_invalid_spp <- coord_invalid |>
-  group_by(species) |>
-  summarise(num_true = sum(COORDINATE_INVALID)) |>
-  filter(num_true > 0) |>
-  pull(species)
-
-coord_invalid_spp_no_na <- myg_assertions |>
-  filter(species %in% coord_invalid_spp,
-         !is.na(species))
-
-  ggplot() + 
-  geom_sf(data = aus, 
-          colour = "black", 
-          fill = "white")  + 
-   geom_point(data = coord_invalid_spp_no_na, mapping = aes(decimalLongitude, decimalLatitude, colour = COORDINATE_INVALID), 
-             size = 0.8, alpha = 0.5) + 
-  # coord_sf(xlim=c(135, 155), 
-  #          ylim=c(-10, -32)) +
-  labs(title = "myg_spiders: coordinate_invalid", 
-       x = "Longtitude (DD)", 
-       y = "Latitude (DD)") +
-  theme_bw() +
-    facet_wrap(~species)
-  
-coord_invalid_spp_no_na |>
-  filter(COORDINATE_INVALID == TRUE)
-```
-
-get verbatum coordinates
-```{r}
-miss_occ_coord_flagged <- myg_assertions |>
-  filter(species == "Missulena occatoria") |>
-  select(species, decimalLatitude, decimalLongitude, contains("COORDINATE")) |>
-  pivot_longer(cols = contains("COORDINATE"), names_to = "assertion_type", values_to = "assertion_flag") |>
-  filter(assertion_flag == TRUE) 
-
-ggplot() + 
-  geom_sf(data = aus, 
-          colour = "black", 
-          fill = "white")  + 
-   geom_point(data = miss_occ_coord_flagged, mapping = aes(decimalLongitude, decimalLatitude, colour = assertion_type), 
-             size = 1.5) + 
-  scale_colour_manual(values = wes_palette("BottleRocket2")) +
-  # coord_sf(xlim=c(135, 155), 
-  #          ylim=c(-10, -32)) +
-  labs(title = "myg_spiders: miss_occ_coord_flagged", 
-       x = "Longtitude (DD)", 
-       y = "Latitude (DD)") +
-  theme_bw() +
-  facet_wrap(~assertion_type)
-
-```
+- PRESUMED_NEGATED_LONGITUDE
+- PRESUMED_SWAPPED_COORDINATE
+- ZERO_COORDINATE
 
 # Put taxonomic assertions here for experts to review
 
