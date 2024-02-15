@@ -565,8 +565,8 @@ fuzzy_taxa <- myg_spiders_all |>
   print(n = Inf)
 ```
 
-TAXON_EXCLUDED
-```{r}
+TAXON_EXCLUDED - is flagged when the supplied scientific name (raw_scientificName) matches a taxon that is not known to occur in Australia. Could the expert review the following list and assess whether raw_scientificName is likely to be an incorrect identification and therefore remain excluded.
+```{r, echo=FALSE}
 # List of species (adjusted name) and raw names (names given in observation)
 taxa_excluded <- myg_spiders_all |>
   filter(TAXON_EXCLUDED == TRUE) |>
@@ -576,13 +576,13 @@ taxa_excluded <- myg_spiders_all |>
   print(n = Inf)
 # seems that species has been made NA and scientificName reduced to genus
 
-# counts of TAXON_EXCLUDED == TRUE 
-myg_assertions |>
-  filter(TAXON_EXCLUDED == TRUE) |>
-  tabyl(scientificName)
+# # counts of TAXON_EXCLUDED == TRUE 
+# myg_assertions |>
+#   filter(TAXON_EXCLUDED == TRUE) |>
+#   tabyl(scientificName)
 ```
 
-TAXON_QUESTION_SPECIES
+TAXON_QUESTION_SPECIES - is flagged when the supplied scientific name (raw_scientificName) contains a question mark, indicating an uncertain identification. 
 ```{r}
 # List of species (adjusted name) and raw names (names given in observation)
 taxa_question <- myg_spiders_all |>
