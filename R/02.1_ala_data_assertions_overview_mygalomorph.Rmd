@@ -344,8 +344,15 @@ Spatial assertions that we can use to exclude data:
 JM to investigate
 - COORDINATES_CENTRE_OF_STATEPROVINCE (Likely to be excluded)
 - COUNTRY_COORDINATE_MISMATCH (Likely to be excluded)
-- STATE_COORDINATE_MISMATCH (Are these in borderlines, have they then been corrected by ALA, is there conflict between stateProvince an decimLat and decimLong, try redownloading with raw_stateProvince) 
+- STATE_COORDINATE_MISMATCH (Are these in borderlines, have they then been corrected by ALA, is there conflict between stateProvince
 
+PRESUMED_NEGATED_LATITUDE
+```{r}
+myg_spiders_all |>
+  filter(PRESUMED_NEGATED_LATITUDE == TRUE) |>
+  select(raw_decimalLatitude, decimalLatitude, raw_decimalLongitude, decimalLongitude, recordID) |>
+  collect()
+```
 
 COORDINATES_CENTRE_OF_STATEPROVINCE
 ```{r}
