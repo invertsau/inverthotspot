@@ -48,7 +48,7 @@ myg_spiders |>
 #   distinct()
 ```
 
-taxonRank = NA where the supplied scientific name is dubious and cannot be assigned with certainty to any taxonomic group
+taxonRank = NA where the supplied scientific name is dubious and cannot be assigned with certainty to any taxonomic group.
 
 ### Species
 
@@ -583,7 +583,7 @@ taxa_excluded <- myg_spiders_all |>
 ```
 
 TAXON_QUESTION_SPECIES - is flagged when the supplied scientific name (raw_scientificName) contains a question mark, indicating an uncertain identification. 
-```{r}
+```{r, echo=FALSE}
 # List of species (adjusted name) and raw names (names given in observation)
 taxa_question <- myg_spiders_all |>
   filter(TAXON_QUESTION_SPECIES == TRUE) |>
@@ -592,10 +592,10 @@ taxa_question <- myg_spiders_all |>
   unique() |>
   print(n = Inf)
 
-# counts of TAXON_QUESTION_SPECIES == TRUE 
-myg_assertions |>
-  filter(TAXON_QUESTION_SPECIES == TRUE) |>
-  tabyl(scientificName)
+# # counts of TAXON_QUESTION_SPECIES == TRUE 
+# myg_assertions |>
+#   filter(TAXON_QUESTION_SPECIES == TRUE) |>
+#   tabyl(scientificName)
 ```
 
 <!-- TAXON_MATCH_FUZZY                     Taxon match f… Warning  asserti…   151 3.897237e-4              1 t        -->
