@@ -3,6 +3,8 @@ title: "Data cleaning"
 author: "Ashley Browse"
 date: "2023-08-11"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -12,37 +14,50 @@ knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
 
 # Cleaning data from ALA
 
-This document lays out the workflow of cleaning data for Mygalomorph spiders from the ALA database 
+<!-- ## Load dependencies -->
 
-## Load dependencies
-
-```{r loadpackages, eval=TRUE}
+```{r loadpackages, eval=TRUE, echo=FALSE}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner, maps)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner, maps, job, glue)
 
 source(here("R/utils.R"))
 
 ```
 
 
-## Read in parquet (observations retrieved from ALA)
+<!-- Introduction message, and define variables  -->
+```{r, echo=FALSE}
+focus_taxon <- "Mygalomorph spiders"
+focus_taxon_short <- "Mygal"
 
-```{r, eval=TRUE}
+glue("This document lays out the workflow of cleaning {focus_taxon} data from the ALA database.")
+
+
+```
+
+
+<!-- ## Read in parquet (observations retrieved from ALA) -->
+
+```{r, eval=TRUE, echo=FALSE}
 myg_spiders_all <-open_dataset(here(get_latest_download()))
 
 ```
 
 
-## Subset columns we want
+<!-- ## Subset columns we want -->
 
-```{r, eval=TRUE}
+```{r, eval=TRUE, echo=FALSE}
 myg_spiders <- myg_spiders_all |> 
   select(recordID:outlierLayer) |> 
   collect()
 
-head(myg_spiders)
+unique_species <- unique(myg_spiders$species) |> length()
+
+glue("There are {unique_species} unique species of {focus_taxon_short}s in the ALA dataset, with {length(myg_spiders$recordID)} records in total.")
+
 ```
 
+Many of these records will be invalid, so we cleaned the data for various errors.
 
 ### Taxonomic errors
 
@@ -50,14 +65,12 @@ head(myg_spiders)
 
 ### Filter down to species level data
 
-Are species and scientificName not the same thing?? 
+```{r, echo=FALSE}
+# myg_spiders |> 
+#   dplyr::count(taxonRank) 
 
-`species` and `scientificName` are the same for Mygalomorphae download
-
-```{r}
-myg_spiders |> 
-  dplyr::count(taxonRank) 
-
+count_before_filter <- length(myg_spiders$recordID)
+  
 myg_species <- myg_spiders |> 
   dplyr::filter(taxonRank == "species")
 
@@ -66,6 +79,8 @@ myg_species |>
   dplyr::select(species, scientificName)  |> 
   dplyr::mutate(exact_match = species == scientificName) |> 
   dplyr::count(exact_match)
+
+glue("{length(myg_spiders$recordID) - count_before_filter} records without species level data were removed.")
 ```
 
 
@@ -82,9 +97,7 @@ The AFD can provide information on:
 
 <!-- Check names against a naming authority to make sure all species included in the analyses are valid -->
 
-```{r}
-# afd <- read_csv(here("data/afd_May2023_clean.csv"))
-# afd |> write_parquet(here("data/afd_05-2023_clean.parquet"))
+```{r, echo=FALSE}
 afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
 
 # Filter down to Arachnida 
@@ -93,36 +106,28 @@ arachnids <- afd |>
   collect()
 ```
 
-Where is Mygalomorphae in the AFD?
+<!-- Where is Mygalomorphae in the AFD? -->
 
-There in no infraorder column in the AFD, can filter down to Mygalomorphae using `HIGHER_CLASSIFICATION`
+<!-- Filter down to Mygalomorphae using `HIGHER_CLASSIFICATION` -->
  
-```{r}
+```{r, inlcude=FALSE}
 arachnids |> 
   pull(HIGHER_CLASSIFICATION) |> 
-  str_subset(pattern = "MYGALOMORPH") |> head()
-
-names(arachnids)
+  str_subset(pattern = "MYGALOMORPH")
 ```
 
-How many matches in ALA data, do we have in the AFD? How many species did not match? Which species don't match?
+<!-- How many matches in ALA data, do we have in the AFD? How many species did not match? Which species don't match? -->
 
-```{r}
-#x <- c(1, 2, 3, 6, 7, 8, 8, 9)
-#y <- c(1, 2, 5, 4, 9)
-
-#setdiff(x, y)
-#x %in% y
-
+```{r, echo=FALSE}
 # how many species in ALA data matched species in the AFD?
-myg_species |> 
+AFD_matched <- myg_species |> 
   filter(scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
   unique() |> 
-  length()
+  length()  # put into sentence form
 
 # How many and which ones are the species in ALA data that DID NOT match with the AFD
-myg_species |> 
+AFD_unmatched <- myg_species |> 
   filter(! scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
   unique() |> 
@@ -133,11 +138,16 @@ unmatched_ala_sp <- myg_species |>
   filter(! scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
   unique() 
+
+glue("Of the {unique_species} unique {focus_taxon_short} species in the ALA database, {AFD_matched} matched those listed in the AFD. These {AFD_unmatched} species did not match:")
+
 unmatched_ala_sp
 ```
 
 
-Which of the ALA species not matched to AFD occur in the list of AFD arachnid species synonyms
+<!-- Which of the ALA species not matched to AFD occur in the list of AFD arachnid species synonyms -->
+
+The AFD lists any applicable synonyms for each species within their database. Our missing species might be synonyms of listed species.
 
 ```{r}
 
@@ -153,10 +163,21 @@ Which of the ALA species not matched to AFD occur in the list of AFD arachnid sp
 
 #check if unmatched species occur in list of synonyms
 issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
-issynonym
+
+glue("{sum(issynonym)} unmatched species is a synonym:")
+
 
 #One species occurs in synonyms list. Which one?
 unmatched_ala_sp[issynonym]
+
+# What is it a synonym of?
+# get genus
+arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),18]
+# get species
+arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),20]
+
+# How should we handle synonyms? 
+# Rename it in our ALA data??
 
 ```
 
@@ -416,6 +437,10 @@ base_map  +
 
 ### Exclude records flagged by CoordinateCleaner
 
+```{r}
+
+```
+
 
 ## Deduplication
 <!-- Check for duplicates (as the last step) -->
@@ -440,5 +465,6 @@ head(Mygalomorphae_clean)
 <!-- Filename should contain the date of the parquet we read in at the start, export to output folder -->
 ```{r}
 get_latest_download()
+write_parquet(Mygalomorphae_clean, here(paste0("data/Cleaned_Data_Mygalomorphae_", Sys.Date(), "_ALA.parquet")))
 ```
 
