@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
 
 ```{r loadpackages, eval=TRUE, echo=FALSE}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner, maps, job, glue)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner, maps, job)
 
 source(here("R/utils.R"))
 
@@ -26,23 +26,21 @@ source(here("R/utils.R"))
 
 
 <!-- Introduction message, and define variables  -->
-```{r, echo=FALSE}
-focus_taxon <- "Mygalomorph spiders"
+```{r, echo=F}
+focus_taxon <- "Mygalomorphae spider"
 focus_taxon_short <- "Mygal"
 
-glue("This document lays out the workflow of cleaning {focus_taxon} data from the ALA database.")
-
-
 ```
+
+This document lays out the workflow of cleaning **`r focus_taxon`** data from the ALA database using R.
 
 
 <!-- ## Read in parquet (observations retrieved from ALA) -->
 
 ```{r, eval=TRUE, echo=FALSE}
-myg_spiders_all <-open_dataset(here(get_latest_download()))
+myg_spiders_all <- open_dataset(here(get_latest_download()))
 
 ```
-
 
 <!-- ## Subset columns we want -->
 
@@ -53,47 +51,42 @@ myg_spiders <- myg_spiders_all |>
 
 unique_species <- unique(myg_spiders$species) |> length()
 
-glue("There are {unique_species} unique species of {focus_taxon_short}s in the ALA dataset, with {length(myg_spiders$recordID)} records in total.")
-
 ```
 
-Many of these records will be invalid, so we cleaned the data for various errors.
+The data includes **`r unique_species`** species of **`r focus_taxon_short`s**, with **`r length(myg_spiders$recordID)`** records in total. Some pre cleaning of the data was done using ALA before downloading, but many of these records may still have errors.
 
-### Taxonomic errors
+## Taxonomic errors
 
 <!-- Clean for taxonomic errors: misspelt names, incorrect, synonyms.  -->
+
+Here we clean the data for taxonomic errors, such as misspelt and outdated names.
 
 ### Filter down to species level data
 
 ```{r, echo=FALSE}
-# myg_spiders |> 
-#   dplyr::count(taxonRank) 
 
 count_before_filter <- length(myg_spiders$recordID)
   
 myg_species <- myg_spiders |> 
   dplyr::filter(taxonRank == "species")
 
-# Checking with new variable
-myg_species |> 
-  dplyr::select(species, scientificName)  |> 
-  dplyr::mutate(exact_match = species == scientificName) |> 
-  dplyr::count(exact_match)
-
-glue("{length(myg_spiders$recordID) - count_before_filter} records without species level data were removed.")
 ```
 
+We verified that all records have species level taxonomic data.
+There were **`r length(myg_spiders$recordID) - count_before_filter`** records without species level data.
 
 ### Read in Australian Faunal Directory (AFD) data to cross check out taxa
 
 The [Australian Faunal Directory (AFD)](https://biodiversity.org.au/afd/home) is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories.
 
-The AFD can provide information on:
+The AFD can provide information on: 
 
-- nomenclature and taxonomy of species (including valid names [= what a species is currently called], synonyms, and changes to names over time);
+- nomenclature and taxonomy of species (including current, previous, and synonyms of species names);
 - type data information;
 - bibliographic information for species;
 - distribution of species.
+
+We used AFD data to ensure all species names in the ALA dataset are valid.
 
 <!-- Check names against a naming authority to make sure all species included in the analyses are valid -->
 
@@ -107,16 +100,15 @@ arachnids <- afd |>
 ```
 
 <!-- Where is Mygalomorphae in the AFD? -->
-
 <!-- Filter down to Mygalomorphae using `HIGHER_CLASSIFICATION` -->
  
-```{r, inlcude=FALSE}
+```{r, eval=FALSE, echo=F}
 arachnids |> 
   pull(HIGHER_CLASSIFICATION) |> 
   str_subset(pattern = "MYGALOMORPH")
 ```
 
-<!-- How many matches in ALA data, do we have in the AFD? How many species did not match? Which species don't match? -->
+<!-- How many matches of ALA data do we have in the AFD? How many species did not match? Which species don't match? -->
 
 ```{r, echo=FALSE}
 # how many species in ALA data matched species in the AFD?
@@ -138,18 +130,16 @@ unmatched_ala_sp <- myg_species |>
   filter(! scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
   unique() 
-
-glue("Of the {unique_species} unique {focus_taxon_short} species in the ALA database, {AFD_matched} matched those listed in the AFD. These {AFD_unmatched} species did not match:")
-
-unmatched_ala_sp
 ```
 
+Of the **`r unique_species`** unique **`r focus_taxon_short`** species in the ALA dataset, **`r AFD_matched`** matched those listed in the AFD. These **`r AFD_unmatched`** species did not match:
+**`r unmatched_ala_sp`**.
 
 <!-- Which of the ALA species not matched to AFD occur in the list of AFD arachnid species synonyms -->
 
-The AFD lists any applicable synonyms for each species within their database. Our missing species might be synonyms of listed species.
+The AFD lists any applicable synonyms for each species within their database. Our **`r AFD_unmatched`** missing species might be synonyms of listed species.
 
-```{r}
+```{r, echo=F}
 
 # Pull out the species name from Synonyms without the Authority
 # "Austrammo monteithi Platnick, 2002"     -> "Austrammo monteithi"
@@ -163,22 +153,34 @@ The AFD lists any applicable synonyms for each species within their database. Ou
 
 #check if unmatched species occur in list of synonyms
 issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
+```
 
-glue("{sum(issynonym)} unmatched species is a synonym:")
+**`r sum(issynonym)`** unmatched ALA species is an AFD synonym. This is: 
+**`r unmatched_ala_sp[issynonym]`**.
+
+**`r unmatched_ala_sp[issynonym]`** is a synonym of 
+**`r arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),18]`** 
+**`r arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),20]`**.
 
 
-#One species occurs in synonyms list. Which one?
-unmatched_ala_sp[issynonym]
+<!-- Not sure if this is what we want to do, but this is some loose code to replace names found to be synonyms with the new name from the AFD -->
+```{r, eval=F, include=F}
 
-# What is it a synonym of?
-# get genus
-arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),18]
-# get species
-arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),20]
+# begin a loop for each species flagged as synonyms (just 1 in mygalamorphae)
+for (i in 1:length(issynonym)){
+  if (issynonym[i]) {
+    print(unmatched_ala_sp[i])
+  }
+}
 
-# How should we handle synonyms? 
-# Rename it in our ALA data??
+#get index of species flagged
+str_which(myg_species$scientificName, pattern = "armigera")
 
+myg_species[str_which(myg_species$scientificName, pattern = "armigera"),]
+
+#create new scientific name
+paste(arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),18],
+      arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),20])
 ```
 
 
@@ -186,21 +188,17 @@ arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),2
 
 ### Use World Spider Catalog and GRIIS to exclude introduced spiders from dataset
 
-```{r}
-# Read in spider data
+The [World Spider Catalogue (WSC)](https://wsc.nmbe.ch/) is *a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images*.
+
+```{r, echo=F, include=F}
+# Read in spider data downloaded from WSC
 wsc <- read_csv(here("data/wsc/species_export_20230929.csv"))
 ```
 
-Have a look at distribution variable: How many contain "Australia"? Which ones are "Introduced to Australia"? 
-```{r}
-# `distribution` values that contain "Australia"
-str_subset(wsc$distribution, "Australia") |> length()
 
-# Return unique values of `distribution` for those that have "Introduced to Australia" in distribution
-#wsc |> pull(distribution) |> str_subset(pattern = "Introduced to Australia") |> unique()
+<!-- Have a look at distribution variable: How many contain "Australia"? Which ones are "Introduced to Australia"?  -->
 
-#wsc |> pull(distribution) |> str_subset(pattern = "Australia") |>  unique()  # shows all unique distribution variables containing "Australia"
-
+```{r, echo=F}
 # We want to capture all observations where "Introduced to" and "Australia" occurs together
 # Example:
 #str_subset(wsc$distribution, pattern = "Introduced to.*Australia")
@@ -214,23 +212,29 @@ introduced_taxa <- wsc |>
 introduced_taxa_wfullname <- introduced_taxa |> 
   mutate(scientific_name = paste(genus, species)) 
 
-introduced_taxa_wfullname |> 
-  select(scientific_name)
+# introduced_taxa_wfullname |> 
+#   select(scientific_name)
+
 ```
 
-Cross match if introduced taxa from WSC with ALA data to exclude introduced spiders
+WSC lists **`r length(introduced_taxa$speciesId)`** species as introduced to Australia.
 
-There are no introduced species of spiders in ALA data according to WSC data
+<!-- Cross match if introduced taxa from WSC with ALA data to exclude introduced spiders -->
 
-```{r}
+```{r, echo=F, include=F}
 introduced_taxa_wfullname$scientific_name %in% myg_species$scientificName |> table()
 myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> table()
+no_Introduced_WSC <- which(myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name)
 ```
 
+There are **`no`r no_Introduced_WSC`** introduced species of spiders in the ALA data according to the WSC data.
 
-### Global Register of Invasive and Introduced Species (GRIIS)
 
-```{r}
+<!-- ### Global Register of Invasive and Introduced Species (GRIIS) -->
+
+The [Global Register of Invasive and Introduced Species (GRIIS)](http://griis.org/) *is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species*.
+
+```{r, echo=F, include=F}
 # Join distrubtion.txt and taxon-edit.txt
 griis_distrib <- read.delim(here("data/griis-australia-v1.6/distribution.txt"))
 griis_taxon <- read.delim(here("data/griis-australia-v1.6/taxon-edited.txt"))
@@ -249,12 +253,15 @@ str_subset(griis_all$class, "Arachnida") # no results
 # show unique values to double check there are no arachnids
 griis_all$class |> unique() # there are no arachnids in this list
 
-
 # Cross match with ALA data
 
+# length(str_subset(griis_all$class, "Arachnida"))
 
 ```
 
+The GRIIS contains **`r count(griis_all)`** records of introduced species in Australia. 
+
+**`r length(str_subset(griis_all$class, "Arachnida"))`** of these are Arachnids.
 
 
 <!-- Excluding marines -->
@@ -263,7 +270,7 @@ griis_all$class |> unique() # there are no arachnids in this list
 <!-- Decide whether to keep morpho-species  -->
 <!-- How do you distinguish these in ALA data? -->
 <!-- FK to check with PB, I don't think these in are ALA data -->
-```{r}
+```{r, echo=F}
 
 ```
 
@@ -272,22 +279,31 @@ griis_all$class |> unique() # there are no arachnids in this list
 
 <!-- Decide whether to keep sub-species and if not whether to combine their data with the parent species -->
  
-```{r}
-#look for subspecies
-myg_spiders$taxonRank |> unique() #what is "unranked" and "NA"
-myg_spiders |> filter(taxonRank == "unranked") #no species IDs
-myg_spiders |> filter(taxonRank == "NA") #nothing
-#look at unique species
-myg_spiders$species |> unique() #no subspecies here
+```{r, echo=F}
+# look for subspecies
+# what taxon levels are in the ALA data?
+# myg_spiders$taxonRank |> unique() #what is "unranked" and "NA"
+# myg_spiders |> filter(taxonRank == "unranked") #no species IDs
+# myg_spiders |> filter(taxonRank == "NA") #nothing
 
+# look at unique species
+# myg_spiders$species |> unique() #no subspecies here
 
-
+# check if any species have more than 2 words:
+# Function to count words in a string
+count_words <- function(string) {
+  words <- strsplit(string, "\\s+")[[1]]  # Split the string into words
+  return(length(words))                   # Return the number of words
+}
+word_counts <- lapply(myg_spiders$species |> unique(), count_words)
+# which(word_counts != 2) 
 ```
 
+There are **`r length(which(word_counts != 2))`** subspecies of `r focus_taxon_short`s within the ALA data.
 
 ### Excluding Marine Species
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, echo=F}
 wm_records_taxamatch("Teranodes")
 Myg_species <- myg_spiders$species |> unique()
 
@@ -311,11 +327,9 @@ job::job({
 
 ### Geographic errors
 
-<!-- Clean for geographic errors: missing or invalid lat/long; if data needs to be masked by land/water. There are also R packages like coordinate cleaner and others (you'd know more) to clean occurrence data  -->
+Here we clean the data for geographic errors, including invalid lat/long, and masking by land/water.
 
-Remove NA is decimalLat and decimalLong
-
-```{r}
+```{r, echo=F}
 myg_species_aus <- myg_species |> 
   filter(decimalLatitude != "NA",
          decimalLongitude != "NA") #remove NA coordinates
@@ -324,14 +338,16 @@ myg_species_aus <- myg_species_aus |>
   filter(decimalLatitude != "0",
          decimalLongitude != "0") #remove empty coordinates
 
-summary(myg_species$decimalLatitude)
-summary(myg_species_aus$decimalLatitude) #347 NA records removed
+#summary(myg_species$decimalLatitude)
+#summary(myg_species_aus$decimalLatitude) #347 NA records removed
 nrow(myg_species) - nrow(myg_species_aus) # total of 373 records removed
 ```
 
+There were 
+
 Restricting data to Australia mainland + Tasmania
 
-```{r}
+```{r, echo=F}
 myg_species_mainland <- myg_species_aus |> 
   filter(decimalLatitude > -45, 
          decimalLatitude < -8, 
@@ -359,7 +375,7 @@ base_map  +
 
 What are the species we've excluded from the mainland? 
 
-```{r}
+```{r, echo=F}
 myg_species_mainland_removed <- anti_join(myg_species_aus, myg_species_mainland)
 myg_species_mainland_removed
 count(myg_species_mainland_removed)
@@ -373,7 +389,7 @@ https://docs.ropensci.org/CoordinateCleaner/
 `.equ` = Equal longitude and latitude
 `.sea` = XXX 
 
-```{r}
+```{r, echo=F}
 flagged <- clean_coordinates(x = myg_species_mainland, 
                                      "decimalLongitude",
                                      "decimalLatitude")
@@ -389,7 +405,7 @@ plot(flagged, lon = "decimalLongitude", lat = "decimalLatitude")
 FALSE are values that are flagged to occur in sea and therefore will be eventually excluded
 
 
-```{r}
+```{r, echo=F}
 flagged_sf <- flagged |> 
   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
            crs = 4326) 
@@ -401,7 +417,7 @@ base_map  +
 
 ### Visualise .cap values
 
-```{r}
+```{r, echo=F}
 flagged_sf <- flagged |> 
   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
            crs = 4326) 
@@ -413,7 +429,7 @@ base_map  +
 
 ### Visualise .otl values
 
-```{r}
+```{r, echo=F}
 flagged_sf <- flagged |> 
   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
            crs = 4326) 
@@ -425,7 +441,7 @@ base_map  +
 
 ### Visualise .inst values
 
-```{r}
+```{r, echo=F}
 flagged_sf <- flagged |> 
   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
            crs = 4326) 
@@ -437,7 +453,7 @@ base_map  +
 
 ### Exclude records flagged by CoordinateCleaner
 
-```{r}
+```{r, echo=F}
 
 ```
 
@@ -447,7 +463,7 @@ base_map  +
 
 In this step we can inspect and clean the data of duplicates 
 
-```{r}
+```{r, echo=F}
 nrow(myg_spiders)
 head(myg_spiders)
 
@@ -463,7 +479,7 @@ head(Mygalomorphae_clean)
 
 
 <!-- Filename should contain the date of the parquet we read in at the start, export to output folder -->
-```{r}
+```{r, echo=F}
 get_latest_download()
 write_parquet(Mygalomorphae_clean, here(paste0("data/Cleaned_Data_Mygalomorphae_", Sys.Date(), "_ALA.parquet")))
 ```
