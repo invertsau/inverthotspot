@@ -87,6 +87,14 @@ Bottom 5 species by number of records:
 tail(myg_records, n = 5)
 ```
 
+```{r, echo = FALSE}
+single_record_spp <- myg_records |>
+  filter(n == 1) |>
+  nrow()
+```
+
+There are `r single_record_spp` species with a single record.
+
 ### Family
 
 Barplot showing the number of species in each family:
