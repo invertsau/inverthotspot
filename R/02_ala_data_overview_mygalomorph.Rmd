@@ -87,13 +87,30 @@ Bottom 5 species by number of records:
 tail(myg_records, n = 5)
 ```
 
-```{r, echo = FALSE}
+#### Adequate number of data points for analysis
+
+For this analysis we need at least 3 records to create alphahulls. 
+
+```{r, include = FALSE}
+# how many records for each species with at least three records
+myg_spp <- myg_spiders |>
+  filter(!is.na(species)) |>
+  group_by(species) |>
+  filter(n() > 2) |>
+  tabyl(species) |>
+  arrange(desc(n))
+
+# How many species have at least three records
+# nrow(myg_spp)
+
+# How many species have a single record
 single_record_spp <- myg_records |>
   filter(n == 1) |>
   nrow()
 ```
 
-There are `r single_record_spp` species with a single record.
+`r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) have 3 or more records.
+`r total_myg - nrow(myg_spp)` species (`r ((total_myg - nrow(myg_spp))/total_myg)*100`%) do not have 3 or more records. There are `r single_record_spp` species (`r (nrow(single_record_spp)/total_myg)*100`%) with a single record.
 
 ### Family
 
@@ -383,29 +400,6 @@ as.data.frame(Cyrtaucheniidae)|>
         axis.text.y = element_text(colour = "black"),
         axis.line = element_line(colour = "black"))
 ```
-
-
-### Adequate number of data points for analysis
-
-For this analysis we need at least 3 observations to create alphahulls. 
-
-```{r, include = FALSE}
-# how many records for each species with at least three records
-myg_spp <- myg_spiders |>
-  filter(!is.na(species)) |>
-  group_by(species) |>
-  filter(n() > 2) |>
-  tabyl(species) |>
-  arrange(desc(n))
-
-# How many species have at least three records
-# nrow(myg_spp)
-
-```
-
-`r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) have 3 or more obs.
-`r total_myg - nrow(myg_spp)` species (`r ((total_myg - nrow(myg_spp))/total_myg)*100`%) do not have 3 or more obs. 
-
 
 ### Species overview by state
 
