@@ -110,7 +110,7 @@ single_record_spp <- myg_records |>
 ```
 
 `r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) have 3 or more records.
-`r total_myg - nrow(myg_spp)` species (`r ((total_myg - nrow(myg_spp))/total_myg)*100`%) do not have 3 or more records. There are `r single_record_spp` species (`r (nrow(single_record_spp)/total_myg)*100`%) with a single record.
+`r total_myg - nrow(myg_spp)` species (`r ((total_myg - nrow(myg_spp))/total_myg)*100`%) do not have 3 or more records. There are `r single_record_spp` species (`r (single_record_spp/total_myg)*100`%) with a single record.
 
 ### Family
 
@@ -495,9 +495,9 @@ myg_spiders |>
 
 ```
 
-PRESERVED_SPECIMEN: An occurrence record describing a preserved specimen.
-HUMAN_OBSERVATION: An occurrence record describing an observation made by one or more people.
-MATERIAL_SAMPLE: An occurrence record based on samples taken from other specimens or the environment.
+PRESERVED_SPECIMEN: An occurrence record describing a preserved specimen.\
+HUMAN_OBSERVATION: An occurrence record describing an observation made by one or more people.\
+MATERIAL_SAMPLE: An occurrence record based on samples taken from other specimens or the environment.\
 MACHINE OBSERVATION: An occurrence record describing an observation made by a machine.
 
 ## Overview of assertions
@@ -506,7 +506,7 @@ Various tests are run on occurrence data in the Atlas of Living Australia, resul
 
 For the analysis of endemism hotspots, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
 
-```{r}
+```{r, include = FALSE}
 myg_assertions <- myg_spiders_all |> 
   dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
   collect()
@@ -536,9 +536,10 @@ myg_assertions |>
 
 We investigated a range of spatial assertions and deemed the following safe to bypass when refining the data download:
 
-- COORDINATE_UNCERTAINTY_METERS_INVALID
+- COORDINATE_UNCERTAINTY_METERS_INVALID\
 We performed visual checks and flagged records did not seem to be out of species' range. They were mostly cases where coordinateUncertaintyinMeters was NA. We know iNaturalist records input NA for coordinateUncertaintyinMeters, therefore in refining the data download we will include records where coordinateUncertaintyinMeters is NA or less than 1000 m. We will remove flagged values for a sensitivity analysis later on.
-- COORDINATE_ROUNDED - the original coordinates were rounded to six decimals (~ 1 m precision) to simplify processing.
+- COORDINATE_ROUNDED\
+The original coordinates were rounded to six decimals (~ 1 m precision) to simplify processing. The level of precision lost will not affect the endemism analysis.
 
 The following will be used to refine the data download as they indicate coordinates outside of the given country (records flagged as TRUE will be excluded):
 
