@@ -17,9 +17,11 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("pacman")
 pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT)
 
-## Read in parquet
+# Load helper functions
+source(here("R/utils.R"))
 
-myg_spiders_all <- open_dataset(here("data/galah/Mygalomorphae_withassertions_2023-12-01_ALA.parquet"))
+## Read in parquet
+myg_spiders_all <- open_dataset(get_latest_download())
 
 ## Subset columns we want for ALA data overview
 myg_spiders <- myg_spiders_all |> 

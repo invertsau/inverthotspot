@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps)
+pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis)
 ```
 
 ### Load alpha hull spatial polygons
@@ -80,11 +80,21 @@ m1_sf <-
   sf::st_transform(4326)
 
 ggplot() +
-  geom_sf(data = m1_sf, fill = NA, colour = "black") + 
+  geom_sf(data = m1_sf, aes(fill = corrected_endemism)) + 
   geom_sf(data = ozmap_country, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = m1_sf, aes(fill = richness)) + 
+  geom_sf(data = ozmap_country, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 ### Reproducing Aaron's original maps
@@ -92,8 +102,6 @@ ggplot() +
 Species richness
 
 ```{r}
-library(tmap)
-
 aust_WGS84 <- st_transform(ozmaps::ozmap_country, crs(comm.poly$map))
 
 # Adjusting the axes

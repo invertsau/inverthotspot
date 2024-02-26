@@ -1,6 +1,6 @@
 ---
 title: "Alpha hulls"
-author: "Fonti"
+author: "Fonti Kar and Payal Bal"
 date: "2023-08-25"
 output: html_document
 ---
@@ -81,6 +81,7 @@ b_aurea <- myg_sp_enoughobs |>
 
 b_aurea |> skim()
 ```
+
 ### A quick overview of observations
 
 Make a simple map
