@@ -2,7 +2,7 @@
 title: "Overview of ALA data"
 author: "Josh Nitschke"
 date: "2023-09-19"
-output: html_document
+output: rmdformats::downcute
 editor_options: 
   chunk_output_type: console
 ---
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Setting up
 
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT)
 
 ## Read in parquet
 
@@ -75,6 +75,8 @@ myg_records <- myg_spiders |>
 
 myg_records_df <- as.data.frame(myg_records)
 barplot(myg_records_df$n, xlab = "species", ylab = "records")
+
+myg_records |> datatable()
 ```
 
 Top 5 species by number of records:
