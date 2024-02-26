@@ -81,15 +81,16 @@ m1_sf <-
 
 ggplot() +
   geom_sf(data = m1_sf, aes(fill = corrected_endemism)) + 
-  geom_sf(data = ozmap_country, fill = NA, colour = "black") + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
   theme_minimal() +
   theme(legend.position = "bottom")
 
 ggplot() +
   geom_sf(data = m1_sf, aes(fill = richness)) + 
-  geom_sf(data = ozmap_country, fill = NA, colour = "black") + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
   viridis::scale_fill_viridis(option = "G",direction = -1) + 
@@ -160,5 +161,27 @@ Corrected.weighted.endemism.poly <- tm_shape(m1_sf, bbox = bbox_new) +
               lwd = 2, border.col = 1)
 
 Corrected.weighted.endemism.poly
+```
+
+https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Moran's%20I%20values%20significantly%20above,negative%20spatial%20autocorrelation%20or%20dispersion.
+
+```{r}
+library(spdep)
+
+# extract the center of each polygon
+coo <- centroids(m1.poly)
+
+coo <- coo |> sf::st_as_sf(crs = 4326)
+
+# Search radius to include all neighboring polygon (0 - 200km)
+S.dist  <-  dnearneigh(coo, 0, 200000)  
+
+#identify all neighboring polygons for each polygon in the dataset.
+lw <- nb2listw(S.dist, style="W",zero.policy=T) 
+
+# Run the MC simulation
+MI  <-  moran.mc(m1.poly$corrected_endemism, lw, nsim=9999,zero.policy=T,)
+
+saveRDS(MI, "output/Mygalomorphae_MI.rds")
 ```
 

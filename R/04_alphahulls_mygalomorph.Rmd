@@ -92,7 +92,7 @@ aus <- st_transform(ozmaps::ozmap_country, 4326)
 
 # Base map 
 base_map <- ggplot() + 
-  geom_sf(data = aus, fill = NA) + 
+  geom_sf(data = aus, fill = "white") + 
   theme_minimal()
 
 # Transform spiders into sf objects
@@ -445,9 +445,11 @@ write_rds(myg_spiders_conr_sf, "output/myg_sf_alphahulls.rds")
 ### Plot these all at once
 
 ```{r}
+myg_spiders_conr_sf <- readRDS("output/myg_sf_alphahulls.rds")
+
 base_map + # There are offshore points need to crop these
   geom_sf(data = myg_spiders_conr_sf, aes(geometry = geometry), fill = "#023E50",
-          alpha = 0.01) +
+          alpha = 0.1) +
   coord_sf(ylim=c(-10,-45),
          xlim=c(113,155)) + 
   theme_minimal()
@@ -463,6 +465,29 @@ base_map + # There are offshore points need to crop these
   theme(legend.position = "bottom")
 ```
 
+A few example taxa
+
+```{r}
+test <- myg_spiders_conr_sf |>  
+  sample_frac(0.2) 
+
+base_map + # There are offshore points need to crop these
+  geom_sf(data = test, aes(geometry = geometry), fill = "#023E50",
+          alpha = 0.1) +
+  geom_sf(data = test_occ, size = 0.2, colour = "deepskyblue2") +
+  coord_sf(ylim=c(-10,-45),
+         xlim=c(113,155)) + 
+  theme_minimal()
+
+test
+test_occ <- myg_conr_nest |> 
+  filter(species %in% test$species) |> 
+  unnest() |> 
+  dplyr::select(-scientificName) |> 
+  st_as_sf(crs = 4326, coords = c("decimalLongitude", "decimalLatitude")) 
+
+test |> st_join(test_occ)
+```
  
 
 
