@@ -50,7 +50,7 @@ myg_spiders |>
 
 taxonRank = NA where the supplied scientific name is dubious and cannot be assigned with certainty to any taxonomic group.
 
-taxonRank = unranked for Selenocosmia crassipes as this taxon represents a cryptic species complex with unresolved phylogeny.
+taxonRank = unranked for _Selenocosmia crassipes_ as this taxon represents a cryptic species complex with unresolved phylogeny.
 
 ### Species
 
@@ -62,7 +62,7 @@ total_myg <- myg_spiders |>
   nrow()
 ```
 
-There are `r total_myg` species in total.
+There are **`r total_myg` species** in total.
 
 The below barplot shows the distribution of the number of records across species.
 ```{r, echo = FALSE}
