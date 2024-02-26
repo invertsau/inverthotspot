@@ -41,14 +41,16 @@ myg_spiders |>
   summarise(n = n()) |>
   arrange(desc(n))
 
-# # Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
-# myg_spiders |> 
-#   filter(taxonRank == "unranked") |> 
-#   select(scientificName, collectionCode) |> 
+# # Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM
+# myg_spiders |>
+#   filter(taxonRank == "unranked") |>
+#   select(scientificName, collectionCode) |>
 #   distinct()
 ```
 
 taxonRank = NA where the supplied scientific name is dubious and cannot be assigned with certainty to any taxonomic group.
+
+taxonRank = unranked for Selenocosmia crassipes as this taxon represents a cryptic species complex with unresolved phylogeny.
 
 ### Species
 
@@ -532,13 +534,15 @@ myg_assertions |>
 
 We investigated a range of spatial assertions and deemed the following safe to bypass when refining the data download:
 
-- COORDINATE_UNCERTAINTY_METERS_INVALID - 
+- COORDINATE_UNCERTAINTY_METERS_INVALID
+We performed visual checks and flagged records did not seem to be out of species' range. They were mostly cases where coordinateUncertaintyinMeters was NA. We know iNaturalist records input NA for coordinateUncertaintyinMeters, therefore in refining the data download we will include records where coordinateUncertaintyinMeters is NA or less than 1000 m. We will remove flagged values for a sensitivity analysis later on.
 - COORDINATE_ROUNDED - the original coordinates were rounded to six decimals (~ 1 m precision) to simplify processing.
-- COORDINATE_OUT_OF_RANGE - 
 
 The following will be used to refine the data download as they indicate coordinates outside of the given country (records flagged as TRUE will be excluded):
 
+- COORDINATE_OUT_OF_RANGE
 - PRESUMED_NEGATED_LONGITUDE
+- PRESUMED_NEGATED_LATITUDE
 - PRESUMED_SWAPPED_COORDINATE
 - ZERO_COORDINATE
 
