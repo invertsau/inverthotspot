@@ -1,8 +1,8 @@
 ---
-title: "02_ala_data_overview_mygalomorph"
+title: "Overview of ALA data"
 author: "Josh Nitschke"
 date: "2023-09-19"
-output: html_document
+output: rmdformats::downcute
 editor_options: 
   chunk_output_type: console
 ---
@@ -11,37 +11,91 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Load dependencies
+```{r loadpackages, include=FALSE}
+## Setting up
 
-```{r loadpackages}
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT)
 
-```
+# Load helper functions
+source(here("R/utils.R"))
 
 ## Read in parquet
-
-```{r}
 myg_spiders_all <- open_dataset(get_latest_download())
-```
 
 ## Subset columns we want for ALA data overview
-
-```{r}
 myg_spiders <- myg_spiders_all |> 
   select(decimalLatitude:collectionCode) |> 
   collect()
 ```
 
-### Data Overview
+# Data Overview
 
-How many species in dataset
+## Higher taxonomy
 
-```{r}
+Descriptive statistics for species and families of Mygalomorphae.
+
+Below shows the total counts of the lowest taxonomic rank provided for each record.
+
+```{r, echo = FALSE, messages=FALSE}
 myg_spiders |> 
   group_by(taxonRank) |> 
-  summarise(n = n())
+  summarise(n = n()) |>
+  arrange(desc(n))
 
+# # Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM
+# myg_spiders |>
+#   filter(taxonRank == "unranked") |>
+#   select(scientificName, collectionCode) |>
+#   distinct()
+```
+
+taxonRank = NA where the supplied scientific name is dubious and cannot be assigned with certainty to any taxonomic group.
+
+taxonRank = unranked for _Selenocosmia crassipes_ as this taxon represents a cryptic species complex with unresolved phylogeny.
+
+### Species
+
+```{r, echo=FALSE}
+# Total number of species
+total_myg <- myg_spiders |> 
+  filter(!is.na(species)) |> 
+  distinct(species) |> 
+  nrow()
+```
+
+There are **`r total_myg` species** in total.
+
+The below barplot shows the distribution of the number of records across species.
+```{r, echo = FALSE}
+# number of records for each species
+myg_records <- myg_spiders |>
+  filter(!is.na(species)) |>
+  group_by(species) |>
+  tabyl(species) |>
+  arrange(desc(n))
+
+myg_records_df <- as.data.frame(myg_records)
+barplot(myg_records_df$n, xlab = "species", ylab = "records")
+
+myg_records |> datatable()
+```
+
+Top 5 species by number of records:
+```{r, echo = FALSE}
+head(myg_records, n = 5)
+```
+
+Bottom 5 species by number of records:
+```{r, echo = FALSE}
+tail(myg_records, n = 5)
+```
+
+#### Adequate number of data points for analysis
+
+For this analysis we need at least 3 records to create alphahulls. 
+
+```{r, include = FALSE}
 # how many records for each species with at least three records
 myg_spp <- myg_spiders |>
   filter(!is.na(species)) |>
@@ -49,15 +103,25 @@ myg_spp <- myg_spiders |>
   filter(n() > 2) |>
   tabyl(species) |>
   arrange(desc(n))
-myg_spp
-
-# Plot of records for each species
-myg_spp_df <- as.data.frame(myg_spp)
-barplot(myg_spp_df$n, xlab = "species", ylab = "records")
 
 # How many species have at least three records
-nrow(myg_spp)
+# nrow(myg_spp)
 
+# How many species have a single record
+single_record_spp <- myg_records |>
+  filter(n == 1) |>
+  nrow()
+```
+
+`r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) have 3 or more records.
+`r total_myg - nrow(myg_spp)` species (`r ((total_myg - nrow(myg_spp))/total_myg)*100`%) do not have 3 or more records. There are `r single_record_spp` species (`r (single_record_spp/total_myg)*100`%) with a single record.
+
+### Family
+
+Barplot showing the number of species in each family:
+```{r, echo = FALSE, message=FALSE}
+# N species, total number of species (bar chart or alike, or tabset)
+# N species per family
 # number of species in each family
 myg_fams <- myg_spiders |>
   filter(!is.na(species)) |>
@@ -81,26 +145,288 @@ as.data.frame(myg_fams)|>
         axis.line = element_line(colour = "black"))
 #which families are not represented?
 
-# Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM 
-myg_spiders |> 
-  filter(taxonRank == "unranked") |> 
-  select(scientificName, collectionCode) |> 
-  distinct()
+```
 
+#### Top species by family {.tabset}
+
+Most recorded species in each family (up to 10 species). Select tabs to see plot for corresponding family.
+
+##### Idiopidae
+```{r, echo=FALSE}
+Idiopidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Idiopidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Idiopidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Idiopidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+
+```
+
+##### Barychelidae
+```{r, echo=FALSE}
+Barychelidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Barychelidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Barychelidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Barychelidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Nemesiidae
+```{r, echo=FALSE}
+Nemesiidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Nemesiidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Nemesiidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Nemesiidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Atracidae
+```{r, echo=FALSE}
+Atracidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Atracidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Atracidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Atracidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Dipluridae
+```{r, echo=FALSE}
+Dipluridae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Dipluridae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Dipluridae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Dipluridae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Hexathelidae
+```{r, echo=FALSE}
+Hexathelidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Hexathelidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Hexathelidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Hexathelidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Actinopodidae
+```{r, echo=FALSE}
+Actinopodidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Actinopodidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Actinopodidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Actinopodidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Migidae
+```{r, echo=FALSE}
+Migidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Migidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Migidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Migidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Theraphosidae
+```{r, echo=FALSE}
+Theraphosidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Theraphosidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Theraphosidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Theraphosidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Pycnothelidae
+```{r, echo=FALSE}
+Pycnothelidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Pycnothelidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Pycnothelidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Pycnothelidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+##### Cyrtaucheniidae
+```{r, echo=FALSE}
+Cyrtaucheniidae <- myg_spiders |>
+  filter(!is.na(species),
+         family == "Cyrtaucheniidae") |>
+  tabyl(species) |>
+  arrange(desc(n)) |>
+  head(n = 10)
+
+as.data.frame(Cyrtaucheniidae)|>
+  mutate(species = factor(species, levels = species))|>
+  ggplot(aes(x = species, y = n)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Cyrtaucheniidae") +
+  labs(y = "number of records") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
 ```
 
 ### Species overview by state
 
-```{r}
+Top 3 most recorded species in each state:
+```{r, echo = FALSE, message=FALSE}
 # number of records by state, for species with at least three overall records
 myg_records_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
-  group_by(species) |>
- # filter(n() > 2) |>
+  filter(stateProvince %in% c("Queensland", "Western Australia", "New South Wales", "South Australia", 
+                              "Victoria", "Northern Territory", "Tasmania", "Australian Capital Territory")) |>
+  #group_by(species) |>
+  #filter(n() > 2) |>
   group_by(stateProvince, species) |>
-  summarise(n()) 
-myg_records_by_state
+  summarise(n = n()) |>
+  arrange(stateProvince, desc(n))
 
+# Top 3 most recorded species in each state
+slice_head(myg_records_by_state, n = 3) |>
+  print(n = Inf)
+```
+
+Barplot showing the number of species and families by state:
+```{r, echo = FALSE, message=FALSE}
 # number of species by state, for species with at least three overall records
 myg_spp_by_state <- myg_records_by_state |> 
   tabyl(stateProvince) |>
@@ -135,70 +461,56 @@ as.data.frame(myg_spp_fam_by_state)|>
         axis.text.x = element_text(angle = 90, colour = "black"),
         axis.text.y = element_text(colour = "black"),
         axis.line = element_line(colour = "black"))
+```
 
-#checking records where stateProvince = NA but still have lat/long
-myg_spiders_na_state <- myg_spiders |>
-  filter(is.na(stateProvince)) |>
-  filter(!is.na(decimalLatitude))
-
-aus <- st_transform(ozmaps::ozmap_country, 4326)
-
-ggplot() + 
-  geom_sf(data = aus, 
-          colour = "black", 
-          fill = "white")  + 
-   geom_point(data = myg_spiders_na_state, 
-             mapping = aes(decimalLongitude, decimalLatitude), 
-             colour = "red", size = 0.8) + 
-  # coord_sf(xlim=c(135, 155), 
-  #          ylim=c(-10, -32)) +
-  labs(title = "myg_spiders: stateProvince = NA", 
-       x = "Longtitude (DD)", 
-       y = "Latitude (DD)") +
-  theme_bw()
-
+```{r, include = FALSE}
 # number of species recorded in only one state (species with at least three overall records)
-myg_spp_by_state |> 
-  filter(n == 1) |>
-  nrow()
+one_state_spp <- myg_records_by_state |> 
+  tabyl(species) |>
+  filter(n == 1) 
 
 # number of species recorded in more than one state (species with at least three overall records)
-myg_spp_by_state |> 
-  filter(n > 1) |>
-  nrow()
+multi_state_spp <- myg_records_by_state |> 
+  tabyl(species) |>
+  filter(n > 1)
 
 ```
 
-## Basis of record
-```{r}
+`r nrow(one_state_spp)` species were recorded in only one state.
+`r nrow(multi_state_spp)` species were recorded in multiple states.
+
+### Basis of record
+
+Total counts of basis of record types. GBIF definitions are provided underneath the table (https://gbif.github.io/parsers/apidocs/org/gbif/api/vocabulary/BasisOfRecord.html). 
+
+```{r, echo = FALSE}
+# Counts of basis of record types. "OCCURRENCE" and "OBSERVATION" types were excluded as they could not be traced back to a source.
 myg_spiders |>
-  filter(!is.na(species)) |>
+  filter(!is.na(species),
+         !basisOfRecord %in% c("OCCURRENCE", "OBSERVATION")) |>
   tabyl(basisOfRecord) |>
   arrange(desc(n))
 
-# Exclude, can't trace back to source
-myg_spiders |> 
-  filter(basisOfRecord == "OCCURRENCE") |> 
-  select(ends_with("code"
-  ))
-
-
-myg_spiders |> 
-  filter(basisOfRecord == "OBSERVATION") |> 
-    select(ends_with("code"
-  ))
-
-# Machine observe keep the one with spatial data
-myg_spiders |> 
-  filter(basisOfRecord == "MACHINE_OBSERVATION", 
-         taxonRank == "species") |> 
-  select(scientificName, recordID, starts_with("decimal"))
+# # Machine observe keep the one with spatial data
+# myg_spiders |> 
+#   filter(basisOfRecord == "MACHINE_OBSERVATION", 
+#          taxonRank == "species") |> 
+#   select(scientificName, recordID, starts_with("decimal"))
 
 ```
 
-### Overview of assertions
+PRESERVED_SPECIMEN: An occurrence record describing a preserved specimen.\
+HUMAN_OBSERVATION: An occurrence record describing an observation made by one or more people.\
+MATERIAL_SAMPLE: An occurrence record based on samples taken from other specimens or the environment.\
+MACHINE OBSERVATION: An occurrence record describing an observation made by a machine.
 
-```{r}
+## Overview of assertions
+
+Various tests are run on occurrence data in the Atlas of Living Australia, resulting in assertions about the content and quality of the data. These Assertions help users gauge whether data is fit for their purposes and allow for easy data filtering. In the data, Assertions are logical variables (TRUE/FALSE) and take the value TRUE when they apply to the associated occurrence record. Descriptions of Assertions can be found at https://github.com/AtlasOfLivingAustralia/ala-dataquality/wiki.
+
+For the analysis of endemism hotspots, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
+
+```{r, include = FALSE}
 myg_assertions <- myg_spiders_all |> 
   dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
   collect()
@@ -224,107 +536,43 @@ myg_assertions |>
   filter(!if_any(AMBIGUOUS_COLLECTION:ZERO_COORDINATE))
 ```
 
-### Checking coordinate-related assertions
-```{r}
-myg_assertions |>
-  filter(!is.na(species),
-         !is.na(decimalLatitude),
-         !is.na(decimalLongitude)) |>
-  filter(if_any(starts_with("COORDINATE"))) |>
-  group_by(species) |>
-  tabyl(species) |>
-  arrange(desc(n))
+### Spatial assertions
 
-# plotting spp. with the most flagged records for coordinate-based assertions
-myg_spp_coordinate_assertions <- myg_assertions |>
-  filter(!is.na(species),
-         !is.na(decimalLatitude),
-         !is.na(decimalLongitude)) |>
-  filter(if_any(starts_with("COORDINATE"))) |>
-  group_by(species) |>
-  filter(n() > 100)
+We investigated a range of spatial assertions and deemed the following safe to bypass when refining the data download:
 
-aus <- st_transform(ozmaps::ozmap_states, 4326)
+- COORDINATE_UNCERTAINTY_METERS_INVALID\
+We performed visual checks and flagged records did not seem to be out of species' range. They were mostly cases where coordinateUncertaintyinMeters was NA. We know iNaturalist records input NA for coordinateUncertaintyinMeters, therefore in refining the data download we will include records where coordinateUncertaintyinMeters is NA or less than 1000 m. We will remove flagged values for a sensitivity analysis later on.
+- COORDINATE_ROUNDED\
+The original coordinates were rounded to six decimals (~ 1 m precision) to simplify processing. The level of precision lost will not affect the endemism analysis.
 
-ggplot() + 
-  geom_sf(data = aus, 
-          colour = "black", 
-          fill = "white")  + 
-   geom_point(data = myg_spp_coordinate_assertions, 
-             mapping = aes(decimalLongitude, decimalLatitude, colour = species), 
-             size = 0.8) + 
-  # coord_sf(xlim=c(135, 155), 
-  #          ylim=c(-10, -32)) +
-  labs(title = "myg_spiders: assertions starting with 'COORDINATE' = TRUE", 
-       x = "Longtitude (DD)", 
-       y = "Latitude (DD)") +
-  theme_bw()
+The following will be used to refine the data download as they indicate coordinates outside of the given country (records flagged as TRUE will be excluded):
 
+- COORDINATE_OUT_OF_RANGE
+- PRESUMED_NEGATED_LONGITUDE
+- PRESUMED_NEGATED_LATITUDE
+- PRESUMED_SWAPPED_COORDINATE
+- ZERO_COORDINATE
+
+### Taxonomic assertions
+
+The following assertions were used to identify taxonomic discrepancies in the data and allow for review by taxonomic experts:
+
+TAXON_MATCH_FUZZY - is flagged when the supplied scientific name (raw_scientificName) does not exactly match the taxonomic backbone of the Atlas. Could the expert review the following list and check that species names (left column) are valid.
+```{r, echo = FALSE}
+# # Number of raw_scientificName variations for each species with fuzzy taxon matches
+# myg_spiders_all |>
+#   filter(TAXON_MATCH_FUZZY == TRUE) |>
+#   select(species, raw_scientificName, recordID) |>
+#   collect() |>
+#   group_by(species) |>
+#   summarise(num_raw_names = length(unique(raw_scientificName)))
+
+# List of species (adjusted name) and raw names (names given in observation)
+fuzzy_taxa <- myg_spiders_all |>
+  filter(TAXON_MATCH_FUZZY == TRUE) |>
+  select(species, scientificName, raw_scientificName) |>
+  collect() |>
+  unique() |>
+  print(n = Inf)
 ```
-
-
-```{r}
-coord_invalid <- myg_assertions |>
-  select(species, decimalLatitude, decimalLongitude, COORDINATE_INVALID)
-
-coord_invalid_spp <- coord_invalid |>
-  group_by(species) |>
-  summarise(num_true = sum(COORDINATE_INVALID)) |>
-  filter(num_true > 0) |>
-  pull(species)
-
-coord_invalid_spp_no_na <- myg_assertions |>
-  filter(species %in% coord_invalid_spp,
-         !is.na(species))
-
-  ggplot() + 
-  geom_sf(data = aus, 
-          colour = "black", 
-          fill = "white")  + 
-   geom_point(data = coord_invalid_spp_no_na, mapping = aes(decimalLongitude, decimalLatitude, colour = COORDINATE_INVALID), 
-             size = 0.8, alpha = 0.5) + 
-  # coord_sf(xlim=c(135, 155), 
-  #          ylim=c(-10, -32)) +
-  labs(title = "myg_spiders: coordinate_invalid", 
-       x = "Longtitude (DD)", 
-       y = "Latitude (DD)") +
-  theme_bw() +
-    facet_wrap(~species)
-  
-coord_invalid_spp_no_na |>
-  filter(COORDINATE_INVALID == TRUE)
-```
-
-get verbatum coordinates
-```{r}
-miss_occ_coord_flagged <- myg_assertions |>
-  filter(species == "Missulena occatoria") |>
-  select(species, decimalLatitude, decimalLongitude, contains("COORDINATE")) |>
-  pivot_longer(cols = contains("COORDINATE"), names_to = "assertion_type", values_to = "assertion_flag") |>
-  filter(assertion_flag == TRUE) 
-
-ggplot() + 
-  geom_sf(data = aus, 
-          colour = "black", 
-          fill = "white")  + 
-   geom_point(data = miss_occ_coord_flagged, mapping = aes(decimalLongitude, decimalLatitude, colour = assertion_type), 
-             size = 1.5) + 
-  scale_colour_manual(values = wes_palette("BottleRocket2")) +
-  # coord_sf(xlim=c(135, 155), 
-  #          ylim=c(-10, -32)) +
-  labs(title = "myg_spiders: miss_occ_coord_flagged", 
-       x = "Longtitude (DD)", 
-       y = "Latitude (DD)") +
-  theme_bw() +
-  facet_wrap(~assertion_type)
-
-```
-
-# Put taxonomic assertions here for experts to review
-
-<!-- TAXON_MATCH_FUZZY                     Taxon match f… Warning  asserti…   151 3.897237e-4              1 t        -->
-<!-- 19 TAXON_EXCLUDED                        Taxon excluded Warning  asserti…    15 3.871427e-5              1 t        -->
-<!-- 20 TAXON_QUESTION_SPECIES                Taxon questio… Warning  asserti…     5 1.290476e-5              1 t        -->
-<!-- 21 TAXON_SPECIES_PLURAL                  Taxon species… Warning  asserti…     4 1.032381e-5              1 t        -->
-<!-- 22 TAXON_HOMONYM    -->
 
