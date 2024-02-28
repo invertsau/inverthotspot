@@ -39,7 +39,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r loadpackages, include=FALSE}
 ## Setting up
-setwd("C:/Users/nitsc/Documents/GitHub/IA/inverthotspot/")
 
 # install.packages("pacman")
 pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT)
