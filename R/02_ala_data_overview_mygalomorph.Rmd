@@ -104,9 +104,13 @@ myg_records <- myg_spiders |>
 
 myg_records_df <- as.data.frame(myg_records)
 barplot(myg_records_df$n, xlab = "species", ylab = "records")
+```
 
+The below table shows the number of records of each species.
+```{r, echo = FALSE}
 myg_records |> datatable()
 ```
+
 
 #### Adequate number of data points for analysis
 
