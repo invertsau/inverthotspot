@@ -61,25 +61,6 @@ myg_spiders <- myg_spiders_all |>
 
 Descriptive statistics for species and families of Mygalomorphae.
 
-Below shows the total counts of the lowest taxonomic rank provided for each record.
-
-```{r, echo = FALSE, messages=FALSE}
-myg_spiders |> 
-  group_by(taxonRank) |> 
-  summarise(n = n()) |>
-  arrange(desc(n))
-
-# # Why are these unranked? Selenocosmia crassipes AB to ask colleagues and JM
-# myg_spiders |>
-#   filter(taxonRank == "unranked") |>
-#   select(scientificName, collectionCode) |>
-#   distinct()
-```
-
-taxonRank = NA where the supplied scientific name is dubious and cannot be assigned with certainty to any taxonomic group.
-
-taxonRank = unranked for _Selenocosmia crassipes_ as this taxon represents a cryptic species complex with unresolved phylogeny.
-
 ### Species
 
 ```{r, echo=FALSE}
