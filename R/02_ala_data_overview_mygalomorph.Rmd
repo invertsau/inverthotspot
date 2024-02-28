@@ -39,6 +39,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r loadpackages, include=FALSE}
 ## Setting up
+setwd("C:/Users/nitsc/Documents/GitHub/IA/inverthotspot/")
 
 # install.packages("pacman")
 pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT)
@@ -47,7 +48,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesa
 source(here("R/utils.R"))
 
 ## Read in parquet
-myg_spiders_all <- open_dataset(get_latest_download())
+myg_spiders_all <- open_dataset(here(get_latest_download()))
 
 ## Subset columns we want for ALA data overview
 myg_spiders <- myg_spiders_all |> 
@@ -105,16 +106,6 @@ myg_records_df <- as.data.frame(myg_records)
 barplot(myg_records_df$n, xlab = "species", ylab = "records")
 
 myg_records |> datatable()
-```
-
-Top 5 species by number of records:
-```{r, echo = FALSE}
-head(myg_records, n = 5)
-```
-
-Bottom 5 species by number of records:
-```{r, echo = FALSE}
-tail(myg_records, n = 5)
 ```
 
 #### Adequate number of data points for analysis
