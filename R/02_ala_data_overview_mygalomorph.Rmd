@@ -500,10 +500,10 @@ myg_spiders |>
 
 ```
 
-PRESERVED_SPECIMEN: An occurrence record describing a preserved specimen.\
-HUMAN_OBSERVATION: An occurrence record describing an observation made by one or more people.\
-MATERIAL_SAMPLE: An occurrence record based on samples taken from other specimens or the environment.\
-MACHINE OBSERVATION: An occurrence record describing an observation made by a machine.
+`PRESERVED_SPECIMEN`: An occurrence record describing a preserved specimen.\
+`HUMAN_OBSERVATION`: An occurrence record describing an observation made by one or more people.\
+`MATERIAL_SAMPLE`: An occurrence record based on samples taken from other specimens or the environment.\
+`MACHINE_OBSERVATION`: An occurrence record describing an observation made by a machine.
 
 ## Overview of assertions
 
@@ -541,24 +541,24 @@ myg_assertions |>
 
 We investigated a range of spatial assertions and deemed the following safe to bypass when refining the data download:
 
-- COORDINATE_UNCERTAINTY_METERS_INVALID\
-We performed visual checks and flagged records did not seem to be out of species' range. They were mostly cases where coordinateUncertaintyinMeters was NA. We know iNaturalist records input NA for coordinateUncertaintyinMeters, therefore in refining the data download we will include records where coordinateUncertaintyinMeters is NA or less than 1000 m. We will remove flagged values for a sensitivity analysis later on.
-- COORDINATE_ROUNDED\
+- `COORDINATE_UNCERTAINTY_METERS_INVALID`\
+We performed visual checks and flagged records did not seem to be out of species' range. They were mostly cases where `coordinateUncertaintyinMeters` was NA. We know iNaturalist records input NA for `coordinateUncertaintyinMeters`, therefore in refining the data download we will include records where `coordinateUncertaintyinMeters` is NA or less than 1000 m. We will remove flagged values for a sensitivity analysis later on.
+- `COORDINATE_ROUNDED`\
 The original coordinates were rounded to six decimals (~ 1 m precision) to simplify processing. The level of precision lost will not affect the endemism analysis.
 
 The following will be used to refine the data download as they indicate coordinates outside of the given country (records flagged as TRUE will be excluded):
 
-- COORDINATE_OUT_OF_RANGE
-- PRESUMED_NEGATED_LONGITUDE
-- PRESUMED_NEGATED_LATITUDE
-- PRESUMED_SWAPPED_COORDINATE
-- ZERO_COORDINATE
+- `COORDINATE_OUT_OF_RANGE`
+- `PRESUMED_NEGATED_LONGITUDE`
+- `PRESUMED_NEGATED_LATITUDE`
+- `PRESUMED_SWAPPED_COORDINATE`
+- `ZERO_COORDINATE`
 
 ### Taxonomic assertions
 
 The following assertions were used to identify taxonomic discrepancies in the data and allow for review by taxonomic experts:
 
-TAXON_MATCH_FUZZY - is flagged when the supplied scientific name (raw_scientificName) does not exactly match the taxonomic backbone of the Atlas. Could the expert review the following list and check that species names (left column) are valid.
+`TAXON_MATCH_FUZZY` - is flagged when the supplied scientific name (`raw_scientificName`) does not exactly match the taxonomic backbone of the Atlas. Could the expert review the following list and check that species names (left column) are valid.
 ```{r, echo = FALSE}
 # # Number of raw_scientificName variations for each species with fuzzy taxon matches
 # myg_spiders_all |>
