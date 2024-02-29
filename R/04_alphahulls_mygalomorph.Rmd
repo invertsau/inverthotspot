@@ -471,14 +471,6 @@ A few example taxa
 test <- myg_spiders_conr_sf |>  
   sample_frac(0.2) 
 
-base_map + # There are offshore points need to crop these
-  geom_sf(data = test, aes(geometry = geometry), fill = "#023E50",
-          alpha = 0.1) +
-  geom_sf(data = test_occ, size = 0.2, colour = "deepskyblue2") +
-  coord_sf(ylim=c(-10,-45),
-         xlim=c(113,155)) + 
-  theme_minimal()
-
 test
 test_occ <- myg_conr_nest |> 
   filter(species %in% test$species) |> 
@@ -486,7 +478,14 @@ test_occ <- myg_conr_nest |>
   dplyr::select(-scientificName) |> 
   st_as_sf(crs = 4326, coords = c("decimalLongitude", "decimalLatitude")) 
 
-test |> st_join(test_occ)
+
+base_map + # There are offshore points need to crop these
+  geom_sf(data = test, aes(geometry = geometry), fill = "#023E50",
+          alpha = 0.2) +
+  geom_sf(data = test_occ, size = 0.2, colour = "deepskyblue2") +
+  coord_sf(ylim=c(-10,-45),
+         xlim=c(113,155)) + 
+  theme_minimal()
 ```
  
 

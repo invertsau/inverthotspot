@@ -2,7 +2,10 @@
 title: "Data cleaning"
 author: "Ashley Browse"
 date: "2023-08-11"
-output: rmdformats::downcute
+output: 
+    rmdformats::downcute:
+    self_contained: true
+    toc_depth: 3
 editor_options: 
   chunk_output_type: console
 ---
@@ -10,6 +13,29 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
 ```
+
+<style>
+#toc ul.nav li ul li {
+    display: none;
+    max-height: none;
+}
+
+#toc ul.nav li.active ul li  {
+    display: block;
+    max-height: none;
+}
+
+#toc ul.nav li ul li ul li {
+    max-height: none;
+    display: none !important;
+}
+
+#toc ul.nav li ul li.active ul li {
+    max-height: none;
+    display: block !important;
+}
+</style>
+
 
 
 # Cleaning data from ALA
