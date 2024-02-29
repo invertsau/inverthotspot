@@ -117,8 +117,8 @@ single_record_spp <- myg_records |>
   nrow()
 ```
 
-`r nrow(myg_spp)` species (`r (nrow(myg_spp)/total_myg)*100`%) have 3 or more records.
-`r total_myg - nrow(myg_spp)` species (`r ((total_myg - nrow(myg_spp))/total_myg)*100`%) do not have 3 or more records. There are `r single_record_spp` species (`r (single_record_spp/total_myg)*100`%) with a single record.
+`r nrow(myg_spp)` species (`r round((nrow(myg_spp)/total_myg)*100, digits = 1)`%) have 3 or more records.
+`r total_myg - nrow(myg_spp)` species (`r round(((total_myg - nrow(myg_spp))/total_myg)*100, digits = 1)`%) do not have 3 or more records. There are `r single_record_spp` species (`r round((single_record_spp/total_myg)*100, digits = 1)`%) with a single record.
 
 ### Family
 
@@ -493,7 +493,9 @@ myg_spiders |>
   filter(!is.na(species),
          !basisOfRecord %in% c("OCCURRENCE", "OBSERVATION")) |>
   tabyl(basisOfRecord) |>
-  arrange(desc(n))
+  mutate(percent = percent*100) |>
+  arrange(desc(n)) |>
+  adorn_rounding(digits = 2, columns = percent)
 
 # # Machine observe keep the one with spatial data
 # myg_spiders |> 
