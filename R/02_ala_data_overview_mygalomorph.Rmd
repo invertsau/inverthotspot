@@ -467,6 +467,48 @@ as.data.frame(myg_spp_fam_by_state)|>
         axis.line = element_line(colour = "black"))
 ```
 
+Map showing the number of species by state:
+```{r, echo = FALSE}
+# map of Australia with states
+aus <- st_transform(ozmaps::ozmap_states, 4326)
+
+# checking for differences between state names
+setdiff(aus$NAME, myg_spp_by_state$stateProvince)
+setdiff(myg_spp_by_state$stateProvince, aus$NAME)
+
+# checking distribution of data
+hist(myg_spp_by_state$n)
+hist(log(myg_spp_by_state$n))
+
+# joining map with species count data
+myg_spp_aus <- myg_spp_by_state |>
+  full_join(y = aus, by = c("stateProvince" = "NAME")) |>
+  st_as_sf()
+
+# plotting number of species by state
+ggplot() + 
+  geom_sf(data = myg_spp_aus,
+          aes(fill = n),
+          colour = "black") +
+  scale_fill_distiller(name = "state_spp",
+                       type = "seq",
+                       palette = "YlOrBr",
+                       direction = 1,
+                       guide = guide_colourbar(direction = "horizontal",
+                                               label.position = "bottom",
+                                               title = NULL)) +
+  annotate("text", 
+           x = 133, 
+           y = -45.5, 
+           label = "No. of species",
+           size = 6) +
+  coord_sf(xlim = c(110, 155), ylim = c(-45, -10)) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(12, 'mm'))  
+```
+
+
 ```{r, include = FALSE}
 # number of species recorded in only one state (species with at least three overall records)
 one_state_spp <- myg_records_by_state |> 
