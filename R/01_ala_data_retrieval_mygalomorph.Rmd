@@ -70,7 +70,8 @@ fields_we_want <- c(
   "stateProvince", "country", "locality", "coordinatePrecision",  "coordinateUncertaintyInMeters", 
   "decimalLatitude", "decimalLongitude", "raw_decimalLatitude", "raw_decimalLongitude", "verbatimCoordinates",
   "basisOfRecord", "institutionCode", "datasetName", "collectionCode", "recordedBy", "catalogNumber",
-  "isDuplicateOf", "outlierLayerCount", "outlierLayer")
+  "isDuplicateOf", "outlierLayerCount", "outlierLayer", 
+  "recordID", "recordedBy", "collectionID", "institutionCode", "dataProviderName", "dataResourceName")
 ```
 
 ### Submit query to ALA
@@ -124,7 +125,14 @@ coarse_cleaned <- joined_data |>
   filter(coordinateUncertaintyInMeters <= 1000 | is.na(coordinateUncertaintyInMeters),
          ZERO_COORDINATE == 0,
          PRESUMED_SWAPPED_COORDINATE == 0,
-         PRESUMED_NEGATED_LONGITUDE == 0)
+         PRESUMED_NEGATED_LATITUDE == 0,
+         PRESUMED_NEGATED_LONGITUDE == 0, 
+         COORDINATE_OUT_OF_RANGE == 0,
+         TAXON_EXCLUDED == 0,
+         TAXON_QUESTION_SPECIES == 0
+         )
+
+nrow(coarse_cleaned)
 ```
 
 
