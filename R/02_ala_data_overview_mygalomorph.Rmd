@@ -439,6 +439,8 @@ myg_spp_by_state <- myg_records_by_state |>
 # number of families by state
 myg_fam_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
+  filter(stateProvince %in% c("Queensland", "Western Australia", "New South Wales", "South Australia", 
+                              "Victoria", "Northern Territory", "Tasmania", "Australian Capital Territory")) |>
   group_by(species) |>
  # filter(n() > 2) |>
   group_by(stateProvince, family) |>
@@ -501,6 +503,46 @@ ggplot() +
            x = 133, 
            y = -45.5, 
            label = "No. of species",
+           size = 6) +
+  coord_sf(xlim = c(110, 155), ylim = c(-45, -10)) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(12, 'mm'))  
+```
+
+Map showing the number of families by state:
+```{r, echo = FALSE}
+# map of Australia with states
+aus <- st_transform(ozmaps::ozmap_states, 4326)
+
+# checking for differences between state names
+setdiff(aus$NAME, myg_fam_by_state$stateProvince)
+setdiff(myg_fam_by_state$stateProvince, aus$NAME)
+
+# checking distribution of data
+hist(myg_fam_by_state$n)
+
+# joining map with species count data
+myg_fam_aus <- myg_fam_by_state |>
+  full_join(y = aus, by = c("stateProvince" = "NAME")) |>
+  st_as_sf()
+
+# plotting number of species by state
+ggplot() + 
+  geom_sf(data = myg_fam_aus,
+          aes(fill = n),
+          colour = "black") +
+  scale_fill_distiller(name = "state_fam",
+                       type = "seq",
+                       palette = "YlOrBr",
+                       direction = 1,
+                       guide = guide_colourbar(direction = "horizontal",
+                                               label.position = "bottom",
+                                               title = NULL)) +
+  annotate("text", 
+           x = 133, 
+           y = -45.5, 
+           label = "No. of families",
            size = 6) +
   coord_sf(xlim = c(110, 155), ylim = c(-45, -10)) +
   theme_void() +
