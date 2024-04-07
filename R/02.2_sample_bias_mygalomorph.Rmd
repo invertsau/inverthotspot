@@ -41,7 +41,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Setting up
 
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT, sampbias, viridis)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT, sampbias, viridis, rnaturalearthdata)
 
 # Load helper functions
 source(here("R/utils.R"))
@@ -54,6 +54,8 @@ myg_spiders_spatial_bias <- myg_spiders_all |>
   select(species, decimalLatitude, decimalLongitude, recordID) |> 
   collect()
 ```
+
+# Spatial sampling bias for Mygalomorphae
 
 Making a map of Australia
 
@@ -74,5 +76,50 @@ model_bias_myg <- sampbias::calculate_bias(
   buffer = 0.5, # account for neighbouring features
   restrict_sample = sf:::as_Spatial(aus)
 )
+
+plot(model_bias_myg)
 ```
 
+Mapping spatial sampling bias
+
+```{r}
+# Project the bias effect in space
+model_bias_myg_proj <- sampbias::project_bias(model_bias_myg)
+
+# Map
+sampbias::map_bias(model_bias_myg_proj, type="log_sampling_rate")
+```
+
+## Trialling different CRS and resolution
+Making a map of Australia
+
+```{r}
+# map of Australia with states
+aus_wgs84 <- st_transform(ozmaps::ozmap_states, "WGS84")
+
+## check map
+ggplot(aus_wgs84) + geom_sf(fill = "transparent")
+```
+
+modelling spatial sampling bias
+
+```{r}
+model_bias_myg_lower_res <- sampbias::calculate_bias(
+  x = myg_spiders_spatial_bias,
+  res = 0.5,   # scale of spatial resolution
+  buffer = 0.5, # account for neighbouring features
+  restrict_sample = sf:::as_Spatial(aus_wgs84)
+)
+
+plot(model_bias_myg_lower_res)
+```
+
+Mapping spatial sampling bias
+
+```{r}
+# Project the bias effect in space
+model_bias_myg_lower_res_proj <- sampbias::project_bias(model_bias_myg_lower_res)
+
+# Map
+sampbias::map_bias(model_bias_myg_lower_res_proj, type="log_sampling_rate")
+```
