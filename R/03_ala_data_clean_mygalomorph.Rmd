@@ -382,60 +382,7 @@ There are `r length(which(wormsOutput$match_type %in% "exact"))` matches
 
 ### Geographic errors
 
-Here we clean the data for geographic errors, including invalid lat/long, and masking by land/water.
-
-```{r, echo=F}
-myg_species_aus <- myg_species |> 
-  filter(decimalLatitude != "NA",
-         decimalLongitude != "NA") #remove NA coordinates
-
-myg_species_aus <- myg_species_aus |> 
-  filter(decimalLatitude != "0",
-         decimalLongitude != "0") #remove empty coordinates
-
-#summary(myg_species$decimalLatitude)
-#summary(myg_species_aus$decimalLatitude) #347 NA records removed
-nrow(myg_species) - nrow(myg_species_aus) # total of 373 records removed
-```
-
-There were 
-
-Restricting data to Australia mainland + Tasmania
-
-```{r, echo=F}
-myg_species_mainland <- myg_species_aus |> 
-  filter(decimalLatitude > -45, 
-         decimalLatitude < -8, 
-         decimalLongitude > 112, 
-         decimalLongitude < 154) 
-
-# Plot:
-# Transform into sf object
-myg_species_mainland_sf <- myg_species_mainland |> 
-  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
-           crs = 4326)
-
-# Verified that we have cropped the data
-# Map data
-aus <- st_transform(ozmaps::ozmap_country, 4326)
-
-base_map <- ggplot() + 
-  geom_sf(data = aus, fill = NA) + 
-  theme_minimal()
-
-base_map  + 
-  geom_sf(data = myg_species_mainland_sf) + 
-  theme_minimal()
-```
-
-What are the species we've excluded from the mainland? 
-
-```{r, echo=F}
-myg_species_mainland_removed <- anti_join(myg_species_aus, myg_species_mainland)
-myg_species_mainland_removed
-count(myg_species_mainland_removed)
-
-```
+Here we clean the data for geographic errors.
 
 Coordinate Cleaner
 
