@@ -112,6 +112,76 @@ model_bias_myg_lower_res <- sampbias::calculate_bias(
 )
 
 plot(model_bias_myg_lower_res)
+
+summary(model_bias_myg_lower_res)
+```
+
+Mapping occurrences and landscape features
+
+```{r}
+# Load in data for landscape features
+data(airports)
+data(waterbodies)
+data(cities)
+data(roads)
+
+
+# Combine data
+features <- c(airports, cities, waterbodies, roads)
+
+# Convert to spatial features, set coordinate system, filter to within NT
+# Add feature ID to each for plotting
+features_sf <- features |>
+  set_names(c("Airport", "City", "River", "Road")) |>
+  map_dfr(~ st_as_sf(.) |> 
+            st_set_crs(st_crs("WGS84")) |>
+            st_intersection(aus_wgs84),
+          .id = "feature")
+
+
+# Plot all the points on a map alongside the features
+features_map <- ggplot() +
+  # NT map
+  geom_sf(data = aus_wgs84,
+          fill = "grey98", color = "grey40") +
+  # Rivers & Roads
+  geom_sf(data = features_sf |> filter(feature == "River" | feature == "Road"),
+          mapping = aes(color = feature),
+          size = 1.1,
+          show.legend = "line") +
+  # Airports
+  geom_sf(data = features_sf |> filter(feature == "Airport" ),
+          mapping = aes(color = feature),
+          shape = 17,
+          size = 6,
+          show.legend = "point") +
+  # Cities
+  geom_sf(data = features_sf |> filter(feature == "City"),
+          mapping = aes(color = feature),
+          shape = 16,
+          size = 4,
+          show.legend = "point") +
+  # Observations
+  geom_point(data = myg_spiders_spatial_bias,
+             mapping = aes(x = decimalLongitude, y = decimalLatitude),
+             color = "#E06E53",
+             size = 1.1,
+             alpha = 0.3) +
+  # Specify colours
+  scale_color_manual(values = c(
+    "River" = "#249db5",
+    "Road" = "#ffc517",
+    "Airport" = "#9956db",
+    "City" = "#30c788"
+  ),
+  # Create custom line/point legend
+  guide = guide_legend(
+    override.aes = list(linetype = c("solid", "solid", "blank", "blank"), 
+                        shape = c(NA, NA, 17, 16),
+                        size = c(1.1, 1.1, 6, 4)),
+    title = NULL)) +
+  theme_void() +
+  theme(legend.position = "bottom")
 ```
 
 Mapping spatial sampling bias
