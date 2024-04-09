@@ -384,6 +384,23 @@ There are `r length(which(wormsOutput$match_type %in% "exact"))` matches
 
 Here we clean the data for geographic errors.
 
+Plot data
+```{r}
+map_area <- borders(col = "grey80", 
+          xlim = range(myg_species$decimalLongitude), 
+          ylim = range(myg_species$decimalLatitude))
+ggplot() +
+  coord_fixed() + 
+  map_area + 
+  geom_point(data = myg_species,
+             aes(x = decimalLongitude, y = decimalLatitude),
+             colour = "darkred",
+             size = 0.5) +
+  theme_bw()
+
+```
+
+
 Coordinate Cleaner
 
 https://docs.ropensci.org/CoordinateCleaner/
@@ -392,7 +409,7 @@ https://docs.ropensci.org/CoordinateCleaner/
 `.sea` = XXX 
 
 ```{r, echo=F}
-flagged <- clean_coordinates(x = myg_species_mainland, 
+flagged <- clean_coordinates(x = myg_species, 
                                      "decimalLongitude",
                                      "decimalLatitude")
 
@@ -400,7 +417,40 @@ flagged <- clean_coordinates(x = myg_species_mainland,
 summary(flagged)
 
 plot(flagged, lon = "decimalLongitude", lat = "decimalLatitude")
+ggplot() +
+  coord_fixed() + 
+  map_area + 
+  geom_point(data = myg_species,
+             aes(x = decimalLongitude, y = decimalLatitude),
+             colour = "darkred",
+             size = 0.5) +
+  geom_point(data = subset(flagged, .summary==FALSE),
+             aes(x = decimalLongitude, y = decimalLatitude),
+             colour = "yellow",
+             size = 0.1) +
+  theme_bw()
+
+#number of total, clean, and flagged
+nrow(flagged)
+nrow(subset(flagged, .summary==TRUE))
+nrow(subset(flagged, .summary==FALSE))
+
 ```
+
+`nrow(subset(flagged, .summary==FALSE))` of `nrow(flagged)` records were flagged
+
+What do the codes mean:
+  .val = coordinate validity: non-numeric or missing coordinates and coordinates exceeding the global extent
+  .equ = equal: tests for equal absolute longitude and latitude
+  .zer = zeros: tests for plain zeros, equal latitude and longitude and a radius around the point 0/0
+  .cap = capitals: tests a radius around adm-0 capitals
+  .cen = centroids: tests a radius around country centroids
+  .sea = seas: tests if coordinates fall into the ocean
+  .otl = outliers: tests each species for outlier records
+  .gbf = gbif: tests a one-degree radius around the GBIF headquarters in Copenhagen, Denmark
+  .inst = institutions: tests a radius around known biodiversity institutions from instiutions
+  .summary = False if any test flagged the respective coordinate (clean coordinates are "True")
+
 
 ### Visualise .sea values
 
@@ -456,7 +506,8 @@ base_map  +
 ### Exclude records flagged by CoordinateCleaner
 
 ```{r, echo=F}
-
+myg_species_clean <- flagged[flagged$.summary,]
+nrow(myg_species_clean)
 ```
 
 
