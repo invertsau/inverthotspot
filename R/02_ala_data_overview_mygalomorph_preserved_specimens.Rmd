@@ -76,7 +76,7 @@ total_myg <- myg_spiders |>
   nrow()
 ```
 
-There are **`r total_myg` species** in total.
+There are **`r total_myg` species** in total with **`r nrow(myg_spiders)`** of records
 
 The below barplot shows the distribution of the number of records across species.
 ```{r, echo = FALSE}
@@ -120,7 +120,9 @@ single_record_spp <- myg_records |>
   nrow()
 ```
 
-`r nrow(myg_spp)` species (`r round((nrow(myg_spp)/total_myg)*100, digits = 1)`%) have 3 or more records.
+`r nrow(myg_spp)` species (`r round((nrow(myg_spp)/total_myg)*100, digits = 1)`%) have 3 or more records. Number of records = `r nrow(myg_spiders |> group_by(species) |> filter(n() > 2) )`
+
+
 `r total_myg - nrow(myg_spp)` species (`r round(((total_myg - nrow(myg_spp))/total_myg)*100, digits = 1)`%) do not have 3 or more records. There are `r single_record_spp` species (`r round((single_record_spp/total_myg)*100, digits = 1)`%) with a single record.
 
 ### Family
