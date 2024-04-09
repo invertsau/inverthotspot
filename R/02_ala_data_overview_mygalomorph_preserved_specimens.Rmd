@@ -51,8 +51,13 @@ myg_spiders_all <- open_dataset(here(get_latest_download()))
 
 ## Subset columns we want for ALA data overview
 myg_spiders <- myg_spiders_all |> 
-  select(decimalLatitude:collectionCode) |> 
+  select(recordID:collectionCode) |> 
   filter(basisOfRecord %in% c("PRESERVED_SPECIMEN", "MATERIAL_SAMPLE")) |>
+  collect()
+
+# Subset data for assertions
+myg_assertions <- myg_spiders_all |> 
+  dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
   collect()
 ```
 
@@ -67,7 +72,6 @@ Descriptive statistics for species and families of Mygalomorphae.
 ```{r, echo=FALSE}
 # Total number of species
 total_myg <- myg_spiders |> 
-  filter(!is.na(species)) |> 
   distinct(species) |> 
   nrow()
 ```
@@ -78,7 +82,6 @@ The below barplot shows the distribution of the number of records across species
 ```{r, echo = FALSE}
 # number of records for each species
 myg_records <- myg_spiders |>
-  filter(!is.na(species)) |>
   group_by(species) |>
   tabyl(species) |>
   arrange(desc(n))
@@ -88,6 +91,7 @@ barplot(myg_records_df$n, xlab = "species", ylab = "records")
 ```
 
 The below table shows the number of records of each species.
+
 ```{r, echo = FALSE}
 myg_records |> 
   mutate(percent = percent*100) |>
@@ -95,15 +99,13 @@ myg_records |>
   formatRound(columns="percent", digits=2)
 ```
 
-
 #### Adequate number of data points for analysis
 
-For this analysis we need at least 3 records to create alphahulls. 
+For this analysis we need at least 3 records to create alpha-hulls. 
 
 ```{r, include = FALSE}
-# how many records for each species with at least three records
+# How many records for each species with at least three records
 myg_spp <- myg_spiders |>
-  filter(!is.na(species)) |>
   group_by(species) |>
   filter(n() > 2) |>
   tabyl(species) |>
@@ -129,9 +131,6 @@ Barplot showing the number of species in each family:
 # N species per family
 # number of species in each family
 myg_fams <- myg_spiders |>
-  filter(!is.na(species)) |>
-  group_by(species) |>
-  #filter(n() > 2) |>
   group_by(family, species) |>
   summarise(n = n()) |>
   tabyl(family) |>
@@ -148,8 +147,6 @@ as.data.frame(myg_fams)|>
         axis.text.x = element_text(angle = 90, colour = "black"),
         axis.text.y = element_text(colour = "black"),
         axis.line = element_line(colour = "black"))
-#which families are not represented?
-
 ```
 
 #### Top species by family {.tabset}
@@ -159,8 +156,7 @@ Most recorded species in each family (up to 10 species). Select tabs to see plot
 ##### Idiopidae
 ```{r, echo=FALSE}
 Idiopidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Idiopidae") |>
+  filter(family == "Idiopidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -183,8 +179,7 @@ as.data.frame(Idiopidae)|>
 ##### Barychelidae
 ```{r, echo=FALSE}
 Barychelidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Barychelidae") |>
+         filter(family == "Barychelidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -206,8 +201,7 @@ as.data.frame(Barychelidae)|>
 ##### Nemesiidae
 ```{r, echo=FALSE}
 Nemesiidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Nemesiidae") |>
+  filter(family == "Nemesiidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -229,8 +223,7 @@ as.data.frame(Nemesiidae)|>
 ##### Atracidae
 ```{r, echo=FALSE}
 Atracidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Atracidae") |>
+  filter(family == "Atracidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -252,8 +245,7 @@ as.data.frame(Atracidae)|>
 ##### Dipluridae
 ```{r, echo=FALSE}
 Dipluridae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Dipluridae") |>
+  filter(family == "Dipluridae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -275,8 +267,7 @@ as.data.frame(Dipluridae)|>
 ##### Hexathelidae
 ```{r, echo=FALSE}
 Hexathelidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Hexathelidae") |>
+  filter(family == "Hexathelidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -298,8 +289,7 @@ as.data.frame(Hexathelidae)|>
 ##### Actinopodidae
 ```{r, echo=FALSE}
 Actinopodidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Actinopodidae") |>
+  filter(family == "Actinopodidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -321,8 +311,7 @@ as.data.frame(Actinopodidae)|>
 ##### Migidae
 ```{r, echo=FALSE}
 Migidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Migidae") |>
+  filter(family == "Migidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -344,8 +333,7 @@ as.data.frame(Migidae)|>
 ##### Theraphosidae
 ```{r, echo=FALSE}
 Theraphosidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Theraphosidae") |>
+  filter(family == "Theraphosidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -367,8 +355,7 @@ as.data.frame(Theraphosidae)|>
 ##### Pycnothelidae
 ```{r, echo=FALSE}
 Pycnothelidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Pycnothelidae") |>
+  filter(family == "Pycnothelidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -390,8 +377,7 @@ as.data.frame(Pycnothelidae)|>
 ##### Cyrtaucheniidae
 ```{r, echo=FALSE}
 Cyrtaucheniidae <- myg_spiders |>
-  filter(!is.na(species),
-         family == "Cyrtaucheniidae") |>
+  filter(family == "Cyrtaucheniidae") |>
   tabyl(species) |>
   arrange(desc(n)) |>
   head(n = 10)
@@ -410,17 +396,23 @@ as.data.frame(Cyrtaucheniidae)|>
         axis.line = element_line(colour = "black"))
 ```
 
+
+```{r}
+# Function to subset data and plot by family
+
+
+
+```
+
+
 ### Species overview by state
 
 Top 3 most recorded species in each state:
 ```{r, echo = FALSE, message=FALSE}
 # number of records by state, for species with at least three overall records
 myg_records_by_state <- myg_spiders |>
-  filter(!is.na(species)) |>
   filter(stateProvince %in% c("Queensland", "Western Australia", "New South Wales", "South Australia", 
                               "Victoria", "Northern Territory", "Tasmania", "Australian Capital Territory")) |>
-  #group_by(species) |>
-  #filter(n() > 2) |>
   group_by(stateProvince, species) |>
   summarise(n = n()) |>
   arrange(stateProvince, desc(n))
@@ -439,7 +431,6 @@ myg_spp_by_state <- myg_records_by_state |>
 
 # number of families by state
 myg_fam_by_state <- myg_spiders |>
-  filter(!is.na(species)) |>
   filter(stateProvince %in% c("Queensland", "Western Australia", "New South Wales", "South Australia", 
                               "Victoria", "Northern Territory", "Tasmania", "Australian Capital Territory")) |>
   group_by(species) |>
@@ -475,14 +466,6 @@ Map showing the number of species by state:
 # map of Australia with states
 aus <- st_transform(ozmaps::ozmap_states, 4326)
 
-# checking for differences between state names
-setdiff(aus$NAME, myg_spp_by_state$stateProvince)
-setdiff(myg_spp_by_state$stateProvince, aus$NAME)
-
-# checking distribution of data
-hist(myg_spp_by_state$n)
-hist(log(myg_spp_by_state$n))
-
 # joining map with species count data
 myg_spp_aus <- myg_spp_by_state |>
   full_join(y = aus, by = c("stateProvince" = "NAME")) |>
@@ -516,13 +499,6 @@ Map showing the number of families by state:
 # map of Australia with states
 aus <- st_transform(ozmaps::ozmap_states, 4326)
 
-# checking for differences between state names
-setdiff(aus$NAME, myg_fam_by_state$stateProvince)
-setdiff(myg_fam_by_state$stateProvince, aus$NAME)
-
-# checking distribution of data
-hist(myg_fam_by_state$n)
-
 # joining map with species count data
 myg_fam_aus <- myg_fam_by_state |>
   full_join(y = aus, by = c("stateProvince" = "NAME")) |>
@@ -551,7 +527,6 @@ ggplot() +
         legend.key.width = unit(12, 'mm'))  
 ```
 
-
 ```{r, include = FALSE}
 # number of species recorded in only one state (species with at least three overall records)
 one_state_spp <- myg_records_by_state |> 
@@ -575,8 +550,7 @@ Total counts of basis of record types. GBIF definitions are provided underneath 
 ```{r, echo = FALSE}
 # Counts of basis of record types. "OCCURRENCE" and "OBSERVATION" types were excluded as they could not be traced back to a source.
 myg_spiders |>
-  filter(!is.na(species),
-         !basisOfRecord %in% c("OCCURRENCE", "OBSERVATION")) |>
+  filter(!basisOfRecord %in% c("OCCURRENCE", "OBSERVATION")) |>
   tabyl(basisOfRecord) |>
   mutate(percent = percent*100) |>
   arrange(desc(n)) |>
@@ -602,25 +576,11 @@ Various tests are run on occurrence data in the Atlas of Living Australia, resul
 For the analysis of endemism hotspots, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
 
 ```{r, include = FALSE}
-myg_assertions <- myg_spiders_all |> 
-  dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
-  collect()
-
-myg_assertions
-
 myg_assertions_long <- myg_assertions |>
   pivot_longer(cols = c(AMBIGUOUS_COLLECTION:ZERO_COORDINATE), names_to = "assertion_type", values_to = "value") 
-
 assertion_counts <- myg_assertions_long |>
   filter(value == TRUE) |>
   tabyl(assertion_type)
-
-# Join with ala_assertions.csv so we have summary of counts
-asserts <- read_csv(here("output/ala_assertions.csv"))
-# asserts |> 
-#   left_join(assertion_counts, by = join_by(id == assertion_type)) |>
-#   arrange(-n) |> 
-#   write_csv(here("output/ala_assertions_with_counts.csv"))
 
 #Filtering observations where all assertions are false
 myg_assertions |>
