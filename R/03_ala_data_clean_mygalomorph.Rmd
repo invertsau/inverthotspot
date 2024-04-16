@@ -384,7 +384,8 @@ There are `r length(which(wormsOutput$match_type %in% "exact"))` matches
 
 Here we clean the data for geographic errors.
 
-Plot data
+<!-- Plot data -->
+
 ```{r}
 map_area <- borders(col = "grey80", 
           xlim = range(myg_species$decimalLongitude), 
@@ -412,7 +413,11 @@ https://docs.ropensci.org/CoordinateCleaner/
 flagged <- clean_coordinates(x = myg_species, 
                                      "decimalLongitude",
                                      "decimalLatitude")
+```
 
+<!-- Mapping all flagged records -->
+
+```{r}
 # Summary of how many flagged records found for each category
 summary(flagged)
 
@@ -422,20 +427,15 @@ ggplot() +
   map_area + 
   geom_point(data = myg_species,
              aes(x = decimalLongitude, y = decimalLatitude),
-             colour = "darkred",
+             colour = "lightgreen",
              size = 0.5) +
   geom_point(data = subset(flagged, .summary==FALSE),
              aes(x = decimalLongitude, y = decimalLatitude),
-             colour = "yellow",
-             size = 0.1) +
+             colour = "darkred",
+             size = 0.5) +
   theme_bw()
-
-#number of total, clean, and flagged
-nrow(flagged)
-nrow(subset(flagged, .summary==TRUE))
-nrow(subset(flagged, .summary==FALSE))
-
 ```
+
 
 `nrow(subset(flagged, .summary==FALSE))` of `nrow(flagged)` records were flagged
 
@@ -450,6 +450,16 @@ What do the codes mean:
   .gbf = gbif: tests a one-degree radius around the GBIF headquarters in Copenhagen, Denmark
   .inst = institutions: tests a radius around known biodiversity institutions from instiutions
   .summary = False if any test flagged the respective coordinate (clean coordinates are "True")
+
+<!-- define basemap for visualisation -->
+
+```{r}
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+
+base_map <- ggplot() + 
+  geom_sf(data = aus, fill = NA) + 
+  theme_minimal()
+```
 
 
 ### Visualise .sea values
@@ -506,10 +516,32 @@ base_map  +
 ### Exclude records flagged by CoordinateCleaner
 
 ```{r, echo=F}
-myg_species_clean <- flagged[flagged$.summary,]
-nrow(myg_species_clean)
+myg_species_clean <- myg_species[which(flagged$.summary),]
 ```
 
+### Report how many records were removed under each Coordinate Cleaner test
+
+```{r}
+#how many flagged by summary?
+nrow(flagged) #total records
+nrow(subset(flagged, .summary==TRUE)) #clean records
+nrow(subset(flagged, .summary==FALSE)) #flagged records
+#was that the number removed?
+nrow(myg_species_clean) == nrow(subset(flagged, .summary==TRUE)) #yes.
+
+#How many were flagged with each test
+summary(flagged)
+sum(flagged$.summary == FALSE)
+sum(flagged$.val == FALSE)
+sum(flagged$.equ == FALSE)
+sum(flagged$.zer == FALSE)
+sum(flagged$.cap == FALSE)
+sum(flagged$.cen == FALSE)
+sum(flagged$.sea == FALSE)
+sum(flagged$.otl == FALSE)
+sum(flagged$.gbf == FALSE)
+sum(flagged$.inst == FALSE)
+```
 
 ## Deduplication
 <!-- Check for duplicates (as the last step) -->
