@@ -157,8 +157,6 @@ unmatched_ala_sp <- myg_species |>
   pull(scientificName) |> 
   unique() 
 
-AFD_matched/unique_species *100
-
 ```
 
 Of the **`r unique_species`** unique **`r focus_taxon_short`** species in the ALA dataset, **`r AFD_matched`** matched those listed in the AFD (**`r round(AFD_matched/unique_species *100, 2)`** %). These **`r AFD_unmatched`** species did not match:
@@ -182,14 +180,16 @@ The AFD lists any applicable synonyms for each species within their database. Ou
 
 #check if unmatched species occur in list of synonyms
 issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
+issynonym_count = sum(issynonym)
 ```
+<!-- Removed ` character to prevent errors -->
+<!-- **r issynonym_count`** unmatched ALA species are AFD synonyms. -->
+<!-- This is:  -->
+<!-- _**r unmatched_ala_sp[issynonym]`**_. -->
 
-**`r sum(issynonym)`** unmatched ALA species is an AFD synonym. This is: 
-_**`r unmatched_ala_sp[issynonym]`**_.
-
-_**`r unmatched_ala_sp[issynonym]`**_ is a synonym of 
-_**`r arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),18]`**_ 
-_**`r arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),20]`**_.
+<!-- _**r unmatched_ala_sp[issynonym]`**_ is a synonym of  -->
+<!-- _**r arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),18]`**_  -->
+<!-- _**r arachnids[which(word(arachnids$SYNONYMS, 1, 2) == unmatched_ala_sp[issynonym]),20]`**_. -->
 
 
 <!-- Not sure if this is what we want to do, but this is some loose code to replace names found to be synonyms with the new name from the AFD -->
@@ -338,13 +338,13 @@ Using this function to cross match our species list to the WORMS database
 
 ```{r, eval=FALSE, echo=F}
 wm_records_taxamatch("Teranodes")
-Myg_species <- myg_spiders$species |> unique()
+myg_species <- myg_spiders$species |> unique()
 
 
 
 
 job::job({
-  output_df <- map(Myg_species,
+  output_df <- map(myg_species,
                    possibly(~wm_records_taxamatch(.x, marine = FALSE)  |>
                               pluck(1)  |>
                               mutate(search_term = .x) |>
@@ -384,6 +384,17 @@ There are `r length(which(wormsOutput$match_type %in% "exact"))` matches
 
 Here we clean the data for geographic errors.
 
+<!-- Remove records not in Australia -->
+
+```{r}
+# show records not in Australia?
+subset(myg_species, myg_species$country != "Australia")$country
+
+# keep only those in Australia
+myg_species <- subset(myg_species, myg_species$country == "Australia")
+```
+
+
 <!-- Plot data -->
 
 ```{r}
@@ -395,7 +406,7 @@ ggplot() +
   map_area + 
   geom_point(data = myg_species,
              aes(x = decimalLongitude, y = decimalLatitude),
-             colour = "darkred",
+             colour = "black",
              size = 0.5) +
   theme_bw()
 
@@ -409,25 +420,62 @@ https://docs.ropensci.org/CoordinateCleaner/
 `.equ` = Equal longitude and latitude
 `.sea` = XXX 
 
+### Report how many records were removed under all Coordinate Cleaner tests
+
+```{r}
+# define tests list
+all_tests <- c("capitals", "centroids", "duplicates", "equal", "gbif", "institutions", "outliers", "ranges", "seas", "urban", "zeros")
+# run tests
+flagged_alltests <- clean_coordinates(x = myg_species,
+                                      "decimalLongitude","decimalLatitude", 
+                                      tests = all_tests)
+#how many flagged?
+summary(flagged_alltests)
+nrow(flagged_alltests) #total records
+nrow(subset(flagged_alltests, .summary==TRUE)) #clean records
+nrow(subset(flagged_alltests, .summary==FALSE)) #flagged records
+
+names(flagged_alltests)
+#How many were flagged with each test
+flagsums <- data.frame(Test = all_tests, 
+                       Flags = c(sum(flagged_alltests[".cap"] == FALSE),
+                                 sum(flagged_alltests[".cen"] == FALSE),
+                                 sum(flagged_alltests[".dpl"] == FALSE),
+                                 sum(flagged_alltests[".equ"] == FALSE),
+                                 sum(flagged_alltests[".gbf"] == FALSE),
+                                 sum(flagged_alltests[".inst"] == FALSE),
+                                 sum(flagged_alltests[".otl"] == FALSE),
+                                 0, #ranges test does not run
+                                 sum(flagged_alltests[".sea"] == FALSE),
+                                 sum(flagged_alltests[".urb"] == FALSE),
+                                 sum(flagged_alltests[".zer"] == FALSE)
+                                 ))
+flagsums
+```
+
+These are the tests performed and how many records were flagged in each
+
+# clean cordinates
+
 ```{r, echo=F}
 flagged <- clean_coordinates(x = myg_species, 
                                      "decimalLongitude",
                                      "decimalLatitude")
+
 ```
 
 <!-- Mapping all flagged records -->
 
 ```{r}
-# Summary of how many flagged records found for each category
-summary(flagged)
+#default plot
+#plot(flagged, lon = "decimalLongitude", lat = "decimalLatitude")
 
-plot(flagged, lon = "decimalLongitude", lat = "decimalLatitude")
 ggplot() +
   coord_fixed() + 
   map_area + 
   geom_point(data = myg_species,
              aes(x = decimalLongitude, y = decimalLatitude),
-             colour = "lightgreen",
+             colour = "green",
              size = 0.5) +
   geom_point(data = subset(flagged, .summary==FALSE),
              aes(x = decimalLongitude, y = decimalLatitude),
@@ -438,18 +486,6 @@ ggplot() +
 
 
 `nrow(subset(flagged, .summary==FALSE))` of `nrow(flagged)` records were flagged
-
-What do the codes mean:
-  .val = coordinate validity: non-numeric or missing coordinates and coordinates exceeding the global extent
-  .equ = equal: tests for equal absolute longitude and latitude
-  .zer = zeros: tests for plain zeros, equal latitude and longitude and a radius around the point 0/0
-  .cap = capitals: tests a radius around adm-0 capitals
-  .cen = centroids: tests a radius around country centroids
-  .sea = seas: tests if coordinates fall into the ocean
-  .otl = outliers: tests each species for outlier records
-  .gbf = gbif: tests a one-degree radius around the GBIF headquarters in Copenhagen, Denmark
-  .inst = institutions: tests a radius around known biodiversity institutions from instiutions
-  .summary = False if any test flagged the respective coordinate (clean coordinates are "True")
 
 <!-- define basemap for visualisation -->
 
@@ -517,30 +553,6 @@ base_map  +
 
 ```{r, echo=F}
 myg_species_clean <- myg_species[which(flagged$.summary),]
-```
-
-### Report how many records were removed under each Coordinate Cleaner test
-
-```{r}
-#how many flagged by summary?
-nrow(flagged) #total records
-nrow(subset(flagged, .summary==TRUE)) #clean records
-nrow(subset(flagged, .summary==FALSE)) #flagged records
-#was that the number removed?
-nrow(myg_species_clean) == nrow(subset(flagged, .summary==TRUE)) #yes.
-
-#How many were flagged with each test
-summary(flagged)
-sum(flagged$.summary == FALSE)
-sum(flagged$.val == FALSE)
-sum(flagged$.equ == FALSE)
-sum(flagged$.zer == FALSE)
-sum(flagged$.cap == FALSE)
-sum(flagged$.cen == FALSE)
-sum(flagged$.sea == FALSE)
-sum(flagged$.otl == FALSE)
-sum(flagged$.gbf == FALSE)
-sum(flagged$.inst == FALSE)
 ```
 
 ## Deduplication
