@@ -429,6 +429,7 @@ all_tests <- c("capitals", "centroids", "duplicates", "equal", "gbif", "institut
 flagged_alltests <- clean_coordinates(x = myg_species,
                                       "decimalLongitude","decimalLatitude", 
                                       tests = all_tests)
+
 #how many flagged?
 summary(flagged_alltests)
 nrow(flagged_alltests) #total records
@@ -454,6 +455,19 @@ flagsums
 ```
 
 These are the tests performed and how many records were flagged in each
+
+<!-- Also check AOHI -->
+```{r}
+#additional test
+myg_species_aohi <- cc_aohi(myg_species)
+#which were removed?
+nrow(myg_species)
+nrow(myg_species_aohi)
+
+myg_species[which(myg_species$recordID == 
+        setdiff(myg_species$recordID, myg_species_aohi$recordID)),]
+```
+
 
 # clean cordinates
 
@@ -554,6 +568,13 @@ base_map  +
 ```{r, echo=F}
 myg_species_clean <- myg_species[which(flagged$.summary),]
 ```
+
+<!-- Export as CSV -->
+```{r}
+write.csv(myg_species_clean, 
+          paste0("output/Cleaned_Data_Mygalomorphae_", Sys.Date(), ".csv"))
+```
+
 
 ## Deduplication
 <!-- Check for duplicates (as the last step) -->
