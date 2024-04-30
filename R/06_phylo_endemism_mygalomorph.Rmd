@@ -1,0 +1,114 @@
+---
+title: "Phylogeny"
+author: "Fonti Kar"
+date: "2024-04-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+pacman::p_load(arrow, phytools, dplyr, ggplot2, stringr, janitor)
+
+source("R/utils.R")
+```
+
+### Read in data
+
+```{r}
+cleaned_mygals <- open_dataset(get_latest_cleaned_data())
+
+mygals_names <- cleaned_mygals |> 
+  select(scientificName) |> 
+  collect()
+
+mygals_names$scientificName
+```
+
+
+### Do we have funnel webs?
+
+Yes we do - we should try get Ben's tree then...
+
+```{r}
+str_subset(mygals_names$scientificName, "Hadronyche") |> tabyl() |> arrange(-n)
+```
+
+### Read in tree
+
+```{r}
+tree <- read.tree(file = "data/tree/ASTRAL_all_taxa.tre")
+
+str(tree)
+plot(tree, show.tip.label = F, type = "phylogram")
+```
+
+### Get tip labels
+
+```{r}
+tree$tip.label
+```
+
+### Clean tip labels
+
+No needed for now
+
+```{r}
+str_split_fixed(tree$tip.label, "_", 2) |> 
+  as.data.frame()
+```
+
+### Subset to Australia ones
+MY2045
+MY2145
+MY2084
+MY2134
+AUMS19284
+MU2049
+MY2091
+MY2070
+MY2138
+SDSUMY948
+MY2112
+MY2059
+MY2105
+MY2089
+MY2146
+MY2135
+MY2131
+MY2061
+MY2051
+MY2096
+MY2139
+MY2117
+MY2064
+
+```{r}
+oz_tips <- c("MY2045",
+             "MY2145",
+             "MY2084",
+             "MY2134",
+             "AUMS19284",
+             "MU2049",
+             "MY2091",
+             "MY2070",
+             "MY2138",
+             "SDSUMY948",
+             "MY2112",
+             "MY2059",
+             "MY2105",
+             "MY2089",
+             "MY2146",
+             "MY2135",
+             "MY2131",
+             "MY2061",
+             "MY2051",
+             "MY2096",
+             "MY2139",
+             "MY2117",
+             "MY2064")
+
+str_subset(tree$tip.label, regex(paste(oz_tips, collapse = "|"))) 
+str_subset(tree$tip.label, regex(paste(oz_tips, collapse = "|"))) |> length() # Less that original list must be different tree
+```
+
