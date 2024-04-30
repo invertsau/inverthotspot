@@ -47,7 +47,7 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesa
 source(here("R/utils.R"))
 
 ## Read in parquet
-myg_spiders_all <- open_dataset(here(get_latest_download()))
+myg_spiders_all <- open_dataset(here(get_latest_cleaned_data()))
 
 ## Subset columns we want for ALA data overview
 myg_spiders_spatial_bias <- myg_spiders_all |> 
@@ -70,12 +70,20 @@ ggplot(aus) + geom_sf(fill = "transparent")
 modelling spatial sampling bias
 
 ```{r}
-model_bias_myg <- sampbias::calculate_bias(
+job::job(
+  {
+    model_bias_myg <- sampbias::calculate_bias(
   x = myg_spiders_spatial_bias,
   res = 0.05,   # scale of spatial resolution
   buffer = 0.5, # account for neighbouring features
   restrict_sample = sf:::as_Spatial(aus)
+  )
+  
+  saveRDS(model_bias_myg, "output/sampbias_mygals.rds")
+  }
 )
+
+
 
 plot(model_bias_myg)
 ```
