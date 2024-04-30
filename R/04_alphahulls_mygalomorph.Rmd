@@ -488,5 +488,20 @@ base_map + # There are offshore points need to crop these
   theme_minimal()
 ```
  
+devtools::install_github("gdauby/ConR")
+
+myg_spiders <- read_parquet(here("data/galah/Mygalomorphae_withassertions_2023-09-18_ALA.parquet"))
+
+
+
+dataset <- dummy_dist(nsp = 1, max_occ = 30)
+
+alphas <- EOO.computing(XY = dataset, method.range = "alpha", export_shp = TRUE, alpha = 3)
+
+plot(alphas$spatial)
+
+alphas <- EOO.computing(XY = dataset, method.range = "alpha", export_shp = TRUE, alpha = 3, buff.alpha = 	0.000001)
+
+plot(alphas$spatial)
 
 

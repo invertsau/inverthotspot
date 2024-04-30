@@ -1,0 +1,414 @@
+---
+title: "Overview of ALA data"
+author: "Josh Nitschke"
+date: "2023-09-19"
+output: 
+  rmdformats::downcute:
+    self_contained: true
+    toc_depth: 3
+editor_options: 
+  chunk_output_type: console
+---
+
+<style>
+#toc ul.nav li ul li {
+    display: none;
+    max-height: none;
+}
+
+#toc ul.nav li.active ul li  {
+    display: block;
+    max-height: none;
+}
+
+#toc ul.nav li ul li ul li {
+    max-height: none;
+    display: none !important;
+}
+
+#toc ul.nav li ul li.active ul li {
+    max-height: none;
+    display: block !important;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loadpackages, include=FALSE}
+## Setting up
+
+# install.packages("pacman")
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT)
+
+# Load helper functions
+source(here("R/utils.R"))
+
+## Read in parquet
+myg_spiders_all <- open_dataset(here(get_latest_download()))
+
+## Subset columns we want for ALA data overview
+myg_spiders <- myg_spiders_all |> 
+  select(recordID:collectionCode) |> 
+  filter(basisOfRecord %in% c("PRESERVED_SPECIMEN", "MATERIAL_SAMPLE")) |>
+  collect()
+
+# Subset data for assertions
+myg_assertions <- myg_spiders_all |> 
+  dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
+  collect()
+```
+
+# Data Overview
+
+## Higher taxonomy
+
+Descriptive statistics for species and families of Mygalomorphae.
+
+### Species
+
+```{r, echo=FALSE}
+# Total number of species
+total_myg <- myg_spiders |> 
+  distinct(species) |> 
+  nrow()
+```
+
+There are **`r total_myg` species** in total with **`r nrow(myg_spiders)`** of records
+
+The below barplot shows the distribution of the number of records across species.
+```{r, echo = FALSE}
+# number of records for each species
+myg_records <- myg_spiders |>
+  group_by(species) |>
+  tabyl(species) |>
+  arrange(desc(n))
+
+myg_records_df <- as.data.frame(myg_records)
+barplot(myg_records_df$n, xlab = "species", ylab = "records")
+```
+
+The below table shows the number of records of each species.
+
+```{r, echo = FALSE}
+myg_records |> 
+  mutate(percent = percent*100) |>
+  datatable() |>
+  formatRound(columns="percent", digits=2)
+```
+
+#### Adequate number of data points for analysis
+
+For this analysis we need at least 3 records to create alpha-hulls. 
+
+```{r, include = FALSE}
+# How many records for each species with at least three records
+myg_spp <- myg_spiders |>
+  group_by(species) |>
+  filter(n() > 2) |>
+  tabyl(species) |>
+  arrange(desc(n))
+
+# How many species have at least three records
+# nrow(myg_spp)
+
+# How many species have a single record
+single_record_spp <- myg_records |>
+  filter(n == 1) |>
+  nrow()
+```
+
+`r nrow(myg_spp)` species (`r round((nrow(myg_spp)/total_myg)*100, digits = 1)`%) have 3 or more records. Number of records = `r nrow(myg_spiders |> group_by(species) |> filter(n() > 2) )`
+
+
+`r total_myg - nrow(myg_spp)` species (`r round(((total_myg - nrow(myg_spp))/total_myg)*100, digits = 1)`%) do not have 3 or more records. There are `r single_record_spp` species (`r round((single_record_spp/total_myg)*100, digits = 1)`%) with a single record.
+
+### Family
+
+Barplot showing the number of species in each family:
+```{r, echo = FALSE, message=FALSE}
+# N species, total number of species (bar chart or alike, or tabset)
+# N species per family
+# number of species in each family
+myg_fams <- myg_spiders |>
+  group_by(family, species) |>
+  summarise(n = n()) |>
+  tabyl(family) |>
+  arrange(desc(n))
+
+as.data.frame(myg_fams)|>
+  mutate(family = factor(family, levels = family))|>
+  ggplot(aes(x = family, y = n)) +
+  geom_bar(stat = "identity") +
+  labs(y = "number of species") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+<!-- #### Top species by family  -->
+
+```{r, results = 'asis', echo = FALSE}
+species_in_family <- function(myg_spiders, family){
+  myg_spiders |>
+    filter(family == family) |>
+    tabyl(species) |>
+    arrange(desc(n)) |>
+    head(n = 10) |>
+    mutate(species = factor(species, levels = species))|>
+    ggplot(aes(x = species, y = n)) +
+    geom_bar(stat = "identity") +
+    ggtitle(family) +
+    labs(y = "number of records") +
+    theme_minimal() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.text.x = element_text(angle = 90, colour = "black"),
+          axis.text.y = element_text(colour = "black"),
+          axis.line = element_line(colour = "black"))
+  
+}
+
+cat('#### Top species by family {.tabset}   \n Most recorded species in each family (up to 10 species). Select tabs to see plot for corresponding family. \n\n')
+  myg_fam_ls  <- myg_spiders |> 
+      split(myg_spiders$family)
+    
+  purrr::walk2(.x = myg_fam_ls,
+               .y = unique(myg_spiders$family),
+               ~{
+                 # create tabset for each group 
+                 cat('#####',.y,'   \n')
+                 p <- species_in_family(.x, family = .y)
+                 print(p)
+                 cat('\n\n')
+               })
+```
+
+
+### Species overview by state
+
+Top 3 most recorded species in each state:
+```{r, echo = FALSE, message=FALSE}
+# number of records by state, for species with at least three overall records
+myg_records_by_state <- myg_spiders |>
+  filter(stateProvince %in% c("Queensland", "Western Australia", "New South Wales", "South Australia", 
+                              "Victoria", "Northern Territory", "Tasmania", "Australian Capital Territory")) |>
+  group_by(stateProvince, species) |>
+  summarise(n = n()) |>
+  arrange(stateProvince, desc(n))
+
+# Top 3 most recorded species in each state
+slice_head(myg_records_by_state, n = 3) |>
+  print(n = Inf)
+```
+
+Barplot showing the number of species and families by state:
+```{r, echo = FALSE, message=FALSE}
+# number of species by state, for species with at least three overall records
+myg_spp_by_state <- myg_records_by_state |> 
+  tabyl(stateProvince) |>
+  arrange(desc(n))
+
+# number of families by state
+myg_fam_by_state <- myg_spiders |>
+  filter(stateProvince %in% c("Queensland", "Western Australia", "New South Wales", "South Australia", 
+                              "Victoria", "Northern Territory", "Tasmania", "Australian Capital Territory")) |>
+  group_by(species) |>
+ # filter(n() > 2) |>
+  group_by(stateProvince, family) |>
+  summarise(n()) |>
+  tabyl(stateProvince) |>
+  arrange(desc(n))
+
+#plotting numbers of species and families by state
+myg_spp_fam_by_state <- left_join(myg_spp_by_state, myg_fam_by_state, by = "stateProvince")
+
+scale_right <- max(myg_spp_fam_by_state$n.y)/max(myg_spp_fam_by_state$n.x)
+
+as.data.frame(myg_spp_fam_by_state)|>
+  mutate(stateProvince = factor(stateProvince, levels = stateProvince))|>
+  ggplot(aes(x = stateProvince)) +
+  geom_bar(stat = "identity", aes(y = n.x, fill = "species")) +
+  geom_bar(stat = "identity", aes(y = n.y/scale_right, fill = "families"), colour = "black", alpha = 0.5) +
+  scale_y_continuous(sec.axis = sec_axis(~.*scale_right, name = "number of families")) + 
+  scale_fill_manual(values = c("grey30", "lightgreen")) +
+  labs(y = "number of species") +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90, colour = "black"),
+        axis.text.y = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+Map showing the number of species by state:
+```{r, echo = FALSE}
+# map of Australia with states
+aus <- st_transform(ozmaps::ozmap_states, 4326)
+
+# joining map with species count data
+myg_spp_aus <- myg_spp_by_state |>
+  full_join(y = aus, by = c("stateProvince" = "NAME")) |>
+  st_as_sf()
+
+# plotting number of species by state
+ggplot() + 
+  geom_sf(data = myg_spp_aus,
+          aes(fill = n),
+          colour = "black") +
+  scale_fill_distiller(name = "state_spp",
+                       type = "seq",
+                       palette = "YlOrBr",
+                       direction = 1,
+                       guide = guide_colourbar(direction = "horizontal",
+                                               label.position = "bottom",
+                                               title = NULL)) +
+  annotate("text", 
+           x = 133, 
+           y = -45.5, 
+           label = "No. of species",
+           size = 6) +
+  coord_sf(xlim = c(110, 155), ylim = c(-45, -10)) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(12, 'mm'))  
+```
+
+Map showing the number of families by state:
+```{r, echo = FALSE}
+# map of Australia with states
+aus <- st_transform(ozmaps::ozmap_states, 4326)
+
+# joining map with species count data
+myg_fam_aus <- myg_fam_by_state |>
+  full_join(y = aus, by = c("stateProvince" = "NAME")) |>
+  st_as_sf()
+
+# plotting number of species by state
+ggplot() + 
+  geom_sf(data = myg_fam_aus,
+          aes(fill = n),
+          colour = "black") +
+  scale_fill_distiller(name = "state_fam",
+                       type = "seq",
+                       palette = "YlOrBr",
+                       direction = 1,
+                       guide = guide_colourbar(direction = "horizontal",
+                                               label.position = "bottom",
+                                               title = NULL)) +
+  annotate("text", 
+           x = 133, 
+           y = -45.5, 
+           label = "No. of families",
+           size = 6) +
+  coord_sf(xlim = c(110, 155), ylim = c(-45, -10)) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(12, 'mm'))  
+```
+
+```{r, include = FALSE}
+# number of species recorded in only one state (species with at least three overall records)
+one_state_spp <- myg_records_by_state |> 
+  tabyl(species) |>
+  filter(n == 1) 
+
+# number of species recorded in more than one state (species with at least three overall records)
+multi_state_spp <- myg_records_by_state |> 
+  tabyl(species) |>
+  filter(n > 1)
+
+```
+
+`r nrow(one_state_spp)` species were recorded in only one state.
+`r nrow(multi_state_spp)` species were recorded in multiple states.
+
+### Basis of record
+
+Total counts of basis of record types. GBIF definitions are provided underneath the table (https://gbif.github.io/parsers/apidocs/org/gbif/api/vocabulary/BasisOfRecord.html). 
+
+```{r, echo = FALSE}
+# Counts of basis of record types. "OCCURRENCE" and "OBSERVATION" types were excluded as they could not be traced back to a source.
+myg_spiders |>
+  filter(!basisOfRecord %in% c("OCCURRENCE", "OBSERVATION")) |>
+  tabyl(basisOfRecord) |>
+  mutate(percent = percent*100) |>
+  arrange(desc(n)) |>
+  adorn_rounding(digits = 2, columns = percent)
+
+# # Machine observe keep the one with spatial data
+# myg_spiders |> 
+#   filter(basisOfRecord == "MACHINE_OBSERVATION", 
+#          taxonRank == "species") |> 
+#   select(scientificName, recordID, starts_with("decimal"))
+
+```
+
+`PRESERVED_SPECIMEN`: An occurrence record describing a preserved specimen.\
+`HUMAN_OBSERVATION`: An occurrence record describing an observation made by one or more people.\
+`MATERIAL_SAMPLE`: An occurrence record based on samples taken from other specimens or the environment.\
+`MACHINE_OBSERVATION`: An occurrence record describing an observation made by a machine.
+
+## Overview of assertions
+
+Various tests are run on occurrence data in the Atlas of Living Australia, resulting in assertions about the content and quality of the data. These Assertions help users gauge whether data is fit for their purposes and allow for easy data filtering. In the data, Assertions are logical variables (TRUE/FALSE) and take the value TRUE when they apply to the associated occurrence record. Descriptions of Assertions can be found at https://github.com/AtlasOfLivingAustralia/ala-dataquality/wiki.
+
+For the analysis of endemism hotspots, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
+
+```{r, include = FALSE}
+myg_assertions_long <- myg_assertions |>
+  pivot_longer(cols = c(AMBIGUOUS_COLLECTION:ZERO_COORDINATE), names_to = "assertion_type", values_to = "value") 
+assertion_counts <- myg_assertions_long |>
+  filter(value == TRUE) |>
+  tabyl(assertion_type)
+
+#Filtering observations where all assertions are false
+myg_assertions |>
+  filter(!if_any(AMBIGUOUS_COLLECTION:ZERO_COORDINATE))
+```
+
+### Spatial assertions
+
+We investigated a range of spatial assertions and deemed the following safe to bypass when refining the data download:
+
+- `COORDINATE_UNCERTAINTY_METERS_INVALID`\
+We performed visual checks and flagged records did not seem to be out of species' range. They were mostly cases where `coordinateUncertaintyinMeters` was NA. We know iNaturalist records input NA for `coordinateUncertaintyinMeters`, therefore in refining the data download we will include records where `coordinateUncertaintyinMeters` is NA or less than 1000 m. We will remove flagged values for a sensitivity analysis later on.
+- `COORDINATE_ROUNDED`\
+The original coordinates were rounded to six decimals (~ 1 m precision) to simplify processing. The level of precision lost will not affect the endemism analysis.
+
+The following will be used to refine the data download as they indicate coordinates outside of the given country (records flagged as TRUE will be excluded):
+
+- `COORDINATE_OUT_OF_RANGE`
+- `PRESUMED_NEGATED_LONGITUDE`
+- `PRESUMED_NEGATED_LATITUDE`
+- `PRESUMED_SWAPPED_COORDINATE`
+- `ZERO_COORDINATE`
+
+### Taxonomic assertions
+
+The following assertions were used to identify taxonomic discrepancies in the data and allow for review by taxonomic experts:
+
+`TAXON_MATCH_FUZZY` - is flagged when the supplied scientific name (`raw_scientificName`) does not exactly match the taxonomic backbone of the Atlas. Could the expert review the following list and check that species names (left column) are valid.
+```{r, echo = FALSE}
+# # Number of raw_scientificName variations for each species with fuzzy taxon matches
+# myg_spiders_all |>
+#   filter(TAXON_MATCH_FUZZY == TRUE) |>
+#   select(species, raw_scientificName, recordID) |>
+#   collect() |>
+#   group_by(species) |>
+#   summarise(num_raw_names = length(unique(raw_scientificName)))
+
+# List of species (adjusted name) and raw names (names given in observation)
+fuzzy_taxa <- myg_spiders_all |>
+  filter(TAXON_MATCH_FUZZY == TRUE) |>
+  select(species, scientificName, raw_scientificName) |>
+  collect() |>
+  unique() |>
+  print(n = Inf)
+```
+
