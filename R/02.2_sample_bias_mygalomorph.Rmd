@@ -83,8 +83,6 @@ job::job(
   }
 )
 
-
-
 plot(model_bias_myg)
 ```
 
