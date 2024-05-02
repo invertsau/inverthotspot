@@ -585,11 +585,18 @@ In this step we can inspect and clean the data of duplicates
 nrow(myg_spiders)
 head(myg_spiders)
 
+#myg_spiders$speciesconcatenate <- myg_spiders |> paste(scientificName, decimalLatitude, decimalLongitude)
+???
+
+myg_spiders$speciesconcatenate <- with(myg_spiders, paste(scientificName, decimalLatitude, decimalLongitude))
+
+head(myg_spiders$speciesconcatenate)
+
 Mygalomorphae_clean <- myg_spiders |> 
-  filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
-  filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
+  filter(!duplicated(speciesconcatenate))
 
 nrow(Mygalomorphae_clean)
+nrow(myg_spiders) - nrow(Mygalomorphae_clean)
 head(Mygalomorphae_clean)
 ```
 
