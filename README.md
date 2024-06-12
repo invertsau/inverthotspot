@@ -3,12 +3,12 @@
 This repository contains all the data and analyses for the Invertebrate Hot Spots project. 
 We are using the Infraorder Mygalmorphae Spiders as a case study to develop a workflow to identify areas of interest for the taxonomic group.
 
-## Render the book locally
+## Render the report locally
 
 1. Install Quarto using [these instructions](https://quarto.org/docs/get-started/)
 2. Clone this repository to your local computer
 3. Open the .Rproj file using RStudio
-4. Navigate into the report folder
+4. Navigate into the **report/** folder
 4. Click on any `.qmd` files and click on `Render`. 
 
 Alternatively,
