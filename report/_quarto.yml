@@ -1,0 +1,27 @@
+project:
+  type: book
+  output-dir: docs
+
+book:
+  title: "Mygalomorphae Spider Hot Spot Report"
+  author: "Josh Nitschke, Ashley Browse, Payal Bal, Jessica Marsh, Bruno A. Buzatto, Fonti Kar"
+  date: "4/22/2024"
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - methods.qmd
+    - results.qmd
+    - discussion.qmd
+    - conclusions.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: journal
+  pdf:
+    documentclass: scrreprt
+
+editor: source
+

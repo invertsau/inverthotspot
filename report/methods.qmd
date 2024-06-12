@@ -1,0 +1,52 @@
+# Methods and Statistical Analyses
+
+## [Data retrieval](https://github.com/invertsau/inverthotspot/blob/main/R/01_ala_data_retrieval_mygalomorph.Rmd)
+
+We used data from [Atlas of Living Australia (ALA)]() for this study. We downloaded occurrence records using the `galah` [R package]() using the following criterion: 
+
+1. Found in Australian mainland and Tasmania.
+2. Identified to a taxon rank of species.
+3. Basis of record of either: 
+    i) Preserved specimen
+    ii) Material sample
+    iii) Machine observation 
+    iv) Human observation 
+4. Coordinate uncertainty of less than 1000 meters or has a value of NA (citizen science records or human observations are typically entered as NA)
+
+We downloaded data for this report on the **20 January 2024** and it contained **XXXXX records**
+
+We also used ALA's data quality assertions to further refine our download. We excluded occurrence records using the following criterion:
+
+1. Coordinates are equal to 0
+2. Coordinates are presumed swapped e.g. when latitude is entered as longitude
+3. Latitude and longitude values are presumed negated 
+4. Coordinates our out of range
+5. Taxon excluded by the ALA
+5. Taxon considered as a questionable species
+
+The above assertions excluded XXXX records, a break down of records for each assertion is **summarised in Table. 1**
+
+## Data overview
+
+
+
+## Data cleaning
+
+<!-- Ashley -->
+
+## Generation of $\alpha$ hulls 
+
+## Quantifying species richness and endemism
+
+<!-- Biodiverse -->
+
+### Sample redundancy
+
+### Sample window and moving window
+
+### Endemism metrics
+
+
+## Data and code availability
+
+All data and code to reproduce the R portion of our analyses can be found at our [Github repository](https://github.com/invertsau/inverthotspot). 

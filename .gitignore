@@ -5,5 +5,11 @@
 data/shapesIUCN/
 IUCN_results.xlsx
 *.html
+/.quarto/
+README_files/
+.Rproj.user
+*.pdf
+site_libs/
+_books/
 
 
