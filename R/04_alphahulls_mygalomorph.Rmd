@@ -14,7 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages("remotes")
 # remotes::install_github("beatrizpateiro/alphahull", ref="WIP-ahull.IUCN-feature")
 # remotes::install_github("babichmorrowc/hull2spatial")
-# remotes::install_github("gdauby/ConR")
 
 # Load packages
 #install.packages("pacman")
