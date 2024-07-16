@@ -470,7 +470,7 @@ as.data.frame(myg_spp_fam_by_state)|>
 ```
 
 Map showing the number of species by state:
-```{r, echo = FALSE}
+```{r, include = FALSE}
 # map of Australia with states
 aus <- st_transform(ozmaps::ozmap_states, 4326)
 
@@ -486,7 +486,9 @@ hist(log(myg_spp_by_state$n))
 myg_spp_aus <- myg_spp_by_state |>
   full_join(y = aus, by = c("stateProvince" = "NAME")) |>
   st_as_sf()
+```
 
+```{r, echo=FALSE}
 # plotting number of species by state
 ggplot() + 
   geom_sf(data = myg_spp_aus,
@@ -511,7 +513,7 @@ ggplot() +
 ```
 
 Map showing the number of families by state:
-```{r, echo = FALSE}
+```{r, include = FALSE}
 # map of Australia with states
 aus <- st_transform(ozmaps::ozmap_states, 4326)
 
@@ -521,7 +523,9 @@ setdiff(myg_fam_by_state$stateProvince, aus$NAME)
 
 # checking distribution of data
 hist(myg_fam_by_state$n)
+```
 
+```{r, echo=FALSE}
 # joining map with species count data
 myg_fam_aus <- myg_fam_by_state |>
   full_join(y = aus, by = c("stateProvince" = "NAME")) |>
