@@ -20,8 +20,6 @@ bibliography: references.bib
 format:
   html:
     theme: journal
-  pdf:
-    documentclass: scrreprt
 
 editor: source
 
