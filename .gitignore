@@ -9,7 +9,7 @@ IUCN_results.xlsx
 README_files/
 .Rproj.user
 *.pdf
-site_libs/
-_books/
+report/site_libs/
+report/_books/
 
 
