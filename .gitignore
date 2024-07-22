@@ -11,5 +11,6 @@ README_files/
 *.pdf
 report/site_libs/
 report/_books/
+report/docs/
 
 
