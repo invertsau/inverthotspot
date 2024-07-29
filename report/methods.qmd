@@ -352,7 +352,127 @@ The following assertions were used to identify taxonomic discrepancies in the da
 
 ## Data cleaning
 
-<!-- Ashley -->
+The taxonomic data was cleaned to remove:
+
+-   Taxonomic errors and invalid species names
+-   Species introduced to Australia
+-   Marine species
+-   Records with geographic errors.
+
+Additionally, subspecies level identifications were reclassified to species level.
+
+Here we install the necessary packages, load in the data, and subset the required columns.
+
+```{r}
+# install.packages("pacman")
+pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner, maps, job)
+
+myg_spiders_all <- open_dataset(here(get_latest_download()))
+
+myg_spiders <- myg_spiders_all |> select(recordID:outlierLayer) |> collect()
+```
+
+#### Taxonomic Errors
+
+Records not identified to species level were removed.
+
+```{r}
+myg_species <- myg_spiders |> 
+  dplyr::filter(taxonRank == "species")
+```
+
+We also used Australian Faunal Directory (AFD) data to ensure all species names in the ALA dataset are valid.
+
+The [(AFD)](https://biodiversity.org.au/afd/home) is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories.
+
+Here we open AFD data and check that our mygalomorphae data matches.
+
+```{r, echo=FALSE}
+afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
+
+# Filter down to Arachnida 
+arachnids <- afd |> 
+  filter(CLASS == "ARACHNIDA") |> 
+  collect()
+
+# filter down to mygalomorphae
+arachnids |> 
+  pull(HIGHER_CLASSIFICATION) |> 
+  str_subset(pattern = "MYGALOMORPH")
+
+# Subset species in ALA data that DID NOT match with the AFD
+AFD_unmatched <- myg_species |> 
+  filter(! scientificName %in% arachnids$FULL_NAME) |> 
+  pull(scientificName) |> 
+  unique()
+```
+
+For records that do not match the AFD, we check if they are synonyms of listed species.
+
+```{r}
+issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
+issynonym_count = sum(issynonym)
+```
+
+We then use the World Spider Catalogue to exclude introduced spiders from the dataset.
+
+The [(WSC)](https://wsc.nmbe.ch/) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.
+
+```{r}
+wsc <- read_csv(here("data/wsc/species_export_20230929.csv"))
+
+introduced_taxa <- wsc |> 
+  filter(str_detect(distribution, pattern = "Introduced to.*Australia")) 
+
+introduced_taxa_wfullname <- introduced_taxa |> 
+  mutate(scientific_name = paste(genus, species)) 
+
+# Cross match introduced taxa from WSC with ALA data to exclude introduced spiders 
+introduced_taxa_wfullname$scientific_name %in% myg_species$scientificName |> table()
+myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> table()
+no_Introduced_WSC <- length(which(myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name))
+```
+
+We also used the Global Register of Invasive and Introduced Species (GRIIS) to check for and remove introduced species.
+
+[(GRIIS)](http://griis.org/) is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species.
+
+```{r}
+# Join distrubtion.txt and taxon-edit.txt
+griis_distrib <- read.delim(here("data/griis-australia-v1.6/distribution.txt"))
+griis_taxon <- read.delim(here("data/griis-australia-v1.6/taxon-edited.txt"))
+# check for missing values
+setdiff(griis_distrib$id, griis_taxon$id) |> length() # 24 missing
+setdiff(griis_taxon$id, griis_distrib$id) # none missing
+# join lists
+griis_all <- left_join(griis_distrib, griis_taxon, by = "id")  # Apply left_join dplyr function 
+
+# filter by class = arachnida
+str_subset(griis_all$class, "Arachnida") # there are no introduced arachnids in this list
+```
+
+#### Subspecies
+
+#### Introduced Species
+
+#### Marine Speceis
+
+#### Geographic Errors
+
+#### Duplicate Records
+
+```{r}
+{r, echo=F}
+nrow(myg_spiders)
+head(myg_spiders)
+
+Mygalomorphae_clean <- myg_spiders |> 
+  filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
+  filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
+
+nrow(Mygalomorphae_clean)
+head(Mygalomorphae_clean)
+```
 
 ## Generation of $\alpha$ hulls
 
