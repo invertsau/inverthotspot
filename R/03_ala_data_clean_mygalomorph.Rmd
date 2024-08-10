@@ -248,7 +248,7 @@ introduced_taxa_wfullname <- introduced_taxa |>
 
 WSC lists **`r length(introduced_taxa$speciesId)`** species as introduced to Australia.
 
-<!-- Cross match if introduced taxa from WSC with ALA data to exclude introduced spiders -->
+<!-- Cross match introduced taxa from WSC with ALA data to exclude introduced spiders -->
 
 ```{r, echo=F, include=F}
 introduced_taxa_wfullname$scientific_name %in% myg_species$scientificName |> table()
@@ -332,9 +332,9 @@ There are **`r length(which(word_counts != 2))`** subspecies of `r focus_taxon_s
 
 ### Excluding Marine Species
 
-WORMS introduction...
+The World Register of Marine Species (WoRMS) provides a authoritative and comprehensive list of names of marine organisms, including currently valid and alternative names.
 
-Using this function to cross match our species list to the WORMS database
+This function cross matches our species list to the WoRMS database
 
 ```{r, eval=FALSE, echo=F}
 wm_records_taxamatch("Teranodes")

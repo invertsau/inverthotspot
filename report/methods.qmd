@@ -414,7 +414,9 @@ issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
 issynonym_count = sum(issynonym)
 ```
 
-We then use the World Spider Catalogue to exclude introduced spiders from the dataset.
+#### Introduced Species
+
+We used the World Spider Catalogue (WSC) and the Global Register of Invasive and Introduced Species (GRIIS) to exclude introduced spiders from the dataset.
 
 The [(WSC)](https://wsc.nmbe.ch/) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.
 
@@ -432,8 +434,6 @@ introduced_taxa_wfullname$scientific_name %in% myg_species$scientificName |> tab
 myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> table()
 no_Introduced_WSC <- length(which(myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name))
 ```
-
-We also used the Global Register of Invasive and Introduced Species (GRIIS) to check for and remove introduced species.
 
 [(GRIIS)](http://griis.org/) is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species.
 
@@ -453,9 +453,60 @@ str_subset(griis_all$class, "Arachnida") # there are no introduced arachnids in 
 
 #### Subspecies
 
-#### Introduced Species
+We checked for subspecies by counting the number of words in the "species" field.
+
+```{r}
+# check if any species have more than 2 words:
+# Function to count words in a string
+count_words <- function(string) {
+  words <- strsplit(string, "\\s+")[[1]]  # Split the string into words
+  return(length(words))                   # Return the number of words
+}
+word_counts <- lapply(myg_spiders$species |> unique(), count_words)
+# which(word_counts != 2) 
+```
+
+In this case, there were no subspecies to deal with.
 
 #### Marine Speceis
+
+The World Register of Marine Species (WoRMS) was used to identify and remove marine species from the data.
+
+WoRMS provides a authoritative and comprehensive list of names of marine organisms, including currently valid and alternative names.
+
+This function cross matches our species list to the WoRMS database in the background.
+
+```{r}
+wm_records_taxamatch("Teranodes")
+myg_species <- myg_spiders$species |> unique()
+
+job::job({
+  output_df <- map(myg_species,
+                   possibly(~wm_records_taxamatch(.x, marine = FALSE)  |>
+                              pluck(1)  |>
+                              mutate(search_term = .x) |>
+                              discard(.p = ~is.null(.x))
+                   )
+  ) |>
+    list_rbind()
+  saveRDS(output_df, "output/worrms_myg_wm_records_taxamatch.rds")
+})
+```
+
+We then read the output to find matches between ALA data and WoRMS output.
+
+```{r}
+wormsOutput <- readRDS(here("output/worrms_myg_wm_records_taxamatch.rds"))
+wormsOutput$match_type
+
+#find exact matches between our ALA data and worms output
+length(which(wormsOutput$match_type %in% "exact"))
+wormsOutput$match_type %in% "near"
+wormsOutput$scientificname
+wormsOutput$search_term
+wormsOutput |> select(scientificname, search_term, match_type)
+names(wormsOutput)
+```
 
 #### Geographic Errors
 
