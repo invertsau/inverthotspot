@@ -350,55 +350,41 @@ The following assertions were used to identify taxonomic discrepancies in the da
 
 `TAXON_MATCH_FUZZY` - is flagged when the supplied scientific name (`raw_scientificName`) does not exactly match the taxonomic backbone of the Atlas.
 
+
 ## Data cleaning
 
-The taxonomic data was cleaned to remove:
+After cleaning the data using assertions, several additional errors and unwanted records needed to be manually removed. Only terrestrial species which are native to Australia were to be retained. Additionally, all records needed to be correctly identified and geographically correct. 
+
+Several processes were used to identify and remove all unsuitable records. The types of records which needed to be removed included:
 
 -   Taxonomic errors and invalid species names
 -   Species introduced to Australia
 -   Marine species
 -   Records with geographic errors.
-
-Additionally, subspecies level identifications were reclassified to species level.
-
-Here we install the necessary packages, load in the data, and subset the required columns.
-
-```{r}
-# install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, dplyr, galah, worrms, ozmaps, sf, CoordinateCleaner, maps, job)
-
-myg_spiders_all <- open_dataset(here(get_latest_download()))
-
-myg_spiders <- myg_spiders_all |> select(recordID:outlierLayer) |> collect()
-```
+-   Additionally, any subspecies level identifications were reclassified to species level.
 
 #### Taxonomic Errors
 
-Records not identified to species level were removed.
+Firstly, records not identified to species level were removed. While this was already specified during data retrieval, some higher order records remain in the data.
 
 ```{r}
-myg_species <- myg_spiders |> 
-  dplyr::filter(taxonRank == "species")
+myg_species <- myg_spiders |> dplyr::filter(taxonRank == "species")
 ```
+Out of `r nrow(myg_spiders)` records, `r nrow(myg_spiders) - nrow(myg_species)` higher order records were removed. `r nrow(myg_species)` species level records remain.
 
-We also used Australian Faunal Directory (AFD) data to ensure all species names in the ALA dataset are valid.
+To ensure all records had valid species names, the Australian Faunal Directory (AFD) was used. 
 
 The [(AFD)](https://biodiversity.org.au/afd/home) is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories.
 
-Here we open AFD data and check that our mygalomorphae data matches.
+A list of valid species names was downloaded from the AFD and was compared to the species names in our dataset, suhbsetting any records that did not have a matching valid name.
 
-```{r, echo=FALSE}
+```{r}
 afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
 
 # Filter down to Arachnida 
 arachnids <- afd |> 
   filter(CLASS == "ARACHNIDA") |> 
   collect()
-
-# filter down to mygalomorphae
-arachnids |> 
-  pull(HIGHER_CLASSIFICATION) |> 
-  str_subset(pattern = "MYGALOMORPH")
 
 # Subset species in ALA data that DID NOT match with the AFD
 AFD_unmatched <- myg_species |> 
@@ -407,16 +393,24 @@ AFD_unmatched <- myg_species |>
   unique()
 ```
 
-For records that do not match the AFD, we check if they are synonyms of listed species.
+We identified `r length(AFD_unmatched)` records with invalid species names.
+
+The AFD also list synonyms for listed species, which are often outdated species names. For all records that did not match the AFD, we check if they are synonyms of listed species.
 
 ```{r}
+unmatched_ala_sp <- myg_species |> 
+  filter(! scientificName %in% arachnids$FULL_NAME) |> 
+  pull(scientificName) |> 
+  unique() 
+
 issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
-issynonym_count = sum(issynonym)
 ```
+
+There was `r issynonym_count = sum(issynonym)` record which matched an AFD listed Synonym, and it was updated with the correct species name. All other records with invalid species names were removed.
 
 #### Introduced Species
 
-We used the World Spider Catalogue (WSC) and the Global Register of Invasive and Introduced Species (GRIIS) to exclude introduced spiders from the dataset.
+Any species which are not native to Australia needed to be removed from our dataset. To identify all introduced species in the dataset, we used species lists from the World Spider Catalogue (WSC) and the Global Register of Invasive and Introduced Species (GRIIS).
 
 The [(WSC)](https://wsc.nmbe.ch/) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.
 
@@ -428,12 +422,9 @@ introduced_taxa <- wsc |>
 
 introduced_taxa_wfullname <- introduced_taxa |> 
   mutate(scientific_name = paste(genus, species)) 
-
-# Cross match introduced taxa from WSC with ALA data to exclude introduced spiders 
-introduced_taxa_wfullname$scientific_name %in% myg_species$scientificName |> table()
-myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name |> table()
-no_Introduced_WSC <- length(which(myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name))
 ```
+
+Introduced species in the WSC matched with `r length(which(myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name))` records in our data.
 
 [(GRIIS)](http://griis.org/) is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species.
 
@@ -451,47 +442,14 @@ griis_all <- left_join(griis_distrib, griis_taxon, by = "id")  # Apply left_join
 str_subset(griis_all$class, "Arachnida") # there are no introduced arachnids in this list
 ```
 
-#### Subspecies
+The GRIIS does not list any arachnids as being introduced to Australia.
 
-We checked for subspecies by counting the number of words in the "species" field.
-
-```{r}
-# check if any species have more than 2 words:
-# Function to count words in a string
-count_words <- function(string) {
-  words <- strsplit(string, "\\s+")[[1]]  # Split the string into words
-  return(length(words))                   # Return the number of words
-}
-word_counts <- lapply(myg_spiders$species |> unique(), count_words)
-# which(word_counts != 2) 
-```
-
-In this case, there were no subspecies to deal with.
-
-#### Marine Speceis
+#### Marine Species
 
 The World Register of Marine Species (WoRMS) was used to identify and remove marine species from the data.
 
 WoRMS provides a authoritative and comprehensive list of names of marine organisms, including currently valid and alternative names.
 
-This function cross matches our species list to the WoRMS database in the background.
-
-```{r}
-wm_records_taxamatch("Teranodes")
-myg_species <- myg_spiders$species |> unique()
-
-job::job({
-  output_df <- map(myg_species,
-                   possibly(~wm_records_taxamatch(.x, marine = FALSE)  |>
-                              pluck(1)  |>
-                              mutate(search_term = .x) |>
-                              discard(.p = ~is.null(.x))
-                   )
-  ) |>
-    list_rbind()
-  saveRDS(output_df, "output/worrms_myg_wm_records_taxamatch.rds")
-})
-```
 
 We then read the output to find matches between ALA data and WoRMS output.
 
@@ -510,10 +468,25 @@ names(wormsOutput)
 
 #### Geographic Errors
 
+
+
+#### Subspecies
+
+We checked for subspecies by counting the number of words in the "species" field. Any records with more than 2 words in the "species" field were flagged as potential subspecies level identifications. 
+
+```{r}
+count_words <- function(string) {
+  words <- strsplit(string, "\\s+")[[1]]  # Split the string into words
+  return(length(words))                   # Return the number of words
+}
+word_counts <- lapply(myg_spiders$species |> unique(), count_words)
+```
+
+There were `r length(which(word_counts > 2))` records with more than two words in the "Species" field, and therefore, no subspecies identifications were found within our data.
+
 #### Duplicate Records
 
 ```{r}
-{r, echo=F}
 nrow(myg_spiders)
 head(myg_spiders)
 
