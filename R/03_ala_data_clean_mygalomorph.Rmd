@@ -550,6 +550,38 @@ nrow(Mygalomorphae_clean)
 head(Mygalomorphae_clean)
 ```
 
+
+
+## Narrow down to species with enough observations
+
+```{r}
+# Filter down to species
+myg_cleaned_sp <- myg_spiders_cleaned |> 
+  filter(taxonRank == "species")
+
+# Summarise number of observations by taxon
+myg_cleaned_sp |> 
+  group_by(scientificName) |> 
+  summarise(n = n()) |> 
+  arrange(-n)
+
+# Which ones have less than or equal 3 
+less_than_3_obs <- myg_cleaned_sp |> 
+  group_by(scientificName) |> 
+  summarise(n = n()) |> 
+  filter(n <= 3) |> 
+  pull(scientificName)
+
+myg_sp_enoughobs <- myg_cleaned_sp |> 
+  filter(!scientificName %in% less_than_3_obs)
+
+# How many species
+myg_sp_enoughobs |>
+  dplyr::select(scientificName) |> 
+  distinct() |> 
+  nrow()
+```
+
 ## Export cleaned data as a .parquet
 
 
@@ -557,6 +589,6 @@ head(Mygalomorphae_clean)
 ```{r, echo=F}
 file_name <- str_split_1(get_latest_download(), "/")[3] 
 
-write_parquet(Mygalomorphae_clean, here(paste0("output/data/cleaned_", file_name)))
+write_parquet(myg_sp_enoughobs, here(paste0("output/data/cleaned_", file_name)))
 ```
 
