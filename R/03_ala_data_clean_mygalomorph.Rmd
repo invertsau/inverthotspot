@@ -65,7 +65,6 @@ This document lays out the workflow of cleaning **`r focus_taxon`** data from th
 
 ```{r, eval=TRUE, echo=FALSE}
 myg_spiders_all <- open_dataset(here(get_latest_download()))
-
 ```
 
 <!-- ## Subset columns we want -->
@@ -292,18 +291,6 @@ The GRIIS contains **`r count(griis_all)`** records of introduced species in Aus
 
 **`r length(str_subset(griis_all$class, "Arachnida"))`** of these are Arachnids.
 
-
-<!-- Excluding marines -->
-
-<!-- Notes from Payal -->
-<!-- Decide whether to keep morpho-species  -->
-<!-- How do you distinguish these in ALA data? -->
-<!-- FK to check with PB, I don't think these in are ALA data -->
-```{r, echo=F}
-
-```
-
-
 ### Subspecies
 
 <!-- Decide whether to keep sub-species and if not whether to combine their data with the parent species -->
@@ -326,6 +313,9 @@ count_words <- function(string) {
 }
 word_counts <- lapply(myg_spiders$species |> unique(), count_words)
 # which(word_counts != 2) 
+
+# myg_spiders$species |> unique() |> str_count(pattern = "\\S+") > 2
+
 ```
 
 There are **`r length(which(word_counts != 2))`** subspecies of `r focus_taxon_short`s within the ALA data.
@@ -337,24 +327,21 @@ The World Register of Marine Species (WoRMS) provides a authoritative and compre
 This function cross matches our species list to the WoRMS database
 
 ```{r, eval=FALSE, echo=F}
-wm_records_taxamatch("Teranodes")
+# wm_records_taxamatch("Teranodes")
 myg_species <- myg_spiders$species |> unique()
 
-
-
-
-job::job({
-  output_df <- map(myg_species,
-                   possibly(~wm_records_taxamatch(.x, marine = FALSE)  |>
-                              pluck(1)  |>
-                              mutate(search_term = .x) |>
-                              discard(.p = ~is.null(.x))
-                   )
-  ) |>
-    list_rbind()
-
-  saveRDS(output_df, "output/worrms_myg_wm_records_taxamatch.rds")
-})
+# job::job({
+#   output_df <- map(myg_species,
+#                    possibly(~wm_records_taxamatch(.x, marine = FALSE)  |>
+#                               pluck(1)  |>
+#                               mutate(search_term = .x) |>
+#                               discard(.p = ~is.null(.x))
+#                    )
+#   ) |>
+#     list_rbind()
+# 
+#   saveRDS(output_df, "output/worrms_myg_wm_records_taxamatch.rds")
+# })
 ```
 
 
@@ -393,7 +380,6 @@ subset(myg_species, myg_species$country != "Australia")$country
 # keep only those in Australia
 myg_species <- subset(myg_species, myg_species$country == "Australia")
 ```
-
 
 <!-- Plot data -->
 
@@ -468,16 +454,6 @@ myg_species[which(myg_species$recordID ==
         setdiff(myg_species$recordID, myg_species_aohi$recordID)),]
 ```
 
-
-# clean cordinates
-
-```{r, echo=F}
-flagged <- clean_coordinates(x = myg_species, 
-                                     "decimalLongitude",
-                                     "decimalLatitude")
-
-```
-
 <!-- Mapping all flagged records -->
 
 ```{r}
@@ -491,7 +467,7 @@ ggplot() +
              aes(x = decimalLongitude, y = decimalLatitude),
              colour = "green",
              size = 0.5) +
-  geom_point(data = subset(flagged, .summary==FALSE),
+  geom_point(data = subset(flagged_alltests, .summary==FALSE),
              aes(x = decimalLongitude, y = decimalLatitude),
              colour = "darkred",
              size = 0.5) +
@@ -518,7 +494,7 @@ FALSE are values that are flagged to occur in sea and therefore will be eventual
 
 
 ```{r, echo=F}
-flagged_sf <- flagged |> 
+flagged_sf <- flagged_alltests |> 
   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
            crs = 4326) 
 
@@ -530,10 +506,6 @@ base_map  +
 ### Visualise .cap values
 
 ```{r, echo=F}
-flagged_sf <- flagged |> 
-  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
-           crs = 4326) 
-
 base_map  + 
   geom_sf(data = flagged_sf, aes(color = .cap), alpha = 0.5) + 
   theme_minimal()
@@ -542,10 +514,6 @@ base_map  +
 ### Visualise .otl values
 
 ```{r, echo=F}
-flagged_sf <- flagged |> 
-  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
-           crs = 4326) 
-
 base_map  + 
   geom_sf(data = flagged_sf, aes(color = .otl), alpha = 0.5) + 
   theme_minimal()
@@ -554,10 +522,6 @@ base_map  +
 ### Visualise .inst values
 
 ```{r, echo=F}
-flagged_sf <- flagged |> 
-  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
-           crs = 4326) 
-
 base_map  + 
   geom_sf(data = flagged_sf, aes(color = .inst), alpha = 0.5) + 
   theme_minimal()
@@ -566,15 +530,8 @@ base_map  +
 ### Exclude records flagged by CoordinateCleaner
 
 ```{r, echo=F}
-myg_species_clean <- myg_species[which(flagged$.summary),]
+myg_species_clean <- myg_species[which(flagged_alltests$.summary),]
 ```
-
-<!-- Export as CSV -->
-```{r}
-write.csv(myg_species_clean, 
-          paste0("output/Cleaned_Data_Mygalomorphae_", Sys.Date(), ".csv"))
-```
-
 
 ## Deduplication
 <!-- Check for duplicates (as the last step) -->
@@ -585,7 +542,7 @@ In this step we can inspect and clean the data of duplicates
 nrow(myg_spiders)
 head(myg_spiders)
 
-Mygalomorphae_clean <- myg_spiders |> 
+Mygalomorphae_clean <- myg_species_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
   filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
 
@@ -598,7 +555,8 @@ head(Mygalomorphae_clean)
 
 <!-- Filename should contain the date of the parquet we read in at the start, export to output folder -->
 ```{r, echo=F}
-get_latest_download()
-write_parquet(Mygalomorphae_clean, here(paste0("output/Cleaned_Data_Mygalomorphae_", Sys.Date(), "_ALA.parquet")))
+file_name <- str_split_1(get_latest_download(), "/")[3]
+
+write_parquet(Mygalomorphae_clean, here(paste0("output/data/cleaned_", file_name, "_ALA.parquet")))
 ```
 
