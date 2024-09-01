@@ -121,7 +121,8 @@ myg_conr_nest <- myg_spiders_cleaned |>
   nest(occ = c(starts_with("decimal"), scientificName))
 
 # Test function on one
-ConR_ahull(myg_conr_nest$occ[[1]], sf_transform = TRUE)
+test <- ConR_ahull(myg_conr_nest$occ[[1]], sf_transform = TRUE)
+
 
 # Iterative across list 
 spider_list <- myg_spiders_cleaned |> 
@@ -137,119 +138,21 @@ myg_conr_nest$conr_ahull <- lapply(spider_list, ConR_ahull, sf_transform = TRUE)
 #                           ~ConR_ahull(.x, st_transform = TRUE))
 #   )
 #   
+```
+
+#### Save output as rds for next step of workflow
+
+```{r}
+get_latest_cleaned_data()
+
+# Clean up the name
+file_name <- str_split_1(get_latest_cleaned_data(), "/")[3] |> str_remove(".parquet")
 
 # Save spatial dataframe
-write_rds(myg_conr_nest$conr_ahull, here("output/spatial/clean_myg_concr_output.rds"))
+write_rds(myg_conr_nest$conr_ahull, here("output/spatial", paste0("Spatial_alpha_hulls_", file_name, ".rds")))
 
 myg_concr_output <- read_rds(here("output/myg_concr_output.rds"))
-
-# Flatten output
-myg_concr_output <- myg_concr_output |> flatten() 
-
-# Need a mechanism to name the list
-myg_concr_output[[1]]$Results |> names()
-
-length(myg_concr_output) == nrow(myg_conr_nest)
-
-names(myg_concr_output) <- myg_conr_nest$species
-
-myg_concr_output
-
-# Extract spatialPoly_EOO only for endemism workflow
-get_EOO_sp <- function(sp_name){
-  output <- myg_concr_output |> 
-  pluck(sp_name, "spatialPoly_EOO") 
-}
-
-myg_spiders_conr_sp <- map(.x = myg_conr_nest$species,
-     ~get_EOO_sp(.x))
-
-length(myg_spiders_conr_sp) == nrow(myg_conr_nest)
-
-names(myg_spiders_conr_sp) <- myg_conr_nest$species
-
-write_rds(myg_spiders_conr_sp, "output/myg_spiders_conr_sp.rds")
-
-
-# A function to pull spatialPoly_EOO, change it to sf and add in species name
-get_ahull_sf <- function(sp_name){
-  output <- myg_concr_output |> 
-  pluck(sp_name, "spatialPoly_EOO")  |> 
-  st_as_sf() |> 
-  mutate(species = sp_name) |> 
-  dplyr::select(-dummy) 
-  
-  row.names(output) <- NULL
-  
-  output
-}
-
-myg_spiders_conr_sf <- map_df(.x = myg_conr_nest$species,
-     ~get_ahull_sf(.x))
-
-write_rds(myg_spiders_conr_sf, "output/myg_sf_alphahulls.rds")
 ```
 
-### Plot these all at once
-
-```{r}
-myg_spiders_conr_sf <- readRDS("output/myg_sf_alphahulls.rds")
-
-base_map + # There are offshore points need to crop these
-  geom_sf(data = myg_spiders_conr_sf, aes(geometry = geometry), fill = "#023E50",
-          alpha = 0.1) +
-  coord_sf(ylim=c(-10,-45),
-         xlim=c(113,155)) + 
-  theme_minimal()
-
-base_map + # There are offshore points need to crop these
-    geom_sf(data = myg_hull_plot, aes(geometry = points), colour = "black", 
-              alpha = 0.2) + 
-  geom_sf(data = myg_hull_plot, aes(geometry = geometry, fill = family),
-          alpha = 0.01) +
-  guides(fill = guide_legend(override.aes = list(alpha = 0.5))) + 
-  coord_sf(ylim=c(-10,-45),
-         xlim=c(113,155)) + 
-  theme(legend.position = "bottom")
-```
-
-A few example taxa
-
-```{r}
-test <- myg_spiders_conr_sf |>  
-  sample_frac(0.2) 
-
-test
-test_occ <- myg_conr_nest |> 
-  filter(species %in% test$species) |> 
-  unnest() |> 
-  dplyr::select(-scientificName) |> 
-  st_as_sf(crs = 4326, coords = c("decimalLongitude", "decimalLatitude")) 
-
-
-base_map + # There are offshore points need to crop these
-  geom_sf(data = test, aes(geometry = geometry), fill = "#023E50",
-          alpha = 0.2) +
-  geom_sf(data = test_occ, size = 0.2, colour = "deepskyblue2") +
-  coord_sf(ylim=c(-10,-45),
-         xlim=c(113,155)) + 
-  theme_minimal()
-```
- 
-devtools::install_github("gdauby/ConR")
-
-myg_spiders <- read_parquet(here("data/galah/Mygalomorphae_withassertions_2023-09-18_ALA.parquet"))
-
-
-
-dataset <- dummy_dist(nsp = 1, max_occ = 30)
-
-alphas <- EOO.computing(XY = dataset, method.range = "alpha", export_shp = TRUE, alpha = 3)
-
-plot(alphas$spatial)
-
-alphas <- EOO.computing(XY = dataset, method.range = "alpha", export_shp = TRUE, alpha = 3, buff.alpha = 	0.000001)
-
-plot(alphas$spatial)
 
 
