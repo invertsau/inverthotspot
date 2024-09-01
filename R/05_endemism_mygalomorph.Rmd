@@ -17,6 +17,8 @@ These are estimated from {ConR}, this is a massive list, each element is a spati
 
 ```{r}
 species_polys <- readRDS("output/myg_spiders_conr_sp.rds")
+
+species_polys <- readRDS("output/spatial/Spatial_alpha_hulls_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds")
 ```
 
 ### Pre-processing
@@ -26,7 +28,6 @@ species_polys <- readRDS("output/myg_spiders_conr_sp.rds")
 combinedShp <- do.call(what = rbind, args=species_polys)
 
 ## Assign species names
-combinedShp$dummy <- names(species_polys)
 combinedShp <- terra::vect(combinedShp)
 names(combinedShp) <- "species"
 
@@ -36,7 +37,7 @@ combinedShp
 ### Calculate Community Matrix
 
 Convert raw input distribution data to community at 0.5 decimal degrees
-`trace = 1` is passed to `mean_dist()` whichgenerates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces"the function; trace = 2 or higher will be more voluminous
+`trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
 
 ```{r}
 comm.poly <- phyloregion::polys2comm(dat = combinedShp, species = "species", trace=1, res = 0.5)
@@ -66,8 +67,6 @@ Weighted endemism tally per cell divided by the species richness of that cell
 
 ```{r}
 m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
-
-plot(m1.poly)
 ```
 
 ### Create a endemism map
@@ -98,78 +97,13 @@ ggplot() +
   theme(legend.position = "bottom")
 ```
 
-### Reproducing Aaron's original maps
-
-Species richness
-
-```{r}
-aust_WGS84 <- st_transform(ozmaps::ozmap_country, crs(comm.poly$map))
-
-# Adjusting the axes
-bbox_new <- st_bbox(m1_sf)
-xrange <- bbox_new$xmax - bbox_new$xmin # range of x values
-yrange <- bbox_new$ymax - bbox_new$ymin
-
-bbox_new[1] <- bbox_new[1] + (0.62 * xrange) # xmin - left
-bbox_new[3] <- bbox_new[3] - (0.1 * xrange) # xmax - right
-bbox_new[2] <- bbox_new[2] - (0.01 * yrange) # ymin - bottom
-bbox_new[4] <- bbox_new[4] - (0.1 * yrange) # ymax - top
-
-spRh.poly <- tm_shape(m1_sf, 
-                      bbox = bbox_new
-                      ) +
-  tm_polygons("richness", 
-              style="quantile", 
-              title="Species Richness",
-              palette="YlGnBu") +
-  tm_shape(aust_WGS84) +
-  tm_polygons("NAME", 
-              alpha = 0,
-              legend.show = F,
-              lwd = 2, border.col = 1)
-
-spRh.poly
-```
-
-```{r}
-weighted.endemism.poly <- tm_shape(m1_sf, bbox = bbox_new) +
-  tm_polygons("WE", 
-              style="quantile", 
-              title="Weighted endemism",
-              palette="YlGnBu")+
-  tm_shape(aust_WGS84)+
-  tm_polygons("NAME", 
-              alpha = 0,
-              legend.show = F,
-              lwd = 2, border.col = 1)
-
-weighted.endemism.poly
-```
-
-
-```{r}
-Corrected.weighted.endemism.poly <- tm_shape(m1_sf, bbox = bbox_new) +
-  tm_polygons("corrected_endemism", 
-              style="quantile", 
-              title="Polygons: Corrected weighted endemism",
-              lwd = 0.5,
-              palette="YlGnBu")+
-  tm_shape(aust_WGS84)+
-  tm_polygons("NAME", 
-              alpha = 0,
-              legend.show = F,
-              lwd = 2, border.col = 1)
-
-Corrected.weighted.endemism.poly
-```
-
 https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Moran's%20I%20values%20significantly%20above,negative%20spatial%20autocorrelation%20or%20dispersion.
 
 ```{r}
 library(spdep)
 
 # extract the center of each polygon
-coo <- centroids(m1.poly)
+coo <- terra::centroids(m1.poly)
 
 coo <- coo |> sf::st_as_sf(crs = 4326)
 
@@ -180,8 +114,12 @@ S.dist  <-  dnearneigh(coo, 0, 200000)
 lw <- nb2listw(S.dist, style="W",zero.policy=T) 
 
 # Run the MC simulation
-MI  <-  moran.mc(m1.poly$corrected_endemism, lw, nsim=9999,zero.policy=T,)
+RI  <-  moran.mc(m1.poly$richness, lw, nsim=9999,zero.policy=T)
+MI  <-  moran.mc(m1.poly$corrected_endemism, lw, nsim=9999,zero.policy=T)
+WE_MI  <-  moran.mc(m1.poly$WE, lw, nsim=9999,zero.policy=T)
 
-saveRDS(MI, "output/Mygalomorphae_MI.rds")
+saveRDS(RI, "output/analysis/Cleaned_Mygalomorphae_RI.rds")
+saveRDS(MI, "output/analysis/Cleaned_Mygalomorphae_MI.rds")
+saveRDS(WE_MI, "output/analysis/Cleaned_Mygalomorphae_WE_MI.rds")
 ```
 
