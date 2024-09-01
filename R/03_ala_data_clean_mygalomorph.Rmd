@@ -555,8 +555,8 @@ head(Mygalomorphae_clean)
 
 <!-- Filename should contain the date of the parquet we read in at the start, export to output folder -->
 ```{r, echo=F}
-file_name <- str_split_1(get_latest_download(), "/")[3]
+file_name <- str_split_1(get_latest_download(), "/")[3] 
 
-write_parquet(Mygalomorphae_clean, here(paste0("output/data/cleaned_", file_name, "_ALA.parquet")))
+write_parquet(Mygalomorphae_clean, here(paste0("output/data/cleaned_", file_name)))
 ```
 
