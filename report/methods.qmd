@@ -500,6 +500,10 @@ head(Mygalomorphae_clean)
 
 ## Generation of $\alpha$ hulls
 
+Spatial data for invertebrates is typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods. 
+
+One way to maximise all exisitng data is to represent species range with alpha-hulls, a form of spatial polygon.
+
 ## Quantifying species richness and endemism
 
 <!-- Biodiverse -->
