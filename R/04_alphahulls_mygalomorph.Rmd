@@ -18,52 +18,16 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load packages
 #install.packages("pacman")
 pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf, ggplot2, skimr, alphahull, hull2spatial, sp, purrr, ConR, dplyr)
+
+source("R/utils.R")
 ```
 
 ## Read in data
 
 ```{r}
-myg_spiders <- read_parquet(here("data/galah/Mygalomorphae_withassertions_2023-09-18_ALA.parquet"))
-```
+get_latest_cleaned_data()
 
-## Precleaning
-
-A quick clean for now, data cleaning is still being finalised
-
-```{r}
-myg_spiders_cleaned <- myg_spiders |> 
-  filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
-  filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
-```
-
-## Narrow down to species with enough observations
-
-```{r}
-# Filter down to species
-myg_cleaned_sp <- myg_spiders_cleaned |> 
-  filter(taxonRank == "species")
-
-# Summarise number of observations by taxon
-myg_cleaned_sp |> 
-  group_by(scientificName) |> 
-  summarise(n = n()) |> 
-  arrange(-n)
-
-# Which ones have less than or equal 3 
-less_than_3_obs <- myg_cleaned_sp |> 
-  group_by(scientificName) |> 
-  summarise(n = n()) |> 
-  filter(n <= 3) |> 
-  pull(scientificName)
-
-myg_sp_enoughobs <- myg_cleaned_sp |> 
-  filter(!scientificName %in% less_than_3_obs)
-
-# How many species
-myg_sp_enoughobs |>
-  dplyr::select(scientificName) |> 
-  distinct() |> 
-  nrow()
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data())
 ```
 
 ## Proof of concept
@@ -72,11 +36,11 @@ Selecting a random taxa to create alphahulls, so we can abstract the workflow to
 
 ```{r}
 set.seed(987)
-choosen <- myg_sp_enoughobs |> 
+choosen <- myg_spiders_cleaned |> 
   slice_sample(n = 1) |> 
   pull(scientificName)
 
-b_aurea <- myg_sp_enoughobs |> 
+b_aurea <- myg_spiders_cleaned |> 
   filter(scientificName == choosen)
 
 b_aurea |> skim()
@@ -111,218 +75,6 @@ base_map  +
 
 Alpha hulls are a flexible way to represent species distributions without all the extra work of running a species distribution model. 
 
-There are many ways to create an alphahull, this way is Bea's method which was borrowed by the `ConR` R package which was used in the original NESP project.
-
-After sharing the [IUCN documentation, page 51](https://nc.iucnredlist.org/redlist/content/attachment_files/RedListGuidelines.pdf) with Bea, she noted that her method is different what is stated in the documentation [(Burgman and Fox 2003)](https://espace.library.uq.edu.au/view/UQ:39112/Bias_species_ranges_2003.pdf). 
-
-After discussing the potential impact of the IUCN alpha hull for the conservation/biodiversity community, Bea agreed to implement a function to estimate alpha hulls using the Burgman and Fox method. [This work](https://github.com/beatrizpateiro/alphahull/tree/WIP-ahull.IUCN-feature) is a work in progress and not yet released to public. 
-
-## Bea's version from {alphahull} package
-
-```{r}
-# Create alphaull
-b_aurea_ahull <- b_aurea |> 
-  select(decimalLongitude, decimalLatitude) |> 
-  ahull(alpha = 2)
-
-plot(b_aurea_ahull)
-
-# Transform to sf object
-b_aurea_ahull_sf <- ahull2poly(b_aurea_ahull) |>
-  st_as_sf() |>
-  st_set_crs(4326)  # This method is not working not sure why
-
-# Another way to transform to sf object
-# b_aurea_ahull_2 <- hull2spatial:::ahull2lines(b_aurea_ahull) |> st_as_sf() |> st_cast(to = "MULTIPOLYGON")  |> st_set_crs(4326)
-
-# Add to our map
-base_map  + 
-  geom_sf(data = b_aurea_sf, alpha = 0.5) + 
-  geom_sf(data = b_aurea_ahull_sf, fill = 'orange', alpha = 0.2) +
-  theme_minimal()
-```
-### Extroplate across all taxa
-
-```{r}
-create_ahull_sf <- function(data, 
-                            lat, long, 
-                            alpha = 2){
-  
-# browser()
-ahull_obj <- data |> 
-  dplyr::select({{long}},  {{lat}}) |> 
-  alphahull::ahull(alpha = alpha)
-
-# Convert to sp then sf
-ahull_sf <- hull2spatial::ahull2poly(ahull_obj) |>
-  sf::st_as_sf() |>
-  sf::st_set_crs(4326)
-
-return(ahull_sf)
-
-}
-# Test this out
-create_ahull_sf(b_aurea, decimalLatitude, decimalLongitude)
-```
-
-### Nest data and try apply function across all taxa
-
-```{r}
-myg_nested_sp <- myg_sp_enoughobs |> 
-  select(scientificName, decimalLongitude, decimalLatitude) |> 
-  nest(occ = c(decimalLongitude, decimalLatitude))
-
-myg_nested_ahull <- myg_nested_sp |> 
-  mutate(points_sf = map(.x = occ,
-                           ~ st_as_sf(.x, coords = c("decimalLongitude", "decimalLatitude"), # Set as sf object
-                                      crs = 4326) |> 
-                             rename(points = geometry)), # Rename geometry variable to something intuitive
-         ahulls_sf = map(myg_nested_sp$occ, 
-    possibly(~create_ahull_sf(.x, decimalLatitude, decimalLongitude))
-  )
-  )
-
-# This throws an error
-myg_unnested <- myg_nested_ahull |> 
-  select(scientificName, points_sf, ahulls_sf) |> 
-  unnest(cols = c(points_sf, ahulls_sf)) 
-
-# Bind manually
-ahull_bound <- list_rbind(myg_nested_ahull$ahulls_sf) |> 
-  rename(ahull = geometry)
-
-# Identify which ones are null
-null_hulls_taxa <- which(lengths(myg_nested_ahull$ahulls_sf) == 0)
-
-# Investigate NULL taxa 
-# Not sure why these are NULL for ahulls, some dups and some very similar values
-myg_nested_ahull |> 
-  slice(null_hulls_taxa) |> 
-  pluck("occ")
-
-problem_taxa <- myg_nested_ahull |> 
-  slice(null_hulls_taxa) |> 
-  pull(scientificName)
-
-# Left join in other taxonomic info
-with_taxonomic_info <- myg_nested_ahull |> left_join(myg_sp_enoughobs |> 
-  select(scientificName, genus, family)) |> 
-  distinct()
-
-# Exclude these for now
-myg_hull_plot <- with_taxonomic_info |> 
-  filter(!scientificName %in% problem_taxa) |> 
-  select(-occ) |>
-  unnest(c(points_sf, ahulls_sf)) 
-
-
-# Cropping data to mainland Australia
-myg_hull_plot |> 
-   # filter(decimalLatitude < -10, decimalLatitude >= -45,
-   #       decimalLongitude >= 113, decimalLongitude <= 155) |> 
-  st_as_sf(crs = 4326) 
-```
-
-### Plot the ahulls
-
-```{r}
-base_map + # There are offshore points need to crop these
-    geom_sf(data = myg_hull_plot, aes(geometry = points), colour = "black", 
-              alpha = 0.1)
-
-base_map + # There are offshore points need to crop these
-    geom_sf(data = myg_hull_plot, aes(geometry = points), colour = "black", 
-              alpha = 0.2) + 
-  geom_sf(data = myg_hull_plot, aes(geometry = geometry), fill = "#023E50",
-          alpha = 0.01) +
-  coord_sf(ylim=c(-10,-45),
-         xlim=c(113,155)) 
-
-base_map + # There are offshore points need to crop these
-    geom_sf(data = myg_hull_plot, aes(geometry = points), colour = "black", 
-              alpha = 0.2) + 
-  geom_sf(data = myg_hull_plot, aes(geometry = geometry, fill = family),
-          alpha = 0.01) +
-  guides(fill = guide_legend(override.aes = list(alpha = 0.5))) + 
-  coord_sf(ylim=c(-10,-45),
-         xlim=c(113,155)) + 
-  theme(legend.position = "bottom")
-```
-
-## IUCN version
-
-We need to install alphahull from the [IUCN branch](https://github.com/beatrizpateiro/alphahull/tree/WIP-ahull.IUCN-feature) to use these in code
-
-```{r}
-# remotes::install_github("beatrizpateiro/alphahull", ref = "WIP-ahull.IUCN-feature")
-library(alphahull)
-```
-
-```{r}
-# Create alphaull
-b_aurea_ahull_iucn <- b_aurea |> 
-  select(decimalLongitude, decimalLatitude) |> 
-  alphahull::ahull.IUCN(alpha = 4)
-
-plot(b_aurea_ahull_iucn) # Yikes this looks funky hey!
-
-# Complete the structure between methods
-str(b_aurea_ahull_iucn)
-str(b_aurea_ahull)
-
-
-# Transform to sf object
-ahull2poly(b_aurea_ahull_iucn) # Yeah I didn't think it would be that easy
-```
-
-### Update {hull2spatial} code
-
-```{r}
-# hull2spatial:::ahull2lines # Prints the function
-# Expected behaviour
-hull2spatial:::ahull2lines(b_aurea_ahull)
-
-hull = b_aurea_ahull
-hull_2 = b_aurea_ahull_iucn
-
-IA_ahull2lines <- function(hull) 
-{
-  # Determine what type of ahull it is
-  if(class(hull) ==  "ahull.IUCN")
-    arclist <- hull$arcs
-  
-  arclist <- hull$arcs
-  lines <- list()
-  for (i in 1:nrow(arclist)) {
-    center_i <- arclist[i, 1:2]
-    radius_i <- arclist[i, 3]
-    vector_i <- arclist[i, 4:5]
-    theta_i <- arclist[i, 6]
-    line_i <- arc2line(center = center_i, r = radius_i, vector = vector_i, 
-                       theta = theta_i)
-    list_length <- length(lines)
-    if (list_length > 0) {
-      last_line_coords <- lines[[list_length]]@coords
-    }
-    if (i == 1) {
-      lines[[i]] <- line_i
-    }
-    else if (isTRUE(all.equal(line_i@coords[1, ], last_line_coords[nrow(last_line_coords), 
-    ]))) {
-      lines[[list_length]]@coords <- rbind(last_line_coords, 
-                                           line_i@coords[2:nrow(line_i@coords), ])
-    }
-    else {
-      lines[[length(lines) + 1]] <- line_i
-    }
-  }
-  lines <- Lines(lines, ID = "l")
-  sp_lines <- SpatialLines(list(lines))
-  return(sp_lines)
-}
-
-```
-
 ### ConR
 
 #### Proof of concept for one sp 
@@ -334,174 +86,73 @@ b_aurea
 b_aurea_conr <- b_aurea |> 
   dplyr::select(decimalLatitude, decimalLongitude, scientificName)
 
-conr_output <- IUCN.eval(b_aurea_conr, 
-                         method.range = "alpha.hull",
-                         alpha = 2, 
-                         export_shp = TRUE, 
-                         write_shp = TRUE)
+conr_output <- EOO.computing(b_aurea_conr, 
+                             method.range = "alpha",
+                             alpha = 2, 
+                             buff.alpha = 0.000001,
+                             export_shp = TRUE,
+                             write_shp = TRUE)
 
-conr_output 
-
-# Read in shp
-b_aurea_shp <- st_read(here("shapesIUCN/Blakistonia_aurea_EOO_poly.shp")) |> 
-  st_set_crs(value = 4326)
-
-plot(b_aurea_shp)
+as(conr_output$spatial, "Spatial")
 ```
 
 #### Extrapolate to all Myg taxa
 
 ```{r}
-myg_conr_nest <- myg_sp_enoughobs |> 
+# A function to generate alpha-hull and extract output and transform into sf object
+ConR_ahull <- function(data, sf_transform = TRUE){
+
+  conr_output <- ConR::EOO.computing(data, 
+                               method.range = "alpha",
+                               alpha = 2, 
+                               buff.alpha = 0.000001,
+                               export_shp = TRUE)
+  if(sf_transform == TRUE){
+  as(conr_output$spatial, "Spatial")
+  } 
+  else
+    conr_output$spatial
+}
+
+# Nest data
+myg_conr_nest <- myg_spiders_cleaned |> 
   dplyr::select(decimalLatitude, decimalLongitude, scientificName) |> 
   mutate(species = scientificName) |> 
   nest(occ = c(starts_with("decimal"), scientificName))
 
+# Test function on one
+test <- ConR_ahull(myg_conr_nest$occ[[1]], sf_transform = TRUE)
+
+
+# Iterative across list 
+spider_list <- myg_spiders_cleaned |> 
+  dplyr::select(decimalLatitude, decimalLongitude, scientificName) |> 
+  split(~scientificName)
+
+myg_conr_nest$conr_ahull <- lapply(spider_list, ConR_ahull, sf_transform = TRUE)
+
 # A function to map over
-map(.x = myg_conr_nest$occ, 
-    possibly(~IUCN.eval(DATA =.x, 
-                        method.range = "alpha.hull",
-                        alpha = 2, 
-                        export_shp = TRUE, 
-                        write_shp = TRUE)
-    )
-)
+# Can't get this map working for some reason! 
+# myg_conr_nest |> 
+#   mutate(conr_ahull = map(.x = occ, 
+#                           ~ConR_ahull(.x, st_transform = TRUE))
+#   )
+#   
+```
 
+#### Save output as rds for next step of workflow
 
-# With Buffer
-myg_concr_output_withbuffer <- map(.x = myg_conr_nest$occ, 
-    possibly(~IUCN.eval(DATA =.x, 
-                        method.range = "alpha.hull",
-                        alpha = 2, 
-                        export_shp = TRUE, 
-                        )
-    )
-)
+```{r}
+get_latest_cleaned_data()
 
-write_rds(myg_concr_output_withbuffer, here("output/myg_concr_output_withbuffer_0.1.rds"))
+# Clean up the name
+file_name <- str_split_1(get_latest_cleaned_data(), "/")[3] |> str_remove(".parquet")
 
-# No buffer
-myg_concr_output <- map(.x = myg_conr_nest$occ, 
-    possibly(~IUCN.eval(DATA =.x, 
-                        method.range = "alpha.hull",
-                        alpha = 2, 
-                        export_shp = TRUE, 
-                        buff.alpha = 	0.000001 # This is in decimal degrees why ~	111 mm
-                        )
-    )
-)
-
-# write_rds(myg_concr_output, here("output/myg_concr_output.rds"))
+# Save spatial dataframe
+write_rds(myg_conr_nest$conr_ahull, here("output/spatial", paste0("Spatial_alpha_hulls_", file_name, ".rds")))
 
 myg_concr_output <- read_rds(here("output/myg_concr_output.rds"))
-
-# Flatten output
-myg_concr_output <- myg_concr_output |> flatten() 
-
-# Need a mechanism to name the list
-myg_concr_output[[1]]$Results |> names()
-
-length(myg_concr_output) == nrow(myg_conr_nest)
-
-names(myg_concr_output) <- myg_conr_nest$species
-
-myg_concr_output
-
-# Extract spatialPoly_EOO only for endemism workflow
-get_EOO_sp <- function(sp_name){
-  output <- myg_concr_output |> 
-  pluck(sp_name, "spatialPoly_EOO") 
-}
-
-myg_spiders_conr_sp <- map(.x = myg_conr_nest$species,
-     ~get_EOO_sp(.x))
-
-length(myg_spiders_conr_sp) == nrow(myg_conr_nest)
-
-names(myg_spiders_conr_sp) <- myg_conr_nest$species
-
-write_rds(myg_spiders_conr_sp, "output/myg_spiders_conr_sp.rds")
-
-
-# A function to pull spatialPoly_EOO, change it to sf and add in species name
-get_ahull_sf <- function(sp_name){
-  output <- myg_concr_output |> 
-  pluck(sp_name, "spatialPoly_EOO")  |> 
-  st_as_sf() |> 
-  mutate(species = sp_name) |> 
-  dplyr::select(-dummy) 
-  
-  row.names(output) <- NULL
-  
-  output
-}
-
-myg_spiders_conr_sf <- map_df(.x = myg_conr_nest$species,
-     ~get_ahull_sf(.x))
-
-write_rds(myg_spiders_conr_sf, "output/myg_sf_alphahulls.rds")
 ```
 
-### Plot these all at once
-
-```{r}
-myg_spiders_conr_sf <- readRDS("output/myg_sf_alphahulls.rds")
-
-base_map + # There are offshore points need to crop these
-  geom_sf(data = myg_spiders_conr_sf, aes(geometry = geometry), fill = "#023E50",
-          alpha = 0.1) +
-  coord_sf(ylim=c(-10,-45),
-         xlim=c(113,155)) + 
-  theme_minimal()
-
-base_map + # There are offshore points need to crop these
-    geom_sf(data = myg_hull_plot, aes(geometry = points), colour = "black", 
-              alpha = 0.2) + 
-  geom_sf(data = myg_hull_plot, aes(geometry = geometry, fill = family),
-          alpha = 0.01) +
-  guides(fill = guide_legend(override.aes = list(alpha = 0.5))) + 
-  coord_sf(ylim=c(-10,-45),
-         xlim=c(113,155)) + 
-  theme(legend.position = "bottom")
-```
-
-A few example taxa
-
-```{r}
-test <- myg_spiders_conr_sf |>  
-  sample_frac(0.2) 
-
-test
-test_occ <- myg_conr_nest |> 
-  filter(species %in% test$species) |> 
-  unnest() |> 
-  dplyr::select(-scientificName) |> 
-  st_as_sf(crs = 4326, coords = c("decimalLongitude", "decimalLatitude")) 
-
-
-base_map + # There are offshore points need to crop these
-  geom_sf(data = test, aes(geometry = geometry), fill = "#023E50",
-          alpha = 0.2) +
-  geom_sf(data = test_occ, size = 0.2, colour = "deepskyblue2") +
-  coord_sf(ylim=c(-10,-45),
-         xlim=c(113,155)) + 
-  theme_minimal()
-```
- 
-devtools::install_github("gdauby/ConR")
-
-myg_spiders <- read_parquet(here("data/galah/Mygalomorphae_withassertions_2023-09-18_ALA.parquet"))
-
-
-
-dataset <- dummy_dist(nsp = 1, max_occ = 30)
-
-alphas <- EOO.computing(XY = dataset, method.range = "alpha", export_shp = TRUE, alpha = 3)
-
-plot(alphas$spatial)
-
-alphas <- EOO.computing(XY = dataset, method.range = "alpha", export_shp = TRUE, alpha = 3, buff.alpha = 	0.000001)
-
-plot(alphas$spatial)
 
 
