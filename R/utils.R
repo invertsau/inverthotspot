@@ -30,7 +30,7 @@ get_latest_download <- function(path_to_galah_data = 'data/galah/'){
 #' @examples
 #' arrow::open_dataset(get_latest_cleaned_data())
 
-get_latest_cleaned_data<- function(path_to_clean_data = 'output/clean/'){
+get_latest_cleaned_data<- function(path_to_clean_data = 'output/data/'){
   # Grab all files in folder
   all_outputs <- list.files(path_to_clean_data) 
   
