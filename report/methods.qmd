@@ -1,4 +1,34 @@
+---
+---
+
 # Methods and Statistical Analyses
+
+```{r setup, include=FALSE, eval=TRUE}
+## Setting up
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, skimr, sp, purrr, ConR, dplyr, DT)
+
+# Load helper functions
+source(here("R/utils.R"))
+
+## Read in parquet of raw download
+ myg_spiders_all <- open_dataset(get_latest_download(path_to_galah_data = here("data/galah/")))
+
+# Load cleaned data
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = here("output/data/")))
+```
+
+```{r, eval=TRUE}
+getwd()
+
+here()
+get_latest_download()
+here(get_latest_download())
+
+here(get_latest_cleaned_data())
+get_latest_cleaned_data()
+
+```
+
 
 ## [Data retrieval](https://github.com/invertsau/inverthotspot/blob/main/R/01_ala_data_retrieval_mygalomorph.Rmd)
 
@@ -33,17 +63,6 @@ After the initial data retrieval the data were summarised to provide an overview
 The full data overview report can be found at ...
 
 ```{r loadpackages, include=FALSE}
-## Setting up
-
-# install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT)
-
-# Load helper functions
-source(here("R/utils.R"))
-
-## Read in parquet
-myg_spiders_all <- open_dataset(here(get_latest_download()))
-
 ## Subset columns we want for ALA data overview
 myg_spiders <- myg_spiders_all |> 
   select(decimalLatitude:collectionCode) |> 
@@ -53,7 +72,6 @@ myg_spiders <- myg_spiders_all |>
 ### Species
 
 ```{r, echo=FALSE}
-
 # Total number of species
 total_myg <- myg_spiders |> 
   filter(!is.na(species)) |> 
@@ -500,9 +518,13 @@ head(Mygalomorphae_clean)
 
 ## Generation of $\alpha$ hulls
 
-Spatial data for invertebrates is typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods. 
+Spatial data for invertebrates is typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods such as species distribution models to quantify their whereabouts. 
 
-One way to maximise all exisitng data is to represent species range with alpha-hulls, a form of spatial polygon.
+One way to retain as many species as possible in a spatial analysis is to represent species range with alpha-hulls, a form of spatial polygon. An alpha-hull can be computed using 3 data points, which allows the inclusion of data-deficient invertebrates in our endemism analysis
+
+Using the cleaned data, we applied the `EOO.computing()` function from R package [`ConR`](https://github.com/gdauby/ConR) to quantify alpha-hulls for all species that had at least 3 records (n = `r # myg_spiders_cleaned$species |> unique() |> length()`). We used an alpha-hull value of 2 and a buffer size of 0.000001 (which approximates to ~100m). The alpha-hull workflow is laid out in [this document](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd). 
+
+Alpha-hulls were converted into `SpatialPolgyon` objects using the [`sp`](https://cran.r-project.org/package=sp) R package and exported for endemism analysis 
 
 ## Quantifying species richness and endemism
 
