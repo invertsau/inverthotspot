@@ -5,28 +5,16 @@
 
 ```{r setup, include=FALSE, eval=TRUE}
 ## Setting up
-pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, skimr, sp, purrr, ConR, dplyr, DT)
+pacman::p_load(galah, arrow, here, tidyverse, dplyr, janitor, ozmaps, sf, ggplot2, skimr, sp, purrr, ConR, dplyr, DT)
 
 # Load helper functions
 source(here("R/utils.R"))
 
 ## Read in parquet of raw download
- myg_spiders_all <- open_dataset(get_latest_download(path_to_galah_data = here("data/galah/")))
+myg_spiders_all <- open_dataset(get_latest_download(path_to_galah_data = here("data/galah/")))
 
 # Load cleaned data
 myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = here("output/data/")))
-```
-
-```{r, eval=TRUE}
-getwd()
-
-here()
-get_latest_download()
-here(get_latest_download())
-
-here(get_latest_cleaned_data())
-get_latest_cleaned_data()
-
 ```
 
 
@@ -65,7 +53,7 @@ The full data overview report can be found at ...
 ```{r loadpackages, include=FALSE}
 ## Subset columns we want for ALA data overview
 myg_spiders <- myg_spiders_all |> 
-  select(decimalLatitude:collectionCode) |> 
+  select(scientificName, decimalLatitude:collectionCode) |> 
   collect()
 ```
 
