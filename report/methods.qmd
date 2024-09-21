@@ -506,23 +506,76 @@ head(Mygalomorphae_clean)
 
 ## Generation of $\alpha$ hulls
 
-Spatial data for invertebrates is typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods such as species distribution models to quantify their whereabouts. 
+Spatial data for invertebrates are typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods such as species distribution models. 
 
-One way to retain as many species as possible in a spatial analysis is to represent species range with alpha-hulls, a form of spatial polygon. An alpha-hull can be computed using 3 data points, which allows the inclusion of data-deficient invertebrates in our endemism analysis
+One way to retain as many species as possible in a spatial analysis is to represent species range with alpha-hulls, a form of spatial polygon. An alpha-hull can be computed using a minimum of three data points, which allows the inclusion of data-deficient invertebrates in our endemism analysis
 
-Using the cleaned data, we applied the `EOO.computing()` function from R package [`ConR`](https://github.com/gdauby/ConR) to quantify alpha-hulls for all species that had at least 3 records (n = `r # myg_spiders_cleaned$species |> unique() |> length()`). We used an alpha-hull value of 2 and a buffer size of 0.000001 (which approximates to ~100m). The alpha-hull workflow is laid out in [this document](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd). 
+Using the cleaned data, we applied the `EOO.computing()` function from R package [`ConR`](https://github.com/gdauby/ConR) to quantify alpha-hulls for all species that had at least 3 records (n = `r # myg_spiders_cleaned$species |> unique() |> length()`). We used an alpha value of 2 and a buffer size of 0.000001 (which approximates to ~100m). The alpha-hull workflow is laid out in [this document](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd). 
 
 Alpha-hulls were converted into `SpatialPolgyon` objects using the [`sp`](https://cran.r-project.org/package=sp) R package and exported for endemism analysis 
 
 ## Quantifying species richness and endemism
 
-<!-- Biodiverse -->
+In order to quantify patterns of species richness and endemism, we need to convert our point based (i.e. coordinates for each occurrence of a species) into a community matrix, whereby each row in the matrix corresponds to a different site, while each column represents a different species. The entries in the matrix indicate whether a species is present at a particular site (often with a 1 for presence and 0 for absence) or how abundant the species is at that site. See [here](https://cran.r-project.org/web//packages/phyloregion/vignettes/phyloregion-intro.html) for further information.
 
-### Sample redundancy
+We converted our alpha-hulls into a community matrix using the `poly2comm()` function in the `phyloregion` R package. The resolution or grid size is set at 0.5 decimal degrees. The `poly2comm()` also computes abundance (the number of individuals in each cell) and species rich (number of species in each cell).
 
-### Sample window and moving window
+```{r, include=FALSE}
+pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis)
 
-### Endemism metrics
+species_polys <- readRDS(here("output/spatial/Spatial_alpha_hulls_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds"))
+
+# Combine into one large spatial dataframe
+combinedShp <- do.call(what = rbind, args=species_polys)
+
+## Assign species names
+combinedShp <- terra::vect(combinedShp)
+names(combinedShp) <- "species"
+
+combinedShp
+
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+
+# Base map 
+base_map <- ggplot() + 
+  geom_sf(data = aus, fill = NA, colour = "black") + 
+  theme_minimal()
+
+all_myg_alpha_sf <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds"))
+
+```
+
+```{r, echo=FALSE}
+# Base map 
+ base_map  + 
+  geom_sf(data = all_myg_alpha_sf, 
+          aes(geometry = x),
+           # colour = "black",
+          colour = "#609966") + 
+  coord_sf(c(110, 155)) +
+  theme_minimal() |> 
+  theme(legend.position = "none")
+
+comm.poly <- phyloregion::polys2comm(dat = combinedShp, species = "species", trace=1, res = 0.5)
+plot(comm.poly$map)
+```
+
+### Quantifying Endemism
+
+Endemism is a measure of rarity relative to other species (refs). There are multiple metrics to assess which areas are of importance for Mygal spiders, each have their own caveats. In order to get a fuller picture of the distribution of species and importantly, rare species that are limited in their range, we need to use a combination of endemism metrics. 
+
+#### Weighted endemism
+
+Weighted endemism is species richness inversely weighted by species ranges(Crisp et al. 2001),(Laffan and Crisp 2003),(Barnabas H. Daru et al. 2020).  It gives higher weight to species with smaller ranges, emphasizing areas with many range-restricted species. WE highlights areas with a high concentration of rare species, which can be crucial for conservation efforts, however regions with high species richness can have inflated WE values simply because they have more species, not necessarily more endemics (https://www.jstor.org/stable/3554498).
+
+We calculated WE using the  `weighted_endemism()` from `phyloregion` package. 
+
+#### Corrected weighted endemism
+
+Corrected weighted endemism accounts for species richness in each cell.  This correction accounts for the fact that areas with more species are likely to have more endemics by chance alone (Crisp and Laffan). It provides a balanced measure, considering rarity and richness and range sizes.
+
+We calculated CWE by dividing the WE in each grid cell by species richness. 
+
 
 ## Data and code availability
 
