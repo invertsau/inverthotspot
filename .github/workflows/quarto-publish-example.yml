@@ -12,7 +12,7 @@ name: Render and Publish
 
 jobs:
   build-deploy:
-    runs-on: macos-latest
+    runs-on: windows-latest
     
     steps:
       - name: Check out repository
