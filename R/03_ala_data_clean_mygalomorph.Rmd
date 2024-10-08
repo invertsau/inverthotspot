@@ -548,6 +548,17 @@ Mygalomorphae_clean <- myg_species_clean |>
 
 nrow(Mygalomorphae_clean)
 head(Mygalomorphae_clean)
+
+#investigating lat/long duplicates
+myg_species_clean_coords <- myg_species_clean |> 
+  filter(!is.na(decimalLatitude) & !is.na(decimalLongitude))
+
+lat_long_dups <- duplicated(myg_species_clean_coords[,4:5]) | duplicated(myg_species_clean_coords[,4:5], fromLast = TRUE)
+
+myg_species_clean_coords[lat_long_dups,] |> 
+  arrange(decimalLatitude) |> 
+  view()
+
 ```
 
 
