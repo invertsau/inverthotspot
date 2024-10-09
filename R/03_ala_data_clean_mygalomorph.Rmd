@@ -553,11 +553,26 @@ head(Mygalomorphae_clean)
 myg_species_clean_coords <- myg_species_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude))
 
-lat_long_dups <- duplicated(myg_species_clean_coords[,4:5]) | duplicated(myg_species_clean_coords[,4:5], fromLast = TRUE)
+lat_long_dups <- duplicated(myg_species_clean_coords[,4:5]) | 
+  duplicated(myg_species_clean_coords[,4:5], fromLast = TRUE)
 
-myg_species_clean_coords[lat_long_dups,] |> 
-  arrange(decimalLatitude) |> 
+tabyl(lat_long_dups)
+
+myg_lat_long_dups <- myg_species_clean_coords[lat_long_dups,]
+
+arrange_at(myg_lat_long_dups, c("decimalLatitude", "decimalLongitude")) |> 
   view()
+
+tabyl(myg_lat_long_dups$decimalLatitude) |>
+  arrange(desc(n))
+# checked the most duplicated lat/long - were different species from the same locality (although worded slightly differently) from a mixture of dates from Queensland Museum provider for OZCAM, so I think they're just using the same coordinates for a particular site. This might be the case for all of these duplicates...
+
+
+#checking for records with lat, long, and species duplicated
+lat_long_species_dups <- duplicated(myg_species_clean_coords[,c(4:5,14)]) |
+  duplicated(myg_species_clean_coords[,c(4:5,14)], fromLast = TRUE)
+
+tabyl(lat_long_species_dups) # No records with lat, long, and species duplicated
 
 ```
 
