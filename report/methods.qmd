@@ -28,8 +28,9 @@ We used data from [Atlas of Living Australia (ALA)]() for this study. We downloa
     iv) Human observation
 4.  Coordinate uncertainty of less than 1000 meters or has a value of NA (citizen science records or human observations are typically entered as NA)
 
-We downloaded data for this report on the **20 January 2024** and it contained **XXXXX records**
-
+::: {.callout-note}
+We downloaded data for this report on the `r get_latest_download(paste0(here("data/galah/"), "/")) |> stringr::str_extract(pattern = regex("[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}"))` and the raw download contained `r nrow(myg_spiders_all)` records
+:::
 We also used ALA's data quality assertions to further refine our download. We excluded occurrence records using the following criterion:
 
 1.  Coordinates are equal to 0
