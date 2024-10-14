@@ -12,6 +12,15 @@ myg_spiders_all <- open_dataset(get_latest_download(path_to_galah_data = paste0(
 
 # Load cleaned data
 myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/")))
+
+# Collect data for overview and cleaning
+## Subset columns we want for ALA data overview
+myg_spiders <- myg_spiders_all |> 
+  select(scientificName, decimalLatitude:collectionCode) |> 
+  collect()
+
+# AFD parquet used for Data cleaning
+afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
 ```
 
 
@@ -60,13 +69,6 @@ The data overview workflow can be found [here](https://github.com/invertsau/inve
 :::
 
 After the initial data retrieval the data were summarised to provide an overview of the number of records, species, and families represented, as well as the broad distribution of these across Australian states. The basis of records and data quality assertions were also investigated. This provided a broad overview of data quality and facilitated review by taxonomic experts.
-
-```{r loadpackages, include=FALSE}
-## Subset columns we want for ALA data overview
-myg_spiders <- myg_spiders_all |> 
-  select(scientificName, decimalLatitude:collectionCode) |> 
-  collect()
-```
 
 ### Species
 
@@ -298,13 +300,6 @@ myg_spiders |>
   mutate(percent = percent*100) |>
   arrange(desc(n)) |>
   adorn_rounding(digits = 2, columns = percent)
-
-# # Machine observe keep the one with spatial data
-# myg_spiders |> 
-#   filter(basisOfRecord == "MACHINE_OBSERVATION", 
-#          taxonRank == "species") |> 
-#   select(scientificName, recordID, starts_with("decimal"))
-
 ```
 
 `PRESERVED_SPECIMEN`: An occurrence record describing a preserved specimen.\
@@ -362,48 +357,47 @@ The following criterion were used to identify and remove records for the endemis
 
 #### Taxonomic Errors
 
-Firstly, records not identified to species level were removed. While this was already specified during data retrieval, some higher order records remain in the data.
-
-```{r}
-myg_species <- myg_spiders |> dplyr::filter(taxonRank == "species")
-```
-Out of `r nrow(myg_spiders)` records, `r nrow(myg_spiders) - nrow(myg_species)` higher order records were removed. `r nrow(myg_species)` species level records remain.
-
-To ensure all records had valid species names, the Australian Faunal Directory (AFD) was used. 
+#### Invalid names
 
 The [(AFD)](https://biodiversity.org.au/afd/home) is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories.
 
-A list of valid species names was downloaded from the AFD and was compared to the species names in our dataset, suhbsetting any records that did not have a matching valid name.
+The Australian Faunal Directory (AFD) was used to cross validate the records from ALA to ensure all records had valid species names.
 
-```{r}
-afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
+A list of valid species names was downloaded from the AFD and was compared to the species names in our dataset, subsetting any records that did not have a matching valid name.
 
+```{r, echo=FALSE}
 # Filter down to Arachnida 
 arachnids <- afd |> 
   filter(CLASS == "ARACHNIDA") |> 
   collect()
 
 # Subset species in ALA data that DID NOT match with the AFD
-AFD_unmatched <- myg_species |> 
+AFD_unmatched <- myg_spiders |> 
   filter(! scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
   unique()
 ```
 
-We identified `r length(AFD_unmatched)` records with invalid species names.
-
-The AFD also list synonyms for listed species, which are often outdated species names. For all records that did not match the AFD, we check if they are synonyms of listed species.
+We identified `r length(AFD_unmatched)` records in the ALA that did not match with names in the AFD. These were: 
 
 ```{r}
-unmatched_ala_sp <- myg_species |> 
-  filter(! scientificName %in% arachnids$FULL_NAME) |> 
-  pull(scientificName) |> 
-  unique() 
-
-issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
+AFD_unmatched
 ```
 
-There was `r issynonym_count = sum(issynonym)` record which matched an AFD listed Synonym, and it was updated with the correct species name. All other records with invalid species names were removed.
+For all records that did not match the AFD, we check if they are synonyms of a valid species but this does not seem to be the case. 
+
+```{r, echo=FALSE}
+unmatched_excluded<- myg_spiders |> 
+  filter(scientificName %in% AFD_unmatched) 
+
+myg_spiders_no_tax_error <- myg_spiders |> 
+  filter(!scientificName %in% AFD_unmatched) 
+```
+
+::: {.callout-important}
+As such, we decide to exclude these **`r length(AFD_unmatched)` taxa** from our dataset **(`r nrow(unmatched_excluded)` observations, `r signif(nrow(unmatched_excluded)/nrow(myg_spiders),1)`% of raw dataset)**.
+:::
+
 
 #### Introduced Species
 
@@ -421,7 +415,7 @@ introduced_taxa_wfullname <- introduced_taxa |>
   mutate(scientific_name = paste(genus, species)) 
 ```
 
-Introduced species in the WSC matched with `r length(which(myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name))` records in our data.
+Introduced species in the WSC matched with `r length(which(myg_spiders$scientificName %in% introduced_taxa_wfullname$scientific_name))` records in our data.
 
 [(GRIIS)](http://griis.org/) is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species.
 
