@@ -16,7 +16,7 @@ pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, vir
 These are estimated from {ConR}, this is a massive list, each element is a spatial polygon dataframe
 
 ```{r}
-species_polys <- readRDS("output/myg_spiders_conr_sp.rds")
+# species_polys <- readRDS("output/myg_spiders_conr_sp.rds")
 
 species_polys <- readRDS("output/spatial/Spatial_alpha_hulls_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds")
 ```

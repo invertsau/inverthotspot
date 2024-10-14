@@ -27,7 +27,7 @@ source("R/utils.R")
 ```{r}
 get_latest_cleaned_data()
 
-myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data())
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data()) 
 ```
 
 ## Proof of concept
@@ -176,8 +176,6 @@ base_map  +
   theme_minimal() |> 
   theme(legend.position = "none")
 
-
-plot(all_myg_alpha_sf)
 ```
 
 #### Save output as rds for next step of workflow
