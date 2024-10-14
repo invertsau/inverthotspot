@@ -1,4 +1,4 @@
-# Methods and Statistical Analyses
+# Methods
 
 ```{r setup, include=FALSE, eval=TRUE}
 ## Setting up
@@ -15,7 +15,15 @@ myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data =
 ```
 
 
-## [Data retrieval](https://github.com/invertsau/inverthotspot/blob/main/R/01_ala_data_retrieval_mygalomorph.Rmd)
+## Data retrieval
+
+::: {.callout-note}
+We downloaded data for this report on the `r get_latest_download(paste0(here("data/galah/"), "/")) |> stringr::str_extract(pattern = regex("[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}"))` and the raw download contained `r nrow(myg_spiders_all)` records
+:::
+
+::: {.callout-tip title="Source code"}
+The data retrieval workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/01_ala_data_retrieval_mygalomorph.Rmd)
+:::
 
 We used data from [Atlas of Living Australia (ALA)]() for this study. We downloaded occurrence records using the `galah` [R package]() using the following criterion:
 
@@ -28,9 +36,6 @@ We used data from [Atlas of Living Australia (ALA)]() for this study. We downloa
     iv) Human observation
 4.  Coordinate uncertainty of less than 1000 meters or has a value of NA (citizen science records or human observations are typically entered as NA)
 
-::: {.callout-note}
-We downloaded data for this report on the `r get_latest_download(paste0(here("data/galah/"), "/")) |> stringr::str_extract(pattern = regex("[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}"))` and the raw download contained `r nrow(myg_spiders_all)` records
-:::
 We also used ALA's data quality assertions to further refine our download. We excluded occurrence records using the following criterion:
 
 1.  Coordinates are equal to 0
@@ -40,13 +45,21 @@ We also used ALA's data quality assertions to further refine our download. We ex
 5.  Taxon excluded by the ALA
 6.  Taxon considered as a questionable species
 
-The above assertions excluded XXXX records, a break down of records for each assertion is **summarised in Table. 1**
+See @sec-assertions to learn more about which assertions we used for this project.
 
-## [Data overview](https://github.com/invertsau/inverthotspot/blob/main/R/02_ala_data_overview_mygalomorph.Rmd)
+
+
+## Data overview
+
+::: {.callout-note}
+The full data overview report can be found [here](https://posit.cloud/content/7700631)
+:::
+
+::: {.callout-tip title="Source code"}
+The data overview workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/02_ala_data_overview_mygalomorph.Rmd)
+:::
 
 After the initial data retrieval the data were summarised to provide an overview of the number of records, species, and families represented, as well as the broad distribution of these across Australian states. The basis of records and data quality assertions were also investigated. This provided a broad overview of data quality and facilitated review by taxonomic experts.
-
-The full data overview report can be found at ...
 
 ```{r loadpackages, include=FALSE}
 ## Subset columns we want for ALA data overview
@@ -65,7 +78,7 @@ total_myg <- myg_spiders |>
   nrow()
 ```
 
-There are **`r total_myg` species** in total.
+There are **`r total_myg` species** in total in the original download.
 
 The below barplot shows the distribution of the number of records across species.
 
@@ -272,9 +285,9 @@ ggplot() +
         legend.key.width = unit(12, 'mm'))  
 ```
 
-### Basis of record
+### [Basis of record](https://gbif.github.io/parsers/apidocs/org/gbif/api/vocabulary/BasisOfRecord.html)
 
-Total counts of basis of record types. GBIF definitions are provided underneath the table (https://gbif.github.io/parsers/apidocs/org/gbif/api/vocabulary/BasisOfRecord.html).
+Total counts of basis of record types. 
 
 ```{r, echo = FALSE}
 # Counts of basis of record types. "OCCURRENCE" and "OBSERVATION" types were excluded as they could not be traced back to a source.
@@ -299,37 +312,11 @@ myg_spiders |>
 `MATERIAL_SAMPLE`: An occurrence record based on samples taken from other specimens or the environment.\
 `MACHINE_OBSERVATION`: An occurrence record describing an observation made by a machine.
 
-### Overview of assertions
+### Assertions {#sec-assertions}
 
-Various tests are run on occurrence data in the Atlas of Living Australia, resulting in assertions about the content and quality of the data. These Assertions help users gauge whether data is fit for their purposes and allow for easy data filtering. In the data, Assertions are logical variables (TRUE/FALSE) and take the value TRUE when they apply to the associated occurrence record. Descriptions of Assertions can be found at https://github.com/AtlasOfLivingAustralia/ala-dataquality/wiki.
+Various tests are run on occurrence data in the Atlas of Living Australia, resulting in assertions about the content and quality of the data. These assertions help users gauge whether data is fit for their purposes and allow for easy data filtering. Assertions are logical variables (`TRUE/FALSE`) and take the value TRUE when they apply to the associated occurrence record. Descriptions of Assertions can be found at [here](https://github.com/AtlasOfLivingAustralia/ala-dataquality/wiki.)
 
-For the analysis of endemism hotspots, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
-
-```{r, include = FALSE}
-myg_assertions <- myg_spiders_all |> 
-  dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
-  collect()
-
-myg_assertions
-
-myg_assertions_long <- myg_assertions |>
-  pivot_longer(cols = c(AMBIGUOUS_COLLECTION:ZERO_COORDINATE), names_to = "assertion_type", values_to = "value") 
-
-assertion_counts <- myg_assertions_long |>
-  filter(value == TRUE) |>
-  tabyl(assertion_type)
-
-# Join with ala_assertions.csv so we have summary of counts
-asserts <- read_csv(here("output/ala_assertions.csv"))
-# asserts |> 
-#   left_join(assertion_counts, by = join_by(id == assertion_type)) |>
-#   arrange(-n) |> 
-#   write_csv(here("output/ala_assertions_with_counts.csv"))
-
-#Filtering observations where all assertions are false
-myg_assertions |>
-  filter(!if_any(AMBIGUOUS_COLLECTION:ZERO_COORDINATE))
-```
+Here, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
 
 #### Spatial assertions
 
@@ -357,15 +344,21 @@ The following assertions were used to identify taxonomic discrepancies in the da
 
 ## Data cleaning
 
-After cleaning the data using assertions, several additional errors and unwanted records needed to be manually removed. Only terrestrial species which are native to Australia were to be retained. Additionally, all records needed to be correctly identified and geographically correct. 
+::: {.callout-note}
+The full data cleaning report can be found [here](https://posit.cloud/content/7700644)
+:::
 
-Several processes were used to identify and remove all unsuitable records. The types of records which needed to be removed included:
+::: {.callout-tip title="Source code"}
+The data overview workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/03_ala_data_clean_mygalomorph.Rmd)
+:::
+
+The following criterion were used to identify and remove records for the endemism analyses:
 
 -   Taxonomic errors and invalid species names
 -   Species introduced to Australia
 -   Marine species
--   Records with geographic errors.
--   Additionally, any subspecies level identifications were reclassified to species level.
+-   Records with geographic errors
+-   Any subspecies level identifications were reclassified to species level.
 
 #### Taxonomic Errors
 
