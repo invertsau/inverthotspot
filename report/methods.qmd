@@ -395,17 +395,17 @@ myg_spiders_no_tax_error <- myg_spiders |>
 ```
 
 ::: {.callout-important}
-As such, we decide to exclude these **`r length(AFD_unmatched)` taxa** from our dataset **(`r nrow(unmatched_excluded)` observations, `r signif(nrow(unmatched_excluded)/nrow(myg_spiders),1)`% of raw dataset)**.
+As such, we decide to exclude these `r length(AFD_unmatched)` taxa** from our dataset **(`r nrow(unmatched_excluded)` observations, `r signif(nrow(unmatched_excluded)/nrow(myg_spiders),1)`% of raw dataset).
 :::
 
 
 #### Introduced Species
 
-Any species which are not native to Australia needed to be removed from our dataset. To identify all introduced species in the dataset, we used species lists from the World Spider Catalogue (WSC) and the Global Register of Invasive and Introduced Species (GRIIS).
+Any species which are not native to Australia needed to be removed from our dataset. To identify all introduced species in the dataset, we used species lists from the [World Spider Catalogue (WSC)](https://wsc.nmbe.ch/) and the [Global Register of Invasive and Introduced Species (GRIIS)]((http://griis.org/)).
 
-The [(WSC)](https://wsc.nmbe.ch/) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.
+The (WSC) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.
 
-```{r}
+```{r, include=FALSE}
 wsc <- read_csv(here("data/wsc/species_export_20230929.csv"))
 
 introduced_taxa <- wsc |> 
@@ -415,11 +415,13 @@ introduced_taxa_wfullname <- introduced_taxa |>
   mutate(scientific_name = paste(genus, species)) 
 ```
 
+::: {.callout-important}
 Introduced species in the WSC matched with `r length(which(myg_spiders$scientificName %in% introduced_taxa_wfullname$scientific_name))` records in our data.
+:::
 
-[(GRIIS)](http://griis.org/) is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species.
+(GRIIS) is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species.
 
-```{r}
+```{r, include=FALSE}
 # Join distrubtion.txt and taxon-edit.txt
 griis_distrib <- read.delim(here("data/griis-australia-v1.6/distribution.txt"))
 griis_taxon <- read.delim(here("data/griis-australia-v1.6/taxon-edited.txt"))
@@ -433,7 +435,12 @@ griis_all <- left_join(griis_distrib, griis_taxon, by = "id")  # Apply left_join
 str_subset(griis_all$class, "Arachnida") # there are no introduced arachnids in this list
 ```
 
-The GRIIS does not list any arachnids as being introduced to Australia.
+::: {.callout-important}
+There are no arachnids in the Australian GRIIS list
+:::
+
+
+For the purpose of this project, we conclude there are no introduced spiders in our dataset.
 
 #### Marine Species
 
