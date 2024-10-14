@@ -349,11 +349,13 @@ The data overview workflow can be found [here](https://github.com/invertsau/inve
 
 The following criterion were used to identify and remove records for the endemism analyses:
 
--   Taxonomic errors and invalid species names
--   Species introduced to Australia
--   Marine species
--   Records with geographic errors
--   Any subspecies level identifications were reclassified to species level.
+- Taxonomic errors, invalid species names or synonyms
+- Species introduced to Australia
+- Marine taxa
+- Records with geographic errors
+- Any subspecies level identifications were reclassified to species level
+- Duplicates
+
 
 #### Taxonomic Errors
 
