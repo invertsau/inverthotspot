@@ -1,4 +1,4 @@
-# Methods and Statistical Analyses
+# Methods
 
 ```{r setup, include=FALSE, eval=TRUE}
 ## Setting up
@@ -12,10 +12,27 @@ myg_spiders_all <- open_dataset(get_latest_download(path_to_galah_data = paste0(
 
 # Load cleaned data
 myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/")))
+
+# Collect data for overview and cleaning
+## Subset columns we want for ALA data overview
+myg_spiders <- myg_spiders_all |> 
+  select(scientificName, decimalLatitude:collectionCode) |> 
+  collect()
+
+# AFD parquet used for Data cleaning
+afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
 ```
 
 
-## [Data retrieval](https://github.com/invertsau/inverthotspot/blob/main/R/01_ala_data_retrieval_mygalomorph.Rmd)
+## Data retrieval
+
+::: {.callout-note}
+We downloaded data for this report on the `r get_latest_download(paste0(here("data/galah/"), "/")) |> stringr::str_extract(pattern = regex("[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}"))` and the raw download contained `r nrow(myg_spiders_all)` records
+:::
+
+::: {.callout-tip title="Source code"}
+The data retrieval workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/01_ala_data_retrieval_mygalomorph.Rmd)
+:::
 
 We used data from [Atlas of Living Australia (ALA)]() for this study. We downloaded occurrence records using the `galah` [R package]() using the following criterion:
 
@@ -28,8 +45,6 @@ We used data from [Atlas of Living Australia (ALA)]() for this study. We downloa
     iv) Human observation
 4.  Coordinate uncertainty of less than 1000 meters or has a value of NA (citizen science records or human observations are typically entered as NA)
 
-We downloaded data for this report on the **20 January 2024** and it contained **XXXXX records**
-
 We also used ALA's data quality assertions to further refine our download. We excluded occurrence records using the following criterion:
 
 1.  Coordinates are equal to 0
@@ -39,20 +54,21 @@ We also used ALA's data quality assertions to further refine our download. We ex
 5.  Taxon excluded by the ALA
 6.  Taxon considered as a questionable species
 
-The above assertions excluded XXXX records, a break down of records for each assertion is **summarised in Table. 1**
+See @sec-assertions to learn more about which assertions we used for this project.
 
-## [Data overview](https://github.com/invertsau/inverthotspot/blob/main/R/02_ala_data_overview_mygalomorph.Rmd)
+
+
+## Data overview
+
+::: {.callout-note}
+The full data overview report can be found [here](https://posit.cloud/content/7700631)
+:::
+
+::: {.callout-tip title="Source code"}
+The data overview workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/02_ala_data_overview_mygalomorph.Rmd)
+:::
 
 After the initial data retrieval the data were summarised to provide an overview of the number of records, species, and families represented, as well as the broad distribution of these across Australian states. The basis of records and data quality assertions were also investigated. This provided a broad overview of data quality and facilitated review by taxonomic experts.
-
-The full data overview report can be found at ...
-
-```{r loadpackages, include=FALSE}
-## Subset columns we want for ALA data overview
-myg_spiders <- myg_spiders_all |> 
-  select(scientificName, decimalLatitude:collectionCode) |> 
-  collect()
-```
 
 ### Species
 
@@ -64,7 +80,7 @@ total_myg <- myg_spiders |>
   nrow()
 ```
 
-There are **`r total_myg` species** in total.
+There are **`r total_myg` species** in total in the original download.
 
 The below barplot shows the distribution of the number of records across species.
 
@@ -271,9 +287,9 @@ ggplot() +
         legend.key.width = unit(12, 'mm'))  
 ```
 
-### Basis of record
+### [Basis of record](https://gbif.github.io/parsers/apidocs/org/gbif/api/vocabulary/BasisOfRecord.html)
 
-Total counts of basis of record types. GBIF definitions are provided underneath the table (https://gbif.github.io/parsers/apidocs/org/gbif/api/vocabulary/BasisOfRecord.html).
+Total counts of basis of record types. 
 
 ```{r, echo = FALSE}
 # Counts of basis of record types. "OCCURRENCE" and "OBSERVATION" types were excluded as they could not be traced back to a source.
@@ -284,13 +300,6 @@ myg_spiders |>
   mutate(percent = percent*100) |>
   arrange(desc(n)) |>
   adorn_rounding(digits = 2, columns = percent)
-
-# # Machine observe keep the one with spatial data
-# myg_spiders |> 
-#   filter(basisOfRecord == "MACHINE_OBSERVATION", 
-#          taxonRank == "species") |> 
-#   select(scientificName, recordID, starts_with("decimal"))
-
 ```
 
 `PRESERVED_SPECIMEN`: An occurrence record describing a preserved specimen.\
@@ -298,37 +307,11 @@ myg_spiders |>
 `MATERIAL_SAMPLE`: An occurrence record based on samples taken from other specimens or the environment.\
 `MACHINE_OBSERVATION`: An occurrence record describing an observation made by a machine.
 
-### Overview of assertions
+### Assertions {#sec-assertions}
 
-Various tests are run on occurrence data in the Atlas of Living Australia, resulting in assertions about the content and quality of the data. These Assertions help users gauge whether data is fit for their purposes and allow for easy data filtering. In the data, Assertions are logical variables (TRUE/FALSE) and take the value TRUE when they apply to the associated occurrence record. Descriptions of Assertions can be found at https://github.com/AtlasOfLivingAustralia/ala-dataquality/wiki.
+Various tests are run on occurrence data in the Atlas of Living Australia, resulting in assertions about the content and quality of the data. These assertions help users gauge whether data is fit for their purposes and allow for easy data filtering. Assertions are logical variables (`TRUE/FALSE`) and take the value TRUE when they apply to the associated occurrence record. Descriptions of Assertions can be found at [here](https://github.com/AtlasOfLivingAustralia/ala-dataquality/wiki.)
 
-For the analysis of endemism hotspots, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
-
-```{r, include = FALSE}
-myg_assertions <- myg_spiders_all |> 
-  dplyr::select(scientificName, taxonRank, species, decimalLatitude:decimalLongitude, recordID, collectionCode, institutionCode,  AMBIGUOUS_COLLECTION:ZERO_COORDINATE) |> 
-  collect()
-
-myg_assertions
-
-myg_assertions_long <- myg_assertions |>
-  pivot_longer(cols = c(AMBIGUOUS_COLLECTION:ZERO_COORDINATE), names_to = "assertion_type", values_to = "value") 
-
-assertion_counts <- myg_assertions_long |>
-  filter(value == TRUE) |>
-  tabyl(assertion_type)
-
-# Join with ala_assertions.csv so we have summary of counts
-asserts <- read_csv(here("output/ala_assertions.csv"))
-# asserts |> 
-#   left_join(assertion_counts, by = join_by(id == assertion_type)) |>
-#   arrange(-n) |> 
-#   write_csv(here("output/ala_assertions_with_counts.csv"))
-
-#Filtering observations where all assertions are false
-myg_assertions |>
-  filter(!if_any(AMBIGUOUS_COLLECTION:ZERO_COORDINATE))
-```
+Here, we have focused on spatial and taxonomic assertions because accurate identification of taxa and their spatial distributions is imperative to the calculation of endemism metrics and subsequent mapping.
 
 #### Spatial assertions
 
@@ -356,68 +339,75 @@ The following assertions were used to identify taxonomic discrepancies in the da
 
 ## Data cleaning
 
-After cleaning the data using assertions, several additional errors and unwanted records needed to be manually removed. Only terrestrial species which are native to Australia were to be retained. Additionally, all records needed to be correctly identified and geographically correct. 
+::: {.callout-note}
+The full data cleaning report can be found [here](https://posit.cloud/content/7700644)
+:::
 
-Several processes were used to identify and remove all unsuitable records. The types of records which needed to be removed included:
+::: {.callout-tip title="Source code"}
+The data overview workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/03_ala_data_clean_mygalomorph.Rmd)
+:::
 
--   Taxonomic errors and invalid species names
--   Species introduced to Australia
--   Marine species
--   Records with geographic errors.
--   Additionally, any subspecies level identifications were reclassified to species level.
+The following criterion were used to identify and remove records for the endemism analyses:
+
+- Taxonomic errors, invalid species names or synonyms
+- Species introduced to Australia
+- Marine taxa
+- Records with geographic errors
+- Any subspecies level identifications were reclassified to species level
+- Duplicates
+
 
 #### Taxonomic Errors
 
-Firstly, records not identified to species level were removed. While this was already specified during data retrieval, some higher order records remain in the data.
-
-```{r}
-myg_species <- myg_spiders |> dplyr::filter(taxonRank == "species")
-```
-Out of `r nrow(myg_spiders)` records, `r nrow(myg_spiders) - nrow(myg_species)` higher order records were removed. `r nrow(myg_species)` species level records remain.
-
-To ensure all records had valid species names, the Australian Faunal Directory (AFD) was used. 
+#### Invalid names
 
 The [(AFD)](https://biodiversity.org.au/afd/home) is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories.
 
-A list of valid species names was downloaded from the AFD and was compared to the species names in our dataset, suhbsetting any records that did not have a matching valid name.
+The Australian Faunal Directory (AFD) was used to cross validate the records from ALA to ensure all records had valid species names.
 
-```{r}
-afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
+A list of valid species names was downloaded from the AFD and was compared to the species names in our dataset, subsetting any records that did not have a matching valid name.
 
+```{r, echo=FALSE}
 # Filter down to Arachnida 
 arachnids <- afd |> 
   filter(CLASS == "ARACHNIDA") |> 
   collect()
 
 # Subset species in ALA data that DID NOT match with the AFD
-AFD_unmatched <- myg_species |> 
+AFD_unmatched <- myg_spiders |> 
   filter(! scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
   unique()
 ```
 
-We identified `r length(AFD_unmatched)` records with invalid species names.
-
-The AFD also list synonyms for listed species, which are often outdated species names. For all records that did not match the AFD, we check if they are synonyms of listed species.
+We identified `r length(AFD_unmatched)` records in the ALA that did not match with names in the AFD. These were: 
 
 ```{r}
-unmatched_ala_sp <- myg_species |> 
-  filter(! scientificName %in% arachnids$FULL_NAME) |> 
-  pull(scientificName) |> 
-  unique() 
-
-issynonym <- unmatched_ala_sp %in% word(arachnids$SYNONYMS, 1, 2)
+AFD_unmatched
 ```
 
-There was `r issynonym_count = sum(issynonym)` record which matched an AFD listed Synonym, and it was updated with the correct species name. All other records with invalid species names were removed.
+For all records that did not match the AFD, we check if they are synonyms of a valid species but this does not seem to be the case. 
+
+```{r, echo=FALSE}
+unmatched_excluded<- myg_spiders |> 
+  filter(scientificName %in% AFD_unmatched) 
+
+myg_spiders_no_tax_error <- myg_spiders |> 
+  filter(!scientificName %in% AFD_unmatched) 
+```
+
+::: {.callout-important}
+As such, we decide to exclude these `r length(AFD_unmatched)` taxa** from our dataset **(`r nrow(unmatched_excluded)` observations, `r signif(nrow(unmatched_excluded)/nrow(myg_spiders),1)`% of raw dataset).
+:::
+
 
 #### Introduced Species
 
-Any species which are not native to Australia needed to be removed from our dataset. To identify all introduced species in the dataset, we used species lists from the World Spider Catalogue (WSC) and the Global Register of Invasive and Introduced Species (GRIIS).
+Any species which are not native to Australia needed to be removed from our dataset. To identify all introduced species in the dataset, we used species lists from the [World Spider Catalogue (WSC)](https://wsc.nmbe.ch/) and the [Global Register of Invasive and Introduced Species (GRIIS)]((http://griis.org/)).
 
-The [(WSC)](https://wsc.nmbe.ch/) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.
+The (WSC) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.
 
-```{r}
+```{r, include=FALSE}
 wsc <- read_csv(here("data/wsc/species_export_20230929.csv"))
 
 introduced_taxa <- wsc |> 
@@ -427,11 +417,13 @@ introduced_taxa_wfullname <- introduced_taxa |>
   mutate(scientific_name = paste(genus, species)) 
 ```
 
-Introduced species in the WSC matched with `r length(which(myg_species$scientificName %in% introduced_taxa_wfullname$scientific_name))` records in our data.
+::: {.callout-important}
+Introduced species in the WSC matched with `r length(which(myg_spiders$scientificName %in% introduced_taxa_wfullname$scientific_name))` records in our data.
+:::
 
-[(GRIIS)](http://griis.org/) is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species.
+(GRIIS) is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species.
 
-```{r}
+```{r, include=FALSE}
 # Join distrubtion.txt and taxon-edit.txt
 griis_distrib <- read.delim(here("data/griis-australia-v1.6/distribution.txt"))
 griis_taxon <- read.delim(here("data/griis-australia-v1.6/taxon-edited.txt"))
@@ -445,7 +437,12 @@ griis_all <- left_join(griis_distrib, griis_taxon, by = "id")  # Apply left_join
 str_subset(griis_all$class, "Arachnida") # there are no introduced arachnids in this list
 ```
 
-The GRIIS does not list any arachnids as being introduced to Australia.
+::: {.callout-important}
+There are no arachnids in the Australian GRIIS list
+:::
+
+
+For the purpose of this project, we conclude there are no introduced spiders in our dataset.
 
 #### Marine Species
 
