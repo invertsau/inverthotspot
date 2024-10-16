@@ -87,7 +87,7 @@ The data includes **`r unique_species`** species of **`r focus_taxon_short`s**, 
 Here we clean the data for taxonomic errors, such as misspelt and outdated names.
 
 We verified that all records have species level taxonomic data.
-There were **`r length(myg_spiders$recordID) - count_before_filter`** records without species level data.
+
 
 ### Read in Australian Faunal Directory (AFD) data to cross check out taxa
 
@@ -132,49 +132,47 @@ AFD_matched <- myg_spiders |>
   unique() |> 
   length()  # put into sentence form
 
-# How many and which ones are the species in ALA data that DID NOT match with the AFD
+# Subset species in ALA data that DID NOT match with the AFD
 AFD_unmatched <- myg_spiders |> 
   filter(! scientificName %in% arachnids$FULL_NAME) |> 
   pull(scientificName) |> 
-  unique() |> 
-  length()
+  unique()
 
-# Why are these species not in the AFD? These might be synonyms! 
-unmatched_ala_sp <- myg_spiders |> 
-  filter(! scientificName %in% arachnids$FULL_NAME) |> 
-  pull(scientificName) |> 
-  unique() 
-
+# Compute reporting stats
+length(AFD_unmatched)
+unique(myg_spiders$scientificName) |> length()
 ```
 
-Of the **`r unique_species`** unique **`r focus_taxon_short`** species in the ALA dataset, **`r AFD_matched`** matched those listed in the AFD (**`r round(AFD_matched/unique_species *100, 2)`** %). These **`r AFD_unmatched`** species did not match:
-_**`r unmatched_ala_sp`**_.
+We identified `r length(AFD_unmatched)`/`r unique(myg_spiders$scientificName) |> length()` species in the ALA that did not match with names in the AFD (`r ( length(AFD_unmatched) / unique(myg_spiders$scientificName) |> length() )*100 |> round(2)`%). 
+
 
 <!-- Which of the ALA species not matched to AFD occur in the list of AFD arachnid species synonyms -->
 
-The AFD lists any applicable synonyms for each species within their database. Our **`r AFD_unmatched`** missing species might be synonyms of listed species.
+The AFD lists any applicable synonyms for each species within their database. The `r length(AFD_unmatched)` unmatched species might be synonyms of valid species.
 
 ```{r, echo=F}
 afd_synonyms <- word(arachnids$SYNONYMS, 1, 2)[complete.cases(word(arachnids$SYNONYMS, 1, 2))]
 
-fuzzy_matched <- unmatched_ala_sp |> 
+fuzzy_matched <- AFD_unmatched |> 
   jaccard_left_join(afd_synonyms, n_bands = 20, band_width = 6, threshold = .8) |> 
   rename(ALA_names = value.x,
          AFD_synonyms = value.y)
 
 issynonym_count = is.na(fuzzy_matched$AFD_synonyms) |> table() |> _[1]
-
 ```
 
-**r issynonym_count`** unmatched ALA species are potential AFD synonyms.
-
-The synonym matches are as follows: 
+The potential synonym matches are as follows: 
 
 ```{r}
 fuzzy_matched
 ```
 
-These will be verified by experts to determine how to best handle them.
+These will be verified by experts to determine how to best handle them. For now,taxa in our dataset that are not matched in the AFD will be excluded.
+
+```{r}
+ myg_spiders_no_unmatched<- myg_spiders |> 
+  filter(! scientificName %in% AFD_unmatched)
+```
 
 <!-- Excluding introduced/invasives taxa -->
 
@@ -214,8 +212,8 @@ WSC lists **`r length(introduced_taxa$speciesId)`** species as introduced to Aus
 <!-- Cross match introduced taxa from WSC with ALA data to exclude introduced spiders -->
 
 ```{r, echo=F, include=F}
-introduced_taxa_wfullname$scientific_name %in% myg_spiders$scientificName |> table()
-myg_spiders$scientificName %in% introduced_taxa_wfullname$scientific_name |> table()
+introduced_taxa_wfullname$scientific_name %in% myg_spiders_no_unmatched$scientificName |> table()
+myg_spiders_no_unmatched$scientificName %in% introduced_taxa_wfullname$scientific_name |> table()
 no_Introduced_WSC <- length(which(myg_spiders$scientificName %in% introduced_taxa_wfullname$scientific_name))
 ```
 
@@ -254,35 +252,6 @@ griis_all$class |> unique() # there are no arachnids in this list
 The GRIIS contains **`r count(griis_all)`** records of introduced species in Australia. 
 
 **`r length(str_subset(griis_all$class, "Arachnida"))`** of these are Arachnids.
-
-### Subspecies
-
-<!-- Decide whether to keep sub-species and if not whether to combine their data with the parent species -->
- 
-```{r, echo=F}
-# look for subspecies
-# what taxon levels are in the ALA data?
-# myg_spiders$taxonRank |> unique() #what is "unranked" and "NA"
-# myg_spiders |> filter(taxonRank == "unranked") #no species IDs
-# myg_spiders |> filter(taxonRank == "NA") #nothing
-
-# look at unique species
-# myg_spiders$species |> unique() #no subspecies here
-
-# check if any species have more than 2 words:
-# Function to count words in a string
-count_words <- function(string) {
-  words <- strsplit(string, "\\s+")[[1]]  # Split the string into words
-  return(length(words))                   # Return the number of words
-}
-word_counts <- lapply(myg_spiders$species |> unique(), count_words)
-# which(word_counts != 2) 
-
-# myg_spiders$species |> unique() |> str_count(pattern = "\\S+") > 2
-
-```
-
-There are **`r length(which(word_counts != 2))`** subspecies of `r focus_taxon_short`s within the ALA data.
 
 ### Excluding Marine Species
 
