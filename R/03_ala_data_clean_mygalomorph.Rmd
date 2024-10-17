@@ -261,20 +261,21 @@ This function cross matches our species list to the WoRMS database
 
 ```{r, eval=FALSE, echo=F}
 # wm_records_taxamatch("Teranodes")
-myg_spiders <- myg_spiders$species |> unique()
+myg_spiders <- myg_spiders_no_unmatched$species |> unique()
 
-# job::job({
-#   output_df <- map(myg_spiders,
-#                    possibly(~wm_records_taxamatch(.x, marine = FALSE)  |>
-#                               pluck(1)  |>
-#                               mutate(search_term = .x) |>
-#                               discard(.p = ~is.null(.x))
-#                    )
-#   ) |>
-#     list_rbind()
-# 
-#   saveRDS(output_df, "output/worrms_myg_wm_records_taxamatch.rds")
-# })
+
+job::job({
+  output_df <- purrr::map(myg_spiders,
+                   possibly(~wm_records_taxamatch(.x, marine = FALSE)  |>
+                              pluck(1)  |>
+                              mutate(search_term = .x) |>
+                              discard(.p = ~is.null(.x))
+                   )
+  ) |>
+    list_rbind()
+
+  saveRDS(output_df, paste0("output/", Sys.Date(), "_worrms_myg_wm_records_taxamatch.rds"))
+})
 ```
 
 
@@ -282,7 +283,7 @@ myg_spiders <- myg_spiders$species |> unique()
 ```{r, echo=FALSE}
 #read RDS
 
-wormsOutput <- readRDS(here("output/worrms_myg_wm_records_taxamatch.rds"))
+wormsOutput <- readRDS(here("output/2024-10-17_worrms_myg_wm_records_taxamatch.rds"))
 str(wormsOutput)
 head(wormsOutput)
 wormsOutput$match_type
@@ -312,6 +313,9 @@ subset(myg_spiders, myg_spiders$country != "Australia")$country
 
 # keep only those in Australia
 myg_spiders <- subset(myg_spiders, myg_spiders$country == "Australia")
+
+myg_spiders_no_unmatched |> 
+  filter(!country == "Australia")
 ```
 
 <!-- Plot data -->
@@ -343,9 +347,9 @@ https://docs.ropensci.org/CoordinateCleaner/
 
 ```{r}
 # define tests list
-all_tests <- c("capitals", "centroids", "duplicates", "equal", "gbif", "institutions", "outliers", "ranges", "seas", "urban", "zeros")
+all_tests <- c("capitals", "centroids", "equal", "gbif", "institutions", "outliers", "ranges", "seas", "urban", "zeros")
 # run tests
-flagged_alltests <- clean_coordinates(x = myg_spiders,
+flagged_alltests <- clean_coordinates(x = myg_spiders_no_unmatched,
                                       "decimalLongitude","decimalLatitude", 
                                       tests = all_tests)
 
@@ -356,21 +360,6 @@ nrow(subset(flagged_alltests, .summary==TRUE)) #clean records
 nrow(subset(flagged_alltests, .summary==FALSE)) #flagged records
 
 names(flagged_alltests)
-#How many were flagged with each test
-flagsums <- data.frame(Test = all_tests, 
-                       Flags = c(sum(flagged_alltests[".cap"] == FALSE),
-                                 sum(flagged_alltests[".cen"] == FALSE),
-                                 sum(flagged_alltests[".dpl"] == FALSE),
-                                 sum(flagged_alltests[".equ"] == FALSE),
-                                 sum(flagged_alltests[".gbf"] == FALSE),
-                                 sum(flagged_alltests[".inst"] == FALSE),
-                                 sum(flagged_alltests[".otl"] == FALSE),
-                                 0, #ranges test does not run
-                                 sum(flagged_alltests[".sea"] == FALSE),
-                                 sum(flagged_alltests[".urb"] == FALSE),
-                                 sum(flagged_alltests[".zer"] == FALSE)
-                                 ))
-flagsums
 ```
 
 These are the tests performed and how many records were flagged in each
@@ -378,13 +367,13 @@ These are the tests performed and how many records were flagged in each
 <!-- Also check AOHI -->
 ```{r}
 #additional test
-myg_spiders_aohi <- cc_aohi(myg_spiders)
+myg_spiders_aohi <- cc_aohi(myg_spiders_no_unmatched)
 #which were removed?
-nrow(myg_spiders)
+nrow(myg_spiders_no_unmatched)
 nrow(myg_spiders_aohi)
 
-myg_spiders[which(myg_spiders$recordID == 
-        setdiff(myg_spiders$recordID, myg_spiders_aohi$recordID)),]
+myg_spiders_no_unmatched[which(myg_spiders_no_unmatched$recordID == 
+        setdiff(myg_spiders_no_unmatched$recordID, myg_spiders_aohi$recordID)),]
 ```
 
 <!-- Mapping all flagged records -->
@@ -395,8 +384,7 @@ myg_spiders[which(myg_spiders$recordID ==
 
 ggplot() +
   coord_fixed() + 
-  map_area + 
-  geom_point(data = myg_spiders,
+  geom_point(data = myg_spiders_no_unmatched,
              aes(x = decimalLongitude, y = decimalLatitude),
              colour = "green",
              size = 0.5) +
@@ -420,6 +408,18 @@ base_map <- ggplot() +
   theme_minimal()
 ```
 
+### Visualise .cap values
+
+```{r, echo=F}
+flagged_sf <- flagged_alltests |> 
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
+           crs = 4326) 
+
+base_map +
+  geom_sf(data = flagged_sf |> 
+  filter(.cap == FALSE), alpha = 0.5) + 
+  theme_minimal()
+```
 
 ### Visualise .sea values
 
@@ -427,44 +427,64 @@ FALSE are values that are flagged to occur in sea and therefore will be eventual
 
 
 ```{r, echo=F}
-flagged_sf <- flagged_alltests |> 
-  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), 
-           crs = 4326) 
-
-base_map  + 
-  geom_sf(data = flagged_sf, aes(color = .sea), alpha = 0.5) +
+base_map +
+  geom_sf(data = flagged_sf |> 
+  filter(.sea == FALSE), alpha = 0.5) + 
   theme_minimal()
+
+
+flagged_alltests |> 
+  filter(.sea == FALSE) |> 
+  select(scientificName) |> 
+  distinct()
 ```
 
-### Visualise .cap values
+### Visualise .urb values
 
 ```{r, echo=F}
-base_map  + 
-  geom_sf(data = flagged_sf, aes(color = .cap), alpha = 0.5) + 
+base_map +
+  geom_sf(data = flagged_sf |> 
+  filter(.urb == FALSE), alpha = 0.5) + 
   theme_minimal()
 ```
 
 ### Visualise .otl values
 
 ```{r, echo=F}
-base_map  + 
-  geom_sf(data = flagged_sf, aes(color = .otl), alpha = 0.5) + 
+base_map +
+  geom_sf(data = flagged_sf |> 
+  filter(.otl == FALSE), alpha = 0.5) + 
   theme_minimal()
 ```
 
 ### Visualise .inst values
 
 ```{r, echo=F}
-base_map  + 
-  geom_sf(data = flagged_sf, aes(color = .inst), alpha = 0.5) + 
+base_map +
+  geom_sf(data = flagged_sf |> 
+  filter(.inst == FALSE), alpha = 0.5) + 
   theme_minimal()
 ```
 
 ### Exclude records flagged by CoordinateCleaner
 
+Excluding: 
+
+- .cap
+- .inst
+
 ```{r, echo=F}
-myg_spiders_clean <- myg_spiders[which(flagged_alltests$.summary),]
+myg_spiders_geo_clean <- flagged_alltests |> 
+  filter(!.cap == FALSE,
+         !.inst == FALSE)
+
+summary(flagged_alltests)
 ```
+
+- The `r summary(flagged_alltests)[".cap"] |> as.vector()` records excluded due to being near a capitol vicinity. (`r (( summary(flagged_alltests)[".cap"] |> as.vector() / nrow(myg_spiders)) *100 ) |> round(2)`%)
+
+
+The `r summary(flagged_alltests)[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions. (`r (( summary(flagged_alltests)[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%)
 
 ## Deduplication
 <!-- Check for duplicates (as the last step) -->
@@ -476,7 +496,7 @@ nrow(myg_spiders)
 head(myg_spiders)
 
 #investigating lat/long duplicates
-myg_spiders_clean_coords <- myg_spiders_clean |> 
+myg_spiders_clean_coords <- myg_spiders_geo_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude))
 
 #checking for records with lat, long, and species duplicated
@@ -486,7 +506,7 @@ lat_long_species_dups <- duplicated(myg_spiders_clean_coords[,c(4:5,14)]) |
 tabyl(lat_long_species_dups) # No records with lat, long, and species duplicated
 
 # Deduplicating
-deduplicated_myg_spiders <- myg_spiders_clean |> 
+deduplicated_myg_spiders <- myg_spiders_geo_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |> 
    group_by(scientificName, decimalLatitude, decimalLongitude, eventDate) |> 
    filter(n() == 1) |> 
@@ -496,10 +516,6 @@ deduplicated_myg_spiders <- myg_spiders_clean |>
 ## Narrow down to species with enough observations
 
 ```{r}
-# Filter down to species
-myg_cleaned_sp <- myg_spiders_clean |> 
-  filter(taxonRank == "species")
-
 # Summarise number of observations by taxon
 deduplicated_myg_spiders |> 
   group_by(scientificName) |> 
