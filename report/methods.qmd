@@ -540,11 +540,11 @@ After removing these geographic errors, we have `r nrow(myg_spiders_geo_clean)` 
 
 ### Duplicate Records {#sec-dups}
 
-Duplicate records can affect statistical analyses by pseudoreplication (increasing sample size but not adding information). We noticed that some records that had the _same_ coordinate values for a large number of _different_ species. These records were typically from museum record providers, we suspect this was due to the sampling method e.g. pitfall traps. For this reason, we decided to remove records if the record was duplicated at the: 
+Duplicate records can affect statistical analyses by pseudoreplication (increasing sample size but not adding information). We noticed that some records that had the _same_ coordinate values for a large number of _different_ species. These records were typically from museum record providers, we suspect this was due to the sampling method e.g. pitfall traps. For this reason, we decided to remove records if they fulfiled the following critiera: 
 
-- species level
-- same exact coordinates
-- time of collection 
+- the record was duplicated at the species level
+- had same exact coordinates
+- had same time and date of collection 
 
 ```{r, include=FALSE}
 deduplicated_myg_spiders <- myg_spiders_geo_clean |> 
