@@ -116,9 +116,9 @@ ConR_ahull <- function(data, sf_transform = TRUE){
 
 # Nest data
 myg_conr_nest <- myg_spiders_cleaned |> 
-  dplyr::select(decimalLatitude, decimalLongitude, scientificName) |> 
+  dplyr::select(decimalLatitude, decimalLongitude, scientificName, eventDate) |> 
   mutate(species = scientificName) |> 
-  nest(occ = c(starts_with("decimal"), scientificName))
+  nest(occ = c(starts_with("decimal"), scientificName, eventDate))
 
 # Test function on one
 test <- ConR_ahull(myg_conr_nest$occ[[1]], sf_transform = TRUE)
@@ -140,6 +140,25 @@ myg_conr_nest <- myg_conr_nest |>
   conr_ahull_sf =  purrr::map(.x = occ,
                           possibly(~ConR_ahull(.x, FALSE))
   )) 
+```
+
+### Drop empty polygons
+
+```{r}
+myg_conr_nest |> 
+  print(n = Inf)
+
+x <- myg_conr_nest |> 
+  purrr::map(discard, .p = is.null) |> 
+  tibble()
+
+null_spdf <- myg_conr_nest$conr_ahull |> 
+  purrr::map(is.null) |> 
+  list_c() |> which()
+
+myg_conr_nest |> 
+  # filter(row_number() %in% null_spdf) |> 
+  pluck("occ", 2)
 ```
 
 ### Alpha hulls as sf to plot all on a map
