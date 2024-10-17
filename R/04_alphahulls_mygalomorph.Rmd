@@ -116,28 +116,42 @@ ConR_ahull <- function(data, sf_transform = TRUE){
 
 # Nest data
 myg_conr_nest <- myg_spiders_cleaned |> 
-  dplyr::select(decimalLatitude, decimalLongitude, scientificName) |> 
+  dplyr::select(decimalLatitude, decimalLongitude, scientificName, eventDate) |> 
   mutate(species = scientificName) |> 
-  nest(occ = c(starts_with("decimal"), scientificName))
+  nest(occ = c(starts_with("decimal"), scientificName, eventDate))
 
 # Test function on one
 test <- ConR_ahull(myg_conr_nest$occ[[1]], sf_transform = TRUE)
 
 
-# Iterative across list 
-spider_list <- myg_spiders_cleaned |> 
-  dplyr::select(decimalLatitude, decimalLongitude, scientificName) |> 
-  split(~scientificName)
-
-myg_conr_nest$conr_ahull <- lapply(spider_list, ConR_ahull, sf_transform = TRUE)
-
 # A function to map over
-# Can't get this map working for some reason! 
-# myg_conr_nest |> 
-#   mutate(conr_ahull = map(.x = occ, 
-#                           ~ConR_ahull(.x, st_transform = TRUE))
-#   )
-#   
+#Can't get this map working for some reason!
+myg_conr_nest <- myg_conr_nest |>
+  mutate(conr_ahull = purrr::map(.x = occ,
+                          possibly(~ConR_ahull(.x))
+  ),
+  conr_ahull_sf =  purrr::map(.x = occ,
+                          possibly(~ConR_ahull(.x, FALSE))
+  )) 
+```
+
+### Drop empty polygons
+
+```{r}
+myg_conr_nest |> 
+  print(n = Inf)
+
+x <- myg_conr_nest |> 
+  purrr::map(discard, .p = is.null) |> 
+  tibble()
+
+null_spdf <- myg_conr_nest$conr_ahull |> 
+  purrr::map(is.null) |> 
+  list_c() |> which()
+
+myg_conr_nest |> 
+  # filter(row_number() %in% null_spdf) |> 
+  pluck("occ", 2)
 ```
 
 ### Alpha hulls as sf to plot all on a map
@@ -150,8 +164,6 @@ aus <- st_transform(ozmaps::ozmap_country, 4326)
 base_map <- ggplot() + 
   geom_sf(data = aus, fill = NA, colour = "black") + 
   theme_minimal()
-
-myg_conr_nest$conr_ahull_sf <- lapply(spider_list, ConR_ahull, sf_transform = FALSE)
 
 #Unnest the sf
 all_myg_alpha_sf <- myg_conr_nest |> 

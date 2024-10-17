@@ -353,6 +353,8 @@ flagged_alltests <- clean_coordinates(x = myg_spiders_no_unmatched,
                                       "decimalLongitude","decimalLatitude", 
                                       tests = all_tests)
 
+saveRDS(flagged_alltests, here("output/CoordinateCleaner_flagged.rds"))
+
 #how many flagged?
 summary(flagged_alltests)
 nrow(flagged_alltests) #total records
@@ -472,11 +474,13 @@ Excluding:
 
 - .cap
 - .inst
+- .sea
 
 ```{r, echo=F}
 myg_spiders_geo_clean <- flagged_alltests |> 
   filter(!.cap == FALSE,
-         !.inst == FALSE)
+         !.inst == FALSE,
+         !.sea == FALSE)
 
 summary(flagged_alltests)
 ```
@@ -485,6 +489,9 @@ summary(flagged_alltests)
 
 
 The `r summary(flagged_alltests)[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions. (`r (( summary(flagged_alltests)[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%)
+
+
+The `r summary(flagged_alltests)[".sea"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions. (`r (( summary(flagged_alltests)[".sea"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%)
 
 ## Deduplication
 <!-- Check for duplicates (as the last step) -->
