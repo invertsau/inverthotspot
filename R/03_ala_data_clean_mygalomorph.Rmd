@@ -353,6 +353,8 @@ flagged_alltests <- clean_coordinates(x = myg_spiders_no_unmatched,
                                       "decimalLongitude","decimalLatitude", 
                                       tests = all_tests)
 
+saveRDS(flagged_alltests, here("output/CoordinateCleaner_flagged.rds"))
+
 #how many flagged?
 summary(flagged_alltests)
 nrow(flagged_alltests) #total records

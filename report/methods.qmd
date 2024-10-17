@@ -2,7 +2,7 @@
 
 ```{r setup, include=FALSE, eval=TRUE}
 ## Setting up
- pacman::p_load(galah, arrow, here, tidyverse, dplyr, janitor, ozmaps, sf, ggplot2, skimr, sp, purrr, ConR, dplyr, DT, zoomerjoin)
+ pacman::p_load(galah, arrow, here, tidyverse, dplyr, janitor, ozmaps, sf, ggplot2, skimr, sp, purrr, ConR, dplyr, DT, zoomerjoin, gt)
 
 # Load helper functions
 source(here("R/utils.R"))
@@ -384,10 +384,6 @@ length(AFD_unmatched)
 unique(myg_spiders$scientificName) |> length()
 ```
 
-::: {.callout-note}
-We identified `r length(AFD_unmatched)`/`r unique(myg_spiders$scientificName) |> length()` species in the ALA that did not match with names in the AFD (`r ( ( length(AFD_unmatched) / unique(myg_spiders$scientificName) |> length() )*100 )|> round(2)`%). 
-:::
-
 The AFD lists any applicable synonyms for each species within their database. The `r length(AFD_unmatched)` unmatched species might be synonyms of valid species.
 
 ```{r, include=F}
@@ -421,14 +417,14 @@ unmatched_excluded <- myg_spiders |>
 As such, we decide to exclude these `r length(AFD_unmatched)` taxa from our dataset (`r nrow(unmatched_excluded)` observations, `r signif(nrow(unmatched_excluded)/nrow(myg_spiders),1)`% of raw dataset).
 :::
 
-::: {.callout-important}
-We have `r nrow(myg_spiders_no_unmatched)` observations after the exclusion, `r unique(myg_spiders_no_unmatched$scientificName) |> length()` species.
+::: {.callout-note}
+After removing the taxonomic errors, we have `r nrow(myg_spiders_no_unmatched)` observations after the exclusion, `r unique(myg_spiders_no_unmatched$scientificName) |> length()` species.
 :::
 
 
 #### Introduced Species
 
-Any species which are not native to Australia needed to be removed from our dataset. To identify all introduced species in the dataset, we used species lists from the [World Spider Catalogue (WSC)](https://wsc.nmbe.ch/) and the [Global Register of Invasive and Introduced Species (GRIIS)]((http://griis.org/)).
+Any species which are not native to Australia were removed from our dataset. To identify all introduced species in the dataset, we used species lists from the [World Spider Catalogue (WSC)](https://wsc.nmbe.ch/) and the [Global Register of Invasive and Introduced Species (GRIIS)]((http://griis.org/)).
 
 The (WSC) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.
 
@@ -466,45 +462,86 @@ str_subset(griis_all$class, "Arachnida") # there are no introduced arachnids in 
 There are no arachnids in the Australian GRIIS list
 :::
 
-
+::: {.callout-note}
 For the purpose of this project, we conclude there are no introduced spiders in our dataset.
+:::
 
 #### Marine Species
 
-The World Register of Marine Species (WoRMS) was used to identify and remove marine species from the data.
-
-WoRMS provides a authoritative and comprehensive list of names of marine organisms, including currently valid and alternative names.
-
-
-We then read the output to find matches between ALA data and WoRMS output.
-
-```{r}
-wormsOutput <- readRDS(here("output/worrms_myg_wm_records_taxamatch.rds"))
-wormsOutput$match_type
-
-#find exact matches between our ALA data and worms output
-length(which(wormsOutput$match_type %in% "exact"))
-wormsOutput$match_type %in% "near"
-wormsOutput$scientificname
-wormsOutput$search_term
-wormsOutput |> select(scientificname, search_term, match_type)
-names(wormsOutput)
+```{r, include=FALSE}
+wormsOutput <- readRDS(here("output/2024-10-17_worrms_myg_wm_records_taxamatch.rds"))
 ```
+
+The World Register of Marine Species (WoRMS) was used to identify and remove marine species from the data. WoRMS provides a authoritative and comprehensive list of names of marine organisms, including currently valid and alternative names.
+
+Using the [`worrms` R package](https://docs.ropensci.org/worrms/), we supplied our list of `r unique(myg_spiders_no_unmatched$scientificName) |> length()` species to the `wm_records_taxamatch()` function to check whether any our taxa are classified as marine. 
+
+::: {.callout-note}
+In the case of this project, we found `r length(which(wormsOutput$match_type %in% "exact"))` taxa that matched with marine species in the WoRMS database. 
+:::
 
 #### Geographic Errors
 
-#### Duplicate Records
+```{r}
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+
+base_map <- ggplot() + 
+  geom_sf(data = aus, fill = NA) + 
+  theme_minimal()
+```
+
+Biodiversity data, especially citizen science data can have various geographic imperfections. For example, occurrence records may include data from institutions such as botanic gardens or zoos which may not be reflective of a specie's natural range. There may be data entry errors where the default location of a taxa is assumed to be the center of particular region. For these reasons, we used the R package [`CoordinateCleaner`](https://docs.ropensci.org/CoordinateCleaner/index.html) to investigate potential errors in our dataset.
+
+We used the `clean_coordinates()` function and tested whether any of our coordinates were the following: 
+
+- General coordinate validity
+- Country and province centroids
+- Capital coordinates
+- Coordinates of biodiversity institutions
+- Spatial outliers
+- Temporal outliers
+- Assigned to the location of the GBIF headquarters
+- Located in Urban areas
+- Located in the sea
+- Duplicated values
+- Plain zeros
+
+Here is a table of the number of observations flagged by CoordinateCleaner's testing suite: 
+
+```{r, echo=FALSE, eval=TRUE}
+cc_tests <- readRDS(here("output/CoordinateCleaner_flagged.rds"))
+
+cc_summary <- CoordinateCleaner:::summary.spatialvalid(cc_tests)
+
+tibble(Test = names(cc_summary), 
+         `Number of Observations` = as.vector(cc_summary)) |> 
+  gt()
+```
+
+CoordinateCleaner, identified a large number of duplicates which we have a separate workflow in @sec-dups so we decided to ignore the duplicates flagged by CoordinateCleaner.
+
+After some consideration, we decided to only remove those flagged as being in the vicinity of the capital city and biological institutions. We will consult the taxonomic experts regarding records flagged as being in the sea. 
+
+```{r, include=FALSE}
+myg_spiders_geo_clean <- flagged_alltests |> 
+  filter(!.cap == FALSE,
+         !.inst == FALSE)
+```
+
+The `r cc_summary[".cap"] |> as.vector()` records excluded due to being near a capitol vicinity. (`r (( cc_summary[".cap"] |> as.vector() / nrow(myg_spiders)) *100 ) |> round(2)`%)
+
+
+The `r cc_summary[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions. (`r (( cc_summary[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%)
+
+::: {.callout-note}
+After removing these geographic errors, we have `r nrow(myg_spiders_geo_clean)` observations after the exclusion, `r unique(myg_spiders_geo_clean$scientificName) |> length()` species.
+:::
+
+
+#### Duplicate Records {#sec-dups}
 
 ```{r}
-nrow(myg_spiders)
-head(myg_spiders)
 
-Mygalomorphae_clean <- myg_spiders |> 
-  filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |>
-  filter(!duplicated(decimalLatitude) & !duplicated(decimalLongitude)) 
-
-nrow(Mygalomorphae_clean)
-head(Mygalomorphae_clean)
 ```
 
 ## Generation of $\alpha$ hulls
