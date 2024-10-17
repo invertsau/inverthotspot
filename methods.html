@@ -250,7 +250,15 @@ window.Quarto = {
   <li><a href="#basis-of-record" id="toc-basis-of-record" class="nav-link" data-scroll-target="#basis-of-record"><span class="header-section-number">2.2.4</span> Basis of record</a></li>
   <li><a href="#sec-assertions" id="toc-sec-assertions" class="nav-link" data-scroll-target="#sec-assertions"><span class="header-section-number">2.2.5</span> Assertions</a></li>
   </ul></li>
-  <li><a href="#data-cleaning" id="toc-data-cleaning" class="nav-link" data-scroll-target="#data-cleaning"><span class="header-section-number">2.3</span> Data cleaning</a></li>
+  <li><a href="#data-cleaning" id="toc-data-cleaning" class="nav-link" data-scroll-target="#data-cleaning"><span class="header-section-number">2.3</span> Data cleaning</a>
+  <ul class="collapse">
+  <li><a href="#taxonomic-errors" id="toc-taxonomic-errors" class="nav-link" data-scroll-target="#taxonomic-errors"><span class="header-section-number">2.3.1</span> Taxonomic Errors</a></li>
+  <li><a href="#introduced-species" id="toc-introduced-species" class="nav-link" data-scroll-target="#introduced-species"><span class="header-section-number">2.3.2</span> Introduced Species</a></li>
+  <li><a href="#marine-species" id="toc-marine-species" class="nav-link" data-scroll-target="#marine-species"><span class="header-section-number">2.3.3</span> Marine Species</a></li>
+  <li><a href="#geographic-errors" id="toc-geographic-errors" class="nav-link" data-scroll-target="#geographic-errors"><span class="header-section-number">2.3.4</span> Geographic Errors</a></li>
+  <li><a href="#sec-dups" id="toc-sec-dups" class="nav-link" data-scroll-target="#sec-dups"><span class="header-section-number">2.3.5</span> Duplicate Records</a></li>
+  <li><a href="#minimum-number-of-observations" id="toc-minimum-number-of-observations" class="nav-link" data-scroll-target="#minimum-number-of-observations"><span class="header-section-number">2.3.6</span> Minimum number of observations</a></li>
+  </ul></li>
   <li><a href="#generation-of-alpha-hulls" id="toc-generation-of-alpha-hulls" class="nav-link" data-scroll-target="#generation-of-alpha-hulls"><span class="header-section-number">2.4</span> Generation of <span class="math inline">\(\alpha\)</span> hulls</a></li>
   <li><a href="#biodiversity-metrics" id="toc-biodiversity-metrics" class="nav-link" data-scroll-target="#biodiversity-metrics"><span class="header-section-number">2.5</span> Biodiversity metrics</a>
   <ul class="collapse">
@@ -380,8 +388,8 @@ Source code
 <p>The below table shows the number of records of each species.</p>
 <div class="cell">
 <div class="cell-output-display">
-<div class="datatables html-widget html-fill-item" id="htmlwidget-ee0ed1a57c6dd76e412b" style="width:100%;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-ee0ed1a57c6dd76e412b">{"x":{"filter":"none","vertical":false,"data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69","70","71","72","73","74","75","76","77","78","79","80","81","82","83","84","85","86","87","88","89","90","91","92","93","94","95","96","97","98","99","100","101","102","103","104","105","106","107","108","109","110","111","112","113","114","115","116","117","118","119","120","121","122","123","124","125","126","127","128","129","130","131","132","133","134","135","136","137","138","139","140","141","142","143","144","145","146","147","148","149","150","151","152","153","154","155","156","157","158","159","160","161","162","163","164","165","166","167","168","169","170","171","172","173","174","175","176","177","178","179","180","181","182","183","184","185","186","187","188","189","190","191","192","193","194","195","196","197","198","199","200","201","202","203","204","205","206","207","208","209","210","211","212","213","214","215","216","217","218","219","220","221","222","223","224","225","226","227","228","229","230","231","232","233","234","235","236","237","238","239","240","241","242","243","244","245","246","247","248","249","250","251","252","253","254","255","256","257","258","259","260","261","262","263","264","265","266","267","268","269","270","271","272","273","274","275","276","277","278","279","280","281","282","283","284","285","286","287","288","289","290","291","292","293","294","295","296","297","298","299","300","301","302","303","304","305","306","307","308","309","310","311","312","313","314","315","316","317","318","319","320","321","322","323","324","325","326","327","328","329","330","331","332","333","334","335","336","337","338","339","340","341","342","343","344","345","346","347","348","349","350","351","352","353","354","355","356","357","358","359","360","361","362","363","364","365","366","367","368","369","370","371","372","373","374","375","376","377","378","379","380","381","382","383","384","385","386","387","388","389","390","391","392","393","394","395","396","397","398","399","400","401","402","403","404","405","406","407","408","409","410","411","412","413","414","415","416","417","418","419","420","421","422","423","424","425","426","427","428","429","430","431","432","433","434","435","436","437","438","439","440","441","442","443","444","445","446","447","448","449","450","451","452","453","454","455","456","457"],["Missulena occatoria","Missulena bradleyi","Aname mellosa","Seqocrypta jakara","Atrax robustus","Blakistonia aurea","Hadronyche infensa","Idiosoma subtriste","Hadronyche modesta","Aname pallida","Selenocosmia stirlingi","Bungulla bertmaini","Idiosoma manstridgei","Aname lorica","Missulena insignis","Australothele jamiesoni","Bymainiella terraereginae","Stanwellia grisea","Teyloides bakeri","Aname whitei","Gaius tealei","Hadronyche meridiana","Aname distincta","Aname diversicolor","Teranodes montana","Masteria toddae","Arbanitis longipes","Hadronyche adelaidensis","Hadronyche venenata","Namea flavomaculata","Hadronyche versuta","Namirea planipes","Ixamatus barina","Missulena davidi","Stanwellia nebulosa","Hadronyche formidabilis","Cataxia pulleinei","Aname sinuata","Atrax sutherlandi","Arbanitis andrewsi","Cataxia cunicularius","Chenistonia trevallynia","Mandjelia commoni","Arbanitis rapax","Cryptoforis hughesae","Gaius villosus","Idiommata scintillans","Namea brisbanensis","Chenistonia earthwatchorum","Hadronyche cerberea","Missulena pruinosa","Trittame loki","Cataxia spinipectoris","Missulena granulosa","Hadronyche valida","Hadronyche macquariensis","Teranodes otwayensis","Ixamatus broomi","Cethegus ischnotheloides","Hadronyche nimoola","Cataxia maculata","Ixamatus caldera","Xamiatus rubrifons","Arbanitis robertcollinsi","Paraembolides tubrabucca","Gaius cooperi","Ixamatus webbae","Arbanitis gracilis","Sason colemani","Aname inimica","Atrax yorkmainorum","Euoplos grandis","Moggridgea rainbowi","Ozicrypta cooloola","Idiosoma jarrah","Namea salanitri","Aname baileyorum","Coremiocnemis tropix","Euoplos variabilis","Namea jimna","Bungulla yeni","Cataxia barrettae","Cethegus daemeli","Trittame gracilis","Aname mainae","Eucyrtops latior","Namea capricornia","Bymainiella lugubris","Eucanippe bifida","Idiosoma smeatoni","Aname barrema","Idiommata iridescens","Mandjelia brassi","Seqocrypta hamlynharrisi","Synothele michaelseni","Ozicrypta etna","Bungulla biota","Euoplos schmidti","Bungulla westi","Chenistonia maculata","Aname vernonorum","Australothele maculata","Bungulla mckenziei","Cethegus fugax","Euoplos similaris","Missulena hoggi","Selenotholus foelschei","Aname warialda","Idiosoma galeosomoides","Namea nebulosa","Stanwellia hoggi","Aname phillipae","Arbanitis robertsi","Blakistonia birksi","Ixamatus varius","Mandjelia thorelli","Namirea montislewisi","Paraembolides boycei","Paraembolides brindabella","Stanwellia pexa","Bungulla keirani","Cataxia babindaensis","Cataxia colesi","Cataxia eungellaensis","Eucanippe agastachys","Idiosoma rhaphiduca","Ozicrypta filmeri","Stanwellia annulipes","Cataxia sandsorum","Hadronyche flindersi","Idioctis yerlata","Idiommata blackwallii","Mandjelia wooroonooran","Ozicrypta microcauda","Paraembolides variabilis","Trittame kochi","Arbanitis melancholicus","Australothele magna","Australothele nothofagi","Cethegus pallipes","Hadronyche tambo","Migas nitens","Namea dahmsi","Namea dicalcaria","Ozicrypta littleorum","Ozicrypta reticulata","Trittame forsteri","Aname humptydoo","Bungulla disrupta","Cataxia stirlingi","Cethegus lugubris","Cethegus robustus","Cryptoforis mainae","Hadronyche walkeri","Namea bunya","Aname carina","Aname mccleeryorum","Arbanitis crispus","Arbanitis dereki","Arbanitis maculosus","Blakistonia hortoni","Cataxia melindae","Eucanippe mouldsi","Euoplos raveni","Mandjelia banksi","Namea saundersi","Namirea insularis","Proshermacha tepperi","Trittame bancrofti","Xamiatus kia","Aname grandis","Bymainiella monteithi","Cataxia bolganupensis","Eucanippe mallee","Gaius austini","Hadronyche alpina","Heteromigas terraereginae","Kiama lachrymoides","Kwonkan turriger","Namea calcaria","Namea callemonda","Namea excavans","Ozicrypta sinclairi","Ozicrypta wallacei","Trittame mccolli","Trittame rainbowi","Xamiatus bulburin","Aname watsoni","Carrai afoveolata","Cethegus broomi","Euoplos jayneae","Hesperonatalius harrietae","Namirea eungella","Ozicrypta hollinsae","Synothele meadhunteri","Teyl luculentus","Trittame xerophila","Aname atra","Aname exulans","Aname kirrama","Arbanitis hirsutus","Australothele nambucca","Euoplos spinnipes","Euoplos thynnearum","Hadronyche eyrei","Hadronyche jensenae","Idiommata fusca","Ixamatus candidus","Mandjelia paluma","Mandjelia qantas","Ozicrypta kroombit","Plesiothele fentoni","Seqocrypta mckeowni","Stanwellia inornata","Synothele moonabie","Zophorame gallonae","Aname ellenae","Aname simoneae","Arbanitis monteithi","Blakistonia wingellina","Bungulla burbidgei","Bungulla gibba","Bymainiella polesoni","Cataxia victoriae","Cethegus elegans","Gaius mainae","Hadronyche monteithi","Hadronyche orana","Hesperonatalius maxwelli","Heteromigas dovei","Ixamatus musgravei","Missulena langlandsi","Missulena pinguipes","Namea olympus","Ozicrypta pearni","Paraembolides boydi","Teyl vancouveri","Tungari kenwayae","Aname collinsorum","Bungulla banksia","Bungulla fusca","Bungulla inermis","Bungulla kendricki","Bungulla sampeyae","Cataxia dietrichae","Cryptoforis tasmanica","Euoplos regalis","Euoplos turrificus","Migas variapalpus","Ozicrypta palmarum","Paraembolides cannoni","Troglodiplura challeni","Troglodiplura lowryi","Aname aurea","Aname camara","Arbanitis baehrae","Arbanitis billsheari","Arbanitis fredcoylei","Arbanitis helensmithae","Blakistonia nullarborensis","Bungulla ferraria","Chenistonia montana","Euoplos ornatus","Gaius hueyi","Hadronyche anzses","Hadronyche lamingtonensis","Hadronyche levittgreggae","Hadronyche marracoonda","Hadronyche raveni","Idiosoma cupulifex","Idiosoma winsori","Ixamatus fischeri","Mandjelia anzses","Namea cucurbita","Namirea dougwallacei","Namirea fallax","Ozicrypta mcarthurae","Ozicrypta mcdonaldi","Synothele arrakis","Teyl damsonoides","Teyl heuretes","Zophorame simoni","Aname blackdownensis","Aname frostorum","Aname lillianae","Aname tigrina","Arbanitis beaury","Arbanitis echo","Arbanitis villosus","Arbanitis watsonorum","Blakistonia bassi","Blakistonia mainae","Bungulla laevigata","Bungulla quobba","Cataxia pallida","Cryptoforis woondum","Euoplos festivus","Euoplos saplan","Hadronyche lynabrae","Idiosoma berlandi","Idiosoma montanum","Illawarra wisharti","Mandjelia fleckeri","Mandjelia macgregori","Missulena faulderi","Missulena mainae","Moruga heatherae","Namirea johnlyonsi","Ozicrypta clyneae","Ozicrypta eungella","Ozicrypta tuckeri","Ozicrypta wrightae","Paraembolides grayi","Phlogius crassipes","Proshermacha villosa","Selenocosmia crassipes","Seqocrypta bancrofti","Stanwellia occidentalis","Teyl walkeri","Trittame ingrami","Trittame stonieri","Xamiatus magnificus","Aname grothi","Arbanitis crawfordorum","Arbanitis kirstiae","Arbanitis mascordi","Arbanitis maxhicksi","Arbanitis michaeli","Arbanitis ornatus","Arbanitis tarnawskiae","Australothele montana","Blakistonia tariae","Bungulla ajana","Bungulla aplini","Bungulla bidgemia","Bungulla hamelinensis","Bungulla iota","Bungulla keigheryi","Bungulla weld","Cantuaria mestoni","Cethegus colemani","Cethegus multispinosus","Chenistonia hickmani","Chenistonia tropica","Cryptoforis cairncross","Cryptoforis xenophila","Eucanippe absita","Eucyrtops eremaeus","Euoplos booloumba","Euoplos cornishi","Euoplos crenatus","Euoplos goomboorian","Gaius aurora","Gaius humphreysi","Hadronyche nadgee","Idiosoma occidentalis","Ixamatus rozefeldsi","Kwonkan goongarriensis","Mandjelia colemani","Mandjelia iwupataka","Mandjelia mccrackeni","Mandjelia wyandotte","Mandjelia yuccabine","Missulena iugum","Missulena leniae","Missulena melissae","Moruga wallaceae","Namea gloriosa","Namea gowardae","Nihoa raleighi","Ozicrypta combeni","Ozicrypta digglesi","Proshermacha maculata","Stenygrocercus australiensis","Synothele durokoppin","Synothele howi","Synothele karara","Synothele rubripes","Synothele taurus","Teyl harveyi","Teyl yeni","Trittame augusteyni","Aname aragog","Aname coenosa","Aname hirsuta","Aname longitheca","Aname maculata","Aname mcalpinei","Aname munyardae","Aname nitidimarina","Aname robertsorum","Aname tasmanica","Arbanitis bithongabel","Arbanitis grayi","Arbanitis horsemanae","Arbanitis macei","Arbanitis montanus","Arbanitis thompsonae","Australothele bicuspidata","Blakistonia carnarvon","Blakistonia maryae","Blakistonia olea","Blakistonia plata","Bungulla bella","Bungulla dipsodes","Bungulla harrisonae","Bungulla hillyerae","Cethegus hanni","Chenistonia boranup","Chenistonia caeruleomontana","Cryptoforis hickmani","Cryptoforis victoriensis","Cryptoforis zophera","Euoplos bairnsdale","Euoplos hoggi","Euoplos kalbarri","Hadronyche emmalizae","Hadronyche kaputarensis","Hadronyche pulvinator","Hesperonatalius langlandsi","Idiosoma nigrum","Idiosoma planites","Idiosoma sigillatum","Kwonkan wonganensis","Mandjelia exasperans","Mandjelia galmarra","Mandjelia nuganuga","Mandjelia rejae","Missulena harewoodi","Missulena manningensis","Missulena reflexa","Moruga doddi","Moruga fuliginea","Moruga insularis","Moruga thickthorni","Moruga thorsborneorum","Namea nebo","Ozicrypta australoborealis","Ozicrypta clarki","Ozicrypta lawlessi","Ozicrypta noonamah","Ozicrypta walkeri","Paraembolides montibossi","Proshermacha armigera","Proshermacha auropilosa","Proshermacha wilga","Swolnpes darwini","Synothele butleri","Synothele harveyi","Synothele koonalda","Synothele ooldea","Trittame berniesmythi","Tungari aurukun","Tungari mascordi","Tungari monteithi","Zophorame covacevichae","Zophorame hirsti"],[832,537,473,307,262,200,198,152,138,136,129,121,118,117,109,105,98,93,93,90,87,85,80,76,75,74,73,73,72,68,67,66,63,63,60,59,55,53,52,49,49,47,45,42,41,41,41,41,40,40,40,40,39,39,38,37,37,36,34,34,33,33,32,31,31,30,30,29,29,28,28,28,28,28,27,27,26,26,26,26,25,25,25,25,24,24,24,23,23,23,22,22,22,22,22,21,20,20,19,19,18,18,17,17,17,17,17,16,16,16,16,15,15,15,15,15,15,15,15,15,14,14,14,14,14,14,14,14,13,13,13,13,13,13,13,13,12,12,12,12,12,12,12,12,12,12,12,11,11,11,11,11,11,11,11,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[8.855774348057476,5.715806279936136,5.0345928685471,3.267695582756786,2.788717402873869,2.12879191059074,2.107503991484832,1.617881852048962,1.46886641830761,1.447578499201703,1.373070782331027,1.287919105907398,1.255987227248536,1.245343267695583,1.160191591271953,1.117615753060138,1.043108036189462,0.989888238424694,0.989888238424694,0.9579563597658328,0.9260244811069718,0.9047365620010643,0.8515167642362959,0.8089409260244811,0.7982969664715274,0.7876530069185737,0.77700904736562,0.77700904736562,0.7663650878126663,0.7237892496008514,0.7131452900478977,0.7025013304949441,0.670569451836083,0.670569451836083,0.6386375731772219,0.6279936136242682,0.5854177754124534,0.564129856306546,0.5534858967535923,0.5215540180947312,0.5215540180947312,0.5002660989888238,0.4789781798829164,0.4470463012240553,0.4364023416711016,0.4364023416711016,0.4364023416711016,0.4364023416711016,0.4257583821181479,0.4257583821181479,0.4257583821181479,0.4257583821181479,0.4151144225651942,0.4151144225651942,0.4044704630122405,0.3938265034592868,0.3938265034592868,0.3831825439063332,0.3618946248004257,0.3618946248004257,0.3512506652474721,0.3512506652474721,0.3406067056945183,0.3299627461415646,0.3299627461415646,0.319318786588611,0.319318786588611,0.3086748270356572,0.3086748270356572,0.2980308674827036,0.2980308674827036,0.2980308674827036,0.2980308674827036,0.2980308674827036,0.2873869079297499,0.2873869079297499,0.2767429483767961,0.2767429483767961,0.2767429483767961,0.2767429483767961,0.2660989888238425,0.2660989888238425,0.2660989888238425,0.2660989888238425,0.2554550292708888,0.2554550292708888,0.2554550292708888,0.2448110697179351,0.2448110697179351,0.2448110697179351,0.2341671101649814,0.2341671101649814,0.2341671101649814,0.2341671101649814,0.2341671101649814,0.2235231506120277,0.212879191059074,0.212879191059074,0.2022352315061203,0.2022352315061203,0.1915912719531666,0.1915912719531666,0.1809473124002129,0.1809473124002129,0.1809473124002129,0.1809473124002129,0.1809473124002129,0.1703033528472592,0.1703033528472592,0.1703033528472592,0.1703033528472592,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>species<\/th>\n      <th>n<\/th>\n      <th>percent<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"targets":3,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatRound(data, 2, 3, \",\", \".\", null);\n  }"},{"className":"dt-right","targets":[2,3]},{"orderable":false,"targets":0},{"name":" ","targets":0},{"name":"species","targets":1},{"name":"n","targets":2},{"name":"percent","targets":3}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":["options.columnDefs.0.render"],"jsHooks":[]}</script>
+<div class="datatables html-widget html-fill-item" id="htmlwidget-c39fd2093d107176015c" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-c39fd2093d107176015c">{"x":{"filter":"none","vertical":false,"data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69","70","71","72","73","74","75","76","77","78","79","80","81","82","83","84","85","86","87","88","89","90","91","92","93","94","95","96","97","98","99","100","101","102","103","104","105","106","107","108","109","110","111","112","113","114","115","116","117","118","119","120","121","122","123","124","125","126","127","128","129","130","131","132","133","134","135","136","137","138","139","140","141","142","143","144","145","146","147","148","149","150","151","152","153","154","155","156","157","158","159","160","161","162","163","164","165","166","167","168","169","170","171","172","173","174","175","176","177","178","179","180","181","182","183","184","185","186","187","188","189","190","191","192","193","194","195","196","197","198","199","200","201","202","203","204","205","206","207","208","209","210","211","212","213","214","215","216","217","218","219","220","221","222","223","224","225","226","227","228","229","230","231","232","233","234","235","236","237","238","239","240","241","242","243","244","245","246","247","248","249","250","251","252","253","254","255","256","257","258","259","260","261","262","263","264","265","266","267","268","269","270","271","272","273","274","275","276","277","278","279","280","281","282","283","284","285","286","287","288","289","290","291","292","293","294","295","296","297","298","299","300","301","302","303","304","305","306","307","308","309","310","311","312","313","314","315","316","317","318","319","320","321","322","323","324","325","326","327","328","329","330","331","332","333","334","335","336","337","338","339","340","341","342","343","344","345","346","347","348","349","350","351","352","353","354","355","356","357","358","359","360","361","362","363","364","365","366","367","368","369","370","371","372","373","374","375","376","377","378","379","380","381","382","383","384","385","386","387","388","389","390","391","392","393","394","395","396","397","398","399","400","401","402","403","404","405","406","407","408","409","410","411","412","413","414","415","416","417","418","419","420","421","422","423","424","425","426","427","428","429","430","431","432","433","434","435","436","437","438","439","440","441","442","443","444","445","446","447","448","449","450","451","452","453","454","455","456","457"],["Missulena occatoria","Missulena bradleyi","Aname mellosa","Seqocrypta jakara","Atrax robustus","Blakistonia aurea","Hadronyche infensa","Idiosoma subtriste","Hadronyche modesta","Aname pallida","Selenocosmia stirlingi","Bungulla bertmaini","Idiosoma manstridgei","Aname lorica","Missulena insignis","Australothele jamiesoni","Bymainiella terraereginae","Stanwellia grisea","Teyloides bakeri","Aname whitei","Gaius tealei","Hadronyche meridiana","Aname distincta","Aname diversicolor","Teranodes montana","Masteria toddae","Arbanitis longipes","Hadronyche adelaidensis","Hadronyche venenata","Namea flavomaculata","Hadronyche versuta","Namirea planipes","Ixamatus barina","Missulena davidi","Stanwellia nebulosa","Hadronyche formidabilis","Cataxia pulleinei","Aname sinuata","Atrax sutherlandi","Arbanitis andrewsi","Cataxia cunicularius","Chenistonia trevallynia","Mandjelia commoni","Arbanitis rapax","Cryptoforis hughesae","Gaius villosus","Idiommata scintillans","Namea brisbanensis","Chenistonia earthwatchorum","Hadronyche cerberea","Missulena pruinosa","Trittame loki","Cataxia spinipectoris","Missulena granulosa","Hadronyche valida","Hadronyche macquariensis","Teranodes otwayensis","Ixamatus broomi","Cethegus ischnotheloides","Hadronyche nimoola","Cataxia maculata","Ixamatus caldera","Xamiatus rubrifons","Arbanitis robertcollinsi","Paraembolides tubrabucca","Gaius cooperi","Ixamatus webbae","Arbanitis gracilis","Sason colemani","Aname inimica","Atrax yorkmainorum","Euoplos grandis","Moggridgea rainbowi","Ozicrypta cooloola","Idiosoma jarrah","Namea salanitri","Aname baileyorum","Coremiocnemis tropix","Euoplos variabilis","Namea jimna","Bungulla yeni","Cataxia barrettae","Cethegus daemeli","Trittame gracilis","Aname mainae","Eucyrtops latior","Namea capricornia","Bymainiella lugubris","Eucanippe bifida","Idiosoma smeatoni","Aname barrema","Idiommata iridescens","Mandjelia brassi","Seqocrypta hamlynharrisi","Synothele michaelseni","Ozicrypta etna","Bungulla biota","Euoplos schmidti","Bungulla westi","Chenistonia maculata","Aname vernonorum","Australothele maculata","Bungulla mckenziei","Cethegus fugax","Euoplos similaris","Missulena hoggi","Selenotholus foelschei","Aname warialda","Idiosoma galeosomoides","Namea nebulosa","Stanwellia hoggi","Aname phillipae","Arbanitis robertsi","Blakistonia birksi","Ixamatus varius","Mandjelia thorelli","Namirea montislewisi","Paraembolides boycei","Paraembolides brindabella","Stanwellia pexa","Bungulla keirani","Cataxia babindaensis","Cataxia colesi","Cataxia eungellaensis","Eucanippe agastachys","Idiosoma rhaphiduca","Ozicrypta filmeri","Stanwellia annulipes","Cataxia sandsorum","Hadronyche flindersi","Idioctis yerlata","Idiommata blackwallii","Mandjelia wooroonooran","Ozicrypta microcauda","Paraembolides variabilis","Trittame kochi","Arbanitis melancholicus","Australothele magna","Australothele nothofagi","Cethegus pallipes","Hadronyche tambo","Migas nitens","Namea dahmsi","Namea dicalcaria","Ozicrypta littleorum","Ozicrypta reticulata","Trittame forsteri","Aname humptydoo","Bungulla disrupta","Cataxia stirlingi","Cethegus lugubris","Cethegus robustus","Cryptoforis mainae","Hadronyche walkeri","Namea bunya","Aname carina","Aname mccleeryorum","Arbanitis crispus","Arbanitis dereki","Arbanitis maculosus","Blakistonia hortoni","Cataxia melindae","Eucanippe mouldsi","Euoplos raveni","Mandjelia banksi","Namea saundersi","Namirea insularis","Proshermacha tepperi","Trittame bancrofti","Xamiatus kia","Aname grandis","Bymainiella monteithi","Cataxia bolganupensis","Eucanippe mallee","Gaius austini","Hadronyche alpina","Heteromigas terraereginae","Kiama lachrymoides","Kwonkan turriger","Namea calcaria","Namea callemonda","Namea excavans","Ozicrypta sinclairi","Ozicrypta wallacei","Trittame mccolli","Trittame rainbowi","Xamiatus bulburin","Aname watsoni","Carrai afoveolata","Cethegus broomi","Euoplos jayneae","Hesperonatalius harrietae","Namirea eungella","Ozicrypta hollinsae","Synothele meadhunteri","Teyl luculentus","Trittame xerophila","Aname atra","Aname exulans","Aname kirrama","Arbanitis hirsutus","Australothele nambucca","Euoplos spinnipes","Euoplos thynnearum","Hadronyche eyrei","Hadronyche jensenae","Idiommata fusca","Ixamatus candidus","Mandjelia paluma","Mandjelia qantas","Ozicrypta kroombit","Plesiothele fentoni","Seqocrypta mckeowni","Stanwellia inornata","Synothele moonabie","Zophorame gallonae","Aname ellenae","Aname simoneae","Arbanitis monteithi","Blakistonia wingellina","Bungulla burbidgei","Bungulla gibba","Bymainiella polesoni","Cataxia victoriae","Cethegus elegans","Gaius mainae","Hadronyche monteithi","Hadronyche orana","Hesperonatalius maxwelli","Heteromigas dovei","Ixamatus musgravei","Missulena langlandsi","Missulena pinguipes","Namea olympus","Ozicrypta pearni","Paraembolides boydi","Teyl vancouveri","Tungari kenwayae","Aname collinsorum","Bungulla banksia","Bungulla fusca","Bungulla inermis","Bungulla kendricki","Bungulla sampeyae","Cataxia dietrichae","Cryptoforis tasmanica","Euoplos regalis","Euoplos turrificus","Migas variapalpus","Ozicrypta palmarum","Paraembolides cannoni","Troglodiplura challeni","Troglodiplura lowryi","Aname aurea","Aname camara","Arbanitis baehrae","Arbanitis billsheari","Arbanitis fredcoylei","Arbanitis helensmithae","Blakistonia nullarborensis","Bungulla ferraria","Chenistonia montana","Euoplos ornatus","Gaius hueyi","Hadronyche anzses","Hadronyche lamingtonensis","Hadronyche levittgreggae","Hadronyche marracoonda","Hadronyche raveni","Idiosoma cupulifex","Idiosoma winsori","Ixamatus fischeri","Mandjelia anzses","Namea cucurbita","Namirea dougwallacei","Namirea fallax","Ozicrypta mcarthurae","Ozicrypta mcdonaldi","Synothele arrakis","Teyl damsonoides","Teyl heuretes","Zophorame simoni","Aname blackdownensis","Aname frostorum","Aname lillianae","Aname tigrina","Arbanitis beaury","Arbanitis echo","Arbanitis villosus","Arbanitis watsonorum","Blakistonia bassi","Blakistonia mainae","Bungulla laevigata","Bungulla quobba","Cataxia pallida","Cryptoforis woondum","Euoplos festivus","Euoplos saplan","Hadronyche lynabrae","Idiosoma berlandi","Idiosoma montanum","Illawarra wisharti","Mandjelia fleckeri","Mandjelia macgregori","Missulena faulderi","Missulena mainae","Moruga heatherae","Namirea johnlyonsi","Ozicrypta clyneae","Ozicrypta eungella","Ozicrypta tuckeri","Ozicrypta wrightae","Paraembolides grayi","Phlogius crassipes","Proshermacha villosa","Selenocosmia crassipes","Seqocrypta bancrofti","Stanwellia occidentalis","Teyl walkeri","Trittame ingrami","Trittame stonieri","Xamiatus magnificus","Aname grothi","Arbanitis crawfordorum","Arbanitis kirstiae","Arbanitis mascordi","Arbanitis maxhicksi","Arbanitis michaeli","Arbanitis ornatus","Arbanitis tarnawskiae","Australothele montana","Blakistonia tariae","Bungulla ajana","Bungulla aplini","Bungulla bidgemia","Bungulla hamelinensis","Bungulla iota","Bungulla keigheryi","Bungulla weld","Cantuaria mestoni","Cethegus colemani","Cethegus multispinosus","Chenistonia hickmani","Chenistonia tropica","Cryptoforis cairncross","Cryptoforis xenophila","Eucanippe absita","Eucyrtops eremaeus","Euoplos booloumba","Euoplos cornishi","Euoplos crenatus","Euoplos goomboorian","Gaius aurora","Gaius humphreysi","Hadronyche nadgee","Idiosoma occidentalis","Ixamatus rozefeldsi","Kwonkan goongarriensis","Mandjelia colemani","Mandjelia iwupataka","Mandjelia mccrackeni","Mandjelia wyandotte","Mandjelia yuccabine","Missulena iugum","Missulena leniae","Missulena melissae","Moruga wallaceae","Namea gloriosa","Namea gowardae","Nihoa raleighi","Ozicrypta combeni","Ozicrypta digglesi","Proshermacha maculata","Stenygrocercus australiensis","Synothele durokoppin","Synothele howi","Synothele karara","Synothele rubripes","Synothele taurus","Teyl harveyi","Teyl yeni","Trittame augusteyni","Aname aragog","Aname coenosa","Aname hirsuta","Aname longitheca","Aname maculata","Aname mcalpinei","Aname munyardae","Aname nitidimarina","Aname robertsorum","Aname tasmanica","Arbanitis bithongabel","Arbanitis grayi","Arbanitis horsemanae","Arbanitis macei","Arbanitis montanus","Arbanitis thompsonae","Australothele bicuspidata","Blakistonia carnarvon","Blakistonia maryae","Blakistonia olea","Blakistonia plata","Bungulla bella","Bungulla dipsodes","Bungulla harrisonae","Bungulla hillyerae","Cethegus hanni","Chenistonia boranup","Chenistonia caeruleomontana","Cryptoforis hickmani","Cryptoforis victoriensis","Cryptoforis zophera","Euoplos bairnsdale","Euoplos hoggi","Euoplos kalbarri","Hadronyche emmalizae","Hadronyche kaputarensis","Hadronyche pulvinator","Hesperonatalius langlandsi","Idiosoma nigrum","Idiosoma planites","Idiosoma sigillatum","Kwonkan wonganensis","Mandjelia exasperans","Mandjelia galmarra","Mandjelia nuganuga","Mandjelia rejae","Missulena harewoodi","Missulena manningensis","Missulena reflexa","Moruga doddi","Moruga fuliginea","Moruga insularis","Moruga thickthorni","Moruga thorsborneorum","Namea nebo","Ozicrypta australoborealis","Ozicrypta clarki","Ozicrypta lawlessi","Ozicrypta noonamah","Ozicrypta walkeri","Paraembolides montibossi","Proshermacha armigera","Proshermacha auropilosa","Proshermacha wilga","Swolnpes darwini","Synothele butleri","Synothele harveyi","Synothele koonalda","Synothele ooldea","Trittame berniesmythi","Tungari aurukun","Tungari mascordi","Tungari monteithi","Zophorame covacevichae","Zophorame hirsti"],[832,537,473,307,262,200,198,152,138,136,129,121,118,117,109,105,98,93,93,90,87,85,80,76,75,74,73,73,72,68,67,66,63,63,60,59,55,53,52,49,49,47,45,42,41,41,41,41,40,40,40,40,39,39,38,37,37,36,34,34,33,33,32,31,31,30,30,29,29,28,28,28,28,28,27,27,26,26,26,26,25,25,25,25,24,24,24,23,23,23,22,22,22,22,22,21,20,20,19,19,18,18,17,17,17,17,17,16,16,16,16,15,15,15,15,15,15,15,15,15,14,14,14,14,14,14,14,14,13,13,13,13,13,13,13,13,12,12,12,12,12,12,12,12,12,12,12,11,11,11,11,11,11,11,11,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[8.855774348057476,5.715806279936136,5.0345928685471,3.267695582756786,2.788717402873869,2.12879191059074,2.107503991484832,1.617881852048962,1.46886641830761,1.447578499201703,1.373070782331027,1.287919105907398,1.255987227248536,1.245343267695583,1.160191591271953,1.117615753060138,1.043108036189462,0.989888238424694,0.989888238424694,0.9579563597658328,0.9260244811069718,0.9047365620010643,0.8515167642362959,0.8089409260244811,0.7982969664715274,0.7876530069185737,0.77700904736562,0.77700904736562,0.7663650878126663,0.7237892496008514,0.7131452900478977,0.7025013304949441,0.670569451836083,0.670569451836083,0.6386375731772219,0.6279936136242682,0.5854177754124534,0.564129856306546,0.5534858967535923,0.5215540180947312,0.5215540180947312,0.5002660989888238,0.4789781798829164,0.4470463012240553,0.4364023416711016,0.4364023416711016,0.4364023416711016,0.4364023416711016,0.4257583821181479,0.4257583821181479,0.4257583821181479,0.4257583821181479,0.4151144225651942,0.4151144225651942,0.4044704630122405,0.3938265034592868,0.3938265034592868,0.3831825439063332,0.3618946248004257,0.3618946248004257,0.3512506652474721,0.3512506652474721,0.3406067056945183,0.3299627461415646,0.3299627461415646,0.319318786588611,0.319318786588611,0.3086748270356572,0.3086748270356572,0.2980308674827036,0.2980308674827036,0.2980308674827036,0.2980308674827036,0.2980308674827036,0.2873869079297499,0.2873869079297499,0.2767429483767961,0.2767429483767961,0.2767429483767961,0.2767429483767961,0.2660989888238425,0.2660989888238425,0.2660989888238425,0.2660989888238425,0.2554550292708888,0.2554550292708888,0.2554550292708888,0.2448110697179351,0.2448110697179351,0.2448110697179351,0.2341671101649814,0.2341671101649814,0.2341671101649814,0.2341671101649814,0.2341671101649814,0.2235231506120277,0.212879191059074,0.212879191059074,0.2022352315061203,0.2022352315061203,0.1915912719531666,0.1915912719531666,0.1809473124002129,0.1809473124002129,0.1809473124002129,0.1809473124002129,0.1809473124002129,0.1703033528472592,0.1703033528472592,0.1703033528472592,0.1703033528472592,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1596593932943055,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1490154337413518,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1383714741883981,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1277275146354444,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.1170835550824907,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.106439595529537,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.09579563597658329,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.08515167642362959,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.07450771687067589,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.06386375731772219,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.05321979776476849,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.04257583821181479,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.03193187865886109,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0212879191059074,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537,0.0106439595529537]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>species<\/th>\n      <th>n<\/th>\n      <th>percent<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"targets":3,"render":"function(data, type, row, meta) {\n    return type !== 'display' ? data : DTWidget.formatRound(data, 2, 3, \",\", \".\", null);\n  }"},{"className":"dt-right","targets":[2,3]},{"orderable":false,"targets":0},{"name":" ","targets":0},{"name":"species","targets":1},{"name":"n","targets":2},{"name":"percent","targets":3}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":["options.columnDefs.0.render"],"jsHooks":[]}</script>
 </div>
 </div>
 </section>
@@ -400,7 +408,6 @@ Source code
 </section>
 <section id="taxonomic-overview-by-state" class="level3" data-number="2.2.3">
 <h3 data-number="2.2.3" class="anchored" data-anchor-id="taxonomic-overview-by-state"><span class="header-section-number">2.2.3</span> Taxonomic overview by state</h3>
-<p>Top 3 most recorded species in each state:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 24 × 3
@@ -433,32 +440,32 @@ Source code
 24 Western Australia            Aname lorica                117</code></pre>
 </div>
 </div>
-<p>Barplot showing the number of species and families by state:</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="methods_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Barplot showing the number of species and families by state</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>Map showing the number of species by state:</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="methods_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Map showing the number of species by state</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>Map showing the number of families by state:</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="methods_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Map showing the number of families by state</figcaption>
 </figure>
 </div>
 </div>
@@ -547,27 +554,13 @@ Source code
 <li>Any subspecies level identifications were reclassified to species level</li>
 <li>Duplicates</li>
 </ul>
-<section id="taxonomic-errors" class="level4" data-number="2.3.0.1">
-<h4 data-number="2.3.0.1" class="anchored" data-anchor-id="taxonomic-errors"><span class="header-section-number">2.3.0.1</span> Taxonomic Errors</h4>
-</section>
-<section id="invalid-names" class="level4" data-number="2.3.0.2">
-<h4 data-number="2.3.0.2" class="anchored" data-anchor-id="invalid-names"><span class="header-section-number">2.3.0.2</span> Invalid names</h4>
+<section id="taxonomic-errors" class="level3" data-number="2.3.1">
+<h3 data-number="2.3.1" class="anchored" data-anchor-id="taxonomic-errors"><span class="header-section-number">2.3.1</span> Taxonomic Errors</h3>
+<section id="invalid-names" class="level4" data-number="2.3.1.1">
+<h4 data-number="2.3.1.1" class="anchored" data-anchor-id="invalid-names"><span class="header-section-number">2.3.1.1</span> Invalid names</h4>
 <p>The <a href="https://biodiversity.org.au/afd/home">(AFD)</a> is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories.</p>
 <p>The Australian Faunal Directory (AFD) was used to cross validate the records from ALA to ensure all records had valid species names.</p>
 <p>A list of valid species names was downloaded from the AFD and was compared to the species names in our dataset, subsetting any records that did not have a matching valid name.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>We identified 4/457 species in the ALA that did not match with names in the AFD (0.88%).</p>
-</div>
-</div>
 <p>The AFD lists any applicable synonyms for each species within their database. The 4 unmatched species might be synonyms of valid species.</p>
 <p>The potential synonym matches are as follows:</p>
 <div class="cell">
@@ -595,23 +588,24 @@ Important
 <p>As such, we decide to exclude these 4 taxa from our dataset (15 observations, 0.002% of raw dataset).</p>
 </div>
 </div>
-<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Important
+Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>We have 9380 observations after the exclusion, 453 species.</p>
+<p>After removing the taxonomic errors, we have 9380 observations after the exclusion, 453 species.</p>
 </div>
 </div>
 </section>
-<section id="introduced-species" class="level4" data-number="2.3.0.3">
-<h4 data-number="2.3.0.3" class="anchored" data-anchor-id="introduced-species"><span class="header-section-number">2.3.0.3</span> Introduced Species</h4>
-<p>Any species which are not native to Australia needed to be removed from our dataset. To identify all introduced species in the dataset, we used species lists from the <a href="https://wsc.nmbe.ch/">World Spider Catalogue (WSC)</a> and the <a href="(http://griis.org/)">Global Register of Invasive and Introduced Species (GRIIS)</a>.</p>
+</section>
+<section id="introduced-species" class="level3" data-number="2.3.2">
+<h3 data-number="2.3.2" class="anchored" data-anchor-id="introduced-species"><span class="header-section-number">2.3.2</span> Introduced Species</h3>
+<p>Any species which are not native to Australia were removed from our dataset. To identify all introduced species in the dataset, we used species lists from the <a href="https://wsc.nmbe.ch/">World Spider Catalogue (WSC)</a> and the <a href="(http://griis.org/)">Global Register of Invasive and Introduced Species (GRIIS)</a>.</p>
 <p>The (WSC) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.</p>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -640,129 +634,680 @@ Important
 <p>There are no arachnids in the Australian GRIIS list</p>
 </div>
 </div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
 <p>For the purpose of this project, we conclude there are no introduced spiders in our dataset.</p>
+</div>
+</div>
 </section>
-<section id="marine-species" class="level4" data-number="2.3.0.4">
-<h4 data-number="2.3.0.4" class="anchored" data-anchor-id="marine-species"><span class="header-section-number">2.3.0.4</span> Marine Species</h4>
-<p>The World Register of Marine Species (WoRMS) was used to identify and remove marine species from the data.</p>
-<p>WoRMS provides a authoritative and comprehensive list of names of marine organisms, including currently valid and alternative names.</p>
-<p>We then read the output to find matches between ALA data and WoRMS output.</p>
+<section id="marine-species" class="level3" data-number="2.3.3">
+<h3 data-number="2.3.3" class="anchored" data-anchor-id="marine-species"><span class="header-section-number">2.3.3</span> Marine Species</h3>
+<p>The World Register of Marine Species (WoRMS) was used to identify and remove marine species from the data. WoRMS provides a authoritative and comprehensive list of names of marine organisms, including currently valid and alternative names.</p>
+<p>Using the <a href="https://docs.ropensci.org/worrms/"><code>worrms</code> R package</a>, we supplied our list of 453 species to the <code>wm_records_taxamatch()</code> function to check whether any our taxa are classified as marine.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In the case of this project, we found 0 taxa that matched with marine species in the WoRMS database.</p>
+</div>
+</div>
+</section>
+<section id="geographic-errors" class="level3" data-number="2.3.4">
+<h3 data-number="2.3.4" class="anchored" data-anchor-id="geographic-errors"><span class="header-section-number">2.3.4</span> Geographic Errors</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>wormsOutput <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="fu">here</span>(<span class="st">"output/worrms_myg_wm_records_taxamatch.rds"</span>))</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>wormsOutput<span class="sc">$</span>match_type</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "phonetic" "phonetic" "phonetic" "phonetic" "phonetic" "near_3"   "near_3"  </code></pre>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>aus <span class="ot">&lt;-</span> <span class="fu">st_transform</span>(ozmaps<span class="sc">::</span>ozmap_country, <span class="dv">4326</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>base_map <span class="ot">&lt;-</span> <span class="fu">ggplot</span>() <span class="sc">+</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> aus, <span class="at">fill =</span> <span class="cn">NA</span>) <span class="sc">+</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#find exact matches between our ALA data and worms output</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">which</span>(wormsOutput<span class="sc">$</span>match_type <span class="sc">%in%</span> <span class="st">"exact"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 0</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>wormsOutput<span class="sc">$</span>match_type <span class="sc">%in%</span> <span class="st">"near"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] FALSE FALSE FALSE FALSE FALSE FALSE FALSE</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>wormsOutput<span class="sc">$</span>scientificname</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] "Nahia"                 "Niahia"                "Nia"                  
-[4] "Naia"                  "Castalia (Naia)"       "Cantharus assimilis"  
-[7] "Synstyela michaelseni"</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>wormsOutput<span class="sc">$</span>search_term</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] NA                      NA                      NA                     
-[4] NA                      NA                      "Cantuaria assimilis"  
-[7] "Synothele michaelseni"</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>wormsOutput <span class="sc">|&gt;</span> <span class="fu">select</span>(scientificname, search_term, match_type)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 7 × 3
-  scientificname        search_term           match_type
-  &lt;chr&gt;                 &lt;chr&gt;                 &lt;chr&gt;     
-1 Nahia                 &lt;NA&gt;                  phonetic  
-2 Niahia                &lt;NA&gt;                  phonetic  
-3 Nia                   &lt;NA&gt;                  phonetic  
-4 Naia                  &lt;NA&gt;                  phonetic  
-5 Castalia (Naia)       &lt;NA&gt;                  phonetic  
-6 Cantharus assimilis   Cantuaria assimilis   near_3    
-7 Synstyela michaelseni Synothele michaelseni near_3    </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(wormsOutput)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] "AphiaID"           "url"               "scientificname"   
- [4] "authority"         "status"            "unacceptreason"   
- [7] "taxonRankID"       "rank"              "valid_AphiaID"    
-[10] "valid_name"        "valid_authority"   "parentNameUsageID"
-[13] "kingdom"           "phylum"            "class"            
-[16] "order"             "family"            "genus"            
-[19] "citation"          "lsid"              "isMarine"         
-[22] "isBrackish"        "isFreshwater"      "isTerrestrial"    
-[25] "isExtinct"         "match_type"        "modified"         
-[28] "search_term"      </code></pre>
-</div>
-</div>
-</section>
-<section id="geographic-errors" class="level4" data-number="2.3.0.5">
-<h4 data-number="2.3.0.5" class="anchored" data-anchor-id="geographic-errors"><span class="header-section-number">2.3.0.5</span> Geographic Errors</h4>
-</section>
-<section id="duplicate-records" class="level4" data-number="2.3.0.6">
-<h4 data-number="2.3.0.6" class="anchored" data-anchor-id="duplicate-records"><span class="header-section-number">2.3.0.6</span> Duplicate Records</h4>
+<p>Biodiversity data, especially citizen science data can have various geographic imperfections. For example, occurrence records may include data from institutions such as botanic gardens or zoos which may not be reflective of a specie’s natural range. There may be data entry errors where the default location of a taxa is assumed to be the center of particular region. For these reasons, we used the R package <a href="https://docs.ropensci.org/CoordinateCleaner/index.html"><code>CoordinateCleaner</code></a> to investigate potential errors in our dataset.</p>
+<p>We used the <code>clean_coordinates()</code> function and tested whether any of our coordinates were the following:</p>
+<ul>
+<li>General coordinate validity</li>
+<li>Country and province centroids</li>
+<li>Capital coordinates</li>
+<li>Coordinates of biodiversity institutions</li>
+<li>Spatial outliers</li>
+<li>Temporal outliers</li>
+<li>Assigned to the location of the GBIF headquarters</li>
+<li>Located in Urban areas</li>
+<li>Located in the sea</li>
+<li>Duplicated values</li>
+<li>Plain zeros</li>
+</ul>
+<p>Table of the number of observations flagged by CoordinateCleaner’s testing suite:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(myg_spiders)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 9395</code></pre>
+<div class="cell-output-display">
+<div id="dsjqrwbuqu" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#dsjqrwbuqu table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#dsjqrwbuqu thead, #dsjqrwbuqu tbody, #dsjqrwbuqu tfoot, #dsjqrwbuqu tr, #dsjqrwbuqu td, #dsjqrwbuqu th {
+  border-style: none;
+}
+
+#dsjqrwbuqu p {
+  margin: 0;
+  padding: 0;
+}
+
+#dsjqrwbuqu .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#dsjqrwbuqu .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#dsjqrwbuqu .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#dsjqrwbuqu .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#dsjqrwbuqu .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#dsjqrwbuqu .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#dsjqrwbuqu .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#dsjqrwbuqu .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#dsjqrwbuqu .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#dsjqrwbuqu .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#dsjqrwbuqu .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#dsjqrwbuqu .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#dsjqrwbuqu .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#dsjqrwbuqu .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#dsjqrwbuqu .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#dsjqrwbuqu .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#dsjqrwbuqu .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#dsjqrwbuqu .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#dsjqrwbuqu .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#dsjqrwbuqu .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#dsjqrwbuqu .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#dsjqrwbuqu .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#dsjqrwbuqu .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#dsjqrwbuqu .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#dsjqrwbuqu .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#dsjqrwbuqu .gt_left {
+  text-align: left;
+}
+
+#dsjqrwbuqu .gt_center {
+  text-align: center;
+}
+
+#dsjqrwbuqu .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#dsjqrwbuqu .gt_font_normal {
+  font-weight: normal;
+}
+
+#dsjqrwbuqu .gt_font_bold {
+  font-weight: bold;
+}
+
+#dsjqrwbuqu .gt_font_italic {
+  font-style: italic;
+}
+
+#dsjqrwbuqu .gt_super {
+  font-size: 65%;
+}
+
+#dsjqrwbuqu .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#dsjqrwbuqu .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#dsjqrwbuqu .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#dsjqrwbuqu .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#dsjqrwbuqu .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#dsjqrwbuqu .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#dsjqrwbuqu .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#dsjqrwbuqu .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#dsjqrwbuqu div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="header gt_col_headings">
+<th id="Test" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Test</th>
+<th id="Number-of-Observations" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Number of Observations</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="Test">.val</td>
+<td class="gt_row gt_right" headers="Number of Observations">0</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Test">.equ</td>
+<td class="gt_row gt_right" headers="Number of Observations">0</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Test">.zer</td>
+<td class="gt_row gt_right" headers="Number of Observations">0</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Test">.cap</td>
+<td class="gt_row gt_right" headers="Number of Observations">48</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Test">.cen</td>
+<td class="gt_row gt_right" headers="Number of Observations">0</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Test">.sea</td>
+<td class="gt_row gt_right" headers="Number of Observations">418</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Test">.urb</td>
+<td class="gt_row gt_right" headers="Number of Observations">1292</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Test">.otl</td>
+<td class="gt_row gt_right" headers="Number of Observations">119</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Test">.gbf</td>
+<td class="gt_row gt_right" headers="Number of Observations">0</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Test">.inst</td>
+<td class="gt_row gt_right" headers="Number of Observations">26</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Test">.dpl</td>
+<td class="gt_row gt_right" headers="Number of Observations">2970</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Test">.summary</td>
+<td class="gt_row gt_right" headers="Number of Observations">4125</td>
+</tr>
+</tbody>
+</table>
+
 </div>
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(myg_spiders)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 29
-  scientificName     decimalLatitude decimalLongitude eventDate          
-  &lt;chr&gt;                        &lt;dbl&gt;            &lt;dbl&gt; &lt;dttm&gt;             
-1 Arbanitis baehrae            -32.1             152. 1993-02-04 00:00:00
-2 Trittame loki                -16               145. 1992-07-21 00:00:00
-3 Arbanitis robertsi           -27.3             153. 1973-07-29 00:00:00
-4 Atrax yorkmainorum           -35.3             149. 1983-07-09 00:00:00
-5 Cethegus lugubris            -10.8             142. 1975-01-30 00:00:00
-6 Idiosoma smeatoni            -35.0             139. NA                 
-# ℹ 25 more variables: occurrenceStatus &lt;chr&gt;, dataResourceName &lt;chr&gt;,
-#   phylum &lt;chr&gt;, class &lt;chr&gt;, order &lt;chr&gt;, family &lt;chr&gt;, genus &lt;chr&gt;,
-#   species &lt;chr&gt;, taxonRank &lt;chr&gt;, taxonID &lt;chr&gt;, raw_scientificName &lt;chr&gt;,
-#   raw_vernacularName &lt;chr&gt;, raw_geodeticDatum &lt;chr&gt;, stateProvince &lt;chr&gt;,
-#   country &lt;chr&gt;, locality &lt;chr&gt;, coordinatePrecision &lt;dbl&gt;,
-#   coordinateUncertaintyInMeters &lt;dbl&gt;, raw_decimalLatitude &lt;dbl&gt;,
-#   raw_decimalLongitude &lt;dbl&gt;, verbatimCoordinates &lt;chr&gt;, …</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>Mygalomorphae_clean <span class="ot">&lt;-</span> myg_spiders <span class="sc">|&gt;</span> </span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(decimalLatitude) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(decimalLongitude)) <span class="sc">|&gt;</span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">duplicated</span>(decimalLatitude) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">duplicated</span>(decimalLongitude)) </span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(Mygalomorphae_clean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 3630</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Mygalomorphae_clean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 29
-  scientificName     decimalLatitude decimalLongitude eventDate          
-  &lt;chr&gt;                        &lt;dbl&gt;            &lt;dbl&gt; &lt;dttm&gt;             
-1 Arbanitis baehrae            -32.1             152. 1993-02-04 00:00:00
-2 Trittame loki                -16               145. 1992-07-21 00:00:00
-3 Arbanitis robertsi           -27.3             153. 1973-07-29 00:00:00
-4 Atrax yorkmainorum           -35.3             149. 1983-07-09 00:00:00
-5 Cethegus lugubris            -10.8             142. 1975-01-30 00:00:00
-6 Idiosoma smeatoni            -35.0             139. NA                 
-# ℹ 25 more variables: occurrenceStatus &lt;chr&gt;, dataResourceName &lt;chr&gt;,
-#   phylum &lt;chr&gt;, class &lt;chr&gt;, order &lt;chr&gt;, family &lt;chr&gt;, genus &lt;chr&gt;,
-#   species &lt;chr&gt;, taxonRank &lt;chr&gt;, taxonID &lt;chr&gt;, raw_scientificName &lt;chr&gt;,
-#   raw_vernacularName &lt;chr&gt;, raw_geodeticDatum &lt;chr&gt;, stateProvince &lt;chr&gt;,
-#   country &lt;chr&gt;, locality &lt;chr&gt;, coordinatePrecision &lt;dbl&gt;,
-#   coordinateUncertaintyInMeters &lt;dbl&gt;, raw_decimalLatitude &lt;dbl&gt;,
-#   raw_decimalLongitude &lt;dbl&gt;, verbatimCoordinates &lt;chr&gt;, …</code></pre>
+<p>CoordinateCleaner, identified a large number of duplicates which we have a separate workflow in <a href="#sec-dups" class="quarto-xref"><span>Section 2.3.5</span></a> so we decided to ignore the duplicates flagged by CoordinateCleaner.</p>
+<p>After some consideration:</p>
+<ul>
+<li>48 records excluded due to being near a capital vicinity (0.51%)</li>
+<li>26 records excluded due to being in the vicinity of biodiversity institutions (0.28%).</li>
+<li>418 records excluded due to being in sea (4.45%).</li>
+</ul>
+<p>We will consult the taxonomic experts regarding records flagged as being in the sea and found in urban areas. At this stage, given the number records are precious, we decide to include these records for the analyses</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>After removing these geographic errors, we have 8888 observations after the exclusion, 437 species.</p>
+</div>
+</div>
+</section>
+<section id="sec-dups" class="level3" data-number="2.3.5">
+<h3 data-number="2.3.5" class="anchored" data-anchor-id="sec-dups"><span class="header-section-number">2.3.5</span> Duplicate Records</h3>
+<p>Duplicate records can affect statistical analyses by pseudoreplication (increasing sample size but not adding information). We noticed that some records that had the <em>same</em> coordinate values for a large number of <em>different</em> species. These records were typically from museum record providers, we suspect this was due to the sampling method e.g.&nbsp;pitfall traps. For this reason, we decided to remove records if they fulfiled the following critiera:</p>
+<ul>
+<li>the record was duplicated at the species level</li>
+<li>had same exact coordinates</li>
+<li>had same time and date of collection</li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Using this method, we excluded 2513 from the dataset (26.75%).</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>After deduplication, we have 6375 observations after the exclusion, 404 species.</p>
+</div>
+</div>
+</section>
+<section id="minimum-number-of-observations" class="level3" data-number="2.3.6">
+<h3 data-number="2.3.6" class="anchored" data-anchor-id="minimum-number-of-observations"><span class="header-section-number">2.3.6</span> Minimum number of observations</h3>
+<p>The final step in our data cleaning workflow is to exclude any species that have fewer than three observations as this is a key requirement for the generation of alpha hulls.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Important
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We identified 185 species with fewer than three observations. This resulted in an exclusion of 324 observations (3.45%).</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>After removing data-deficient taxa, we have 6051 observations after the exclusion, 219 species.</p>
 </div>
 </div>
 </section>
 </section>
 <section id="generation-of-alpha-hulls" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="generation-of-alpha-hulls"><span class="header-section-number">2.4</span> Generation of <span class="math inline">\(\alpha\)</span> hulls</h2>
+<div class="callout callout-style-default callout-tip callout-titled" title="Source code">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Source code
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The alpha-hull workflow can be found <a href="https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd">here</a></p>
+</div>
+</div>
 <p>Spatial data for invertebrates are typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods such as species distribution models.</p>
 <p>One way to retain as many species as possible in a spatial analysis is to represent species range with alpha-hulls, a form of spatial polygon. An alpha-hull can be computed using a minimum of three data points, which allows the inclusion of data-deficient invertebrates in our endemism analysis</p>
 <p>Using the cleaned data, we applied the <code>EOO.computing()</code> function from R package <a href="https://github.com/gdauby/ConR"><code>ConR</code></a> to quantify alpha-hulls for all species that had at least 3 records (n = ). We used an alpha value of 2 and a buffer size of 0.000001 (which approximates to ~100m). The alpha-hull workflow is laid out in <a href="https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd">this document</a>.</p>
@@ -770,20 +1315,35 @@ Important
 </section>
 <section id="biodiversity-metrics" class="level2" data-number="2.5">
 <h2 data-number="2.5" class="anchored" data-anchor-id="biodiversity-metrics"><span class="header-section-number">2.5</span> Biodiversity metrics</h2>
+<div class="callout callout-style-default callout-tip callout-titled" title="Source code">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Source code
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The biodiversity metrics workflow can be found <a href="https://github.com/invertsau/inverthotspot/blob/main/R/05_endemism_mygalomorph.Rmd">here</a></p>
+</div>
+</div>
 <p>In order to quantify patterns of species richness and endemism, we need to convert our point based (i.e.&nbsp;coordinates for each occurrence of a species) into a community matrix, whereby each row in the matrix corresponds to a different site, while each column represents a different species. The entries in the matrix indicate whether a species is present at a particular site (often with a 1 for presence and 0 for absence) or how abundant the species is at that site. See <a href="https://cran.r-project.org/web//packages/phyloregion/vignettes/phyloregion-intro.html">here</a> for further information.</p>
 <p>We converted our alpha-hulls into a community matrix using the <code>poly2comm()</code> function in the <code>phyloregion</code> R package. The resolution or grid size is set at 0.5 decimal degrees. The <code>poly2comm()</code> also computes abundance (the number of individuals in each cell) and species rich (number of species in each cell).</p>
 <div class="cell">
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="methods_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="methods_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Community matrix of Mygalomorphae spiders from our cleaned dataset</figcaption>
 </figure>
 </div>
 </div>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="methods_files/figure-html/unnamed-chunk-21-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="methods_files/figure-html/unnamed-chunk-25-2.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Community matrix of Mygalomorphae spiders from our cleaned dataset</figcaption>
 </figure>
 </div>
 </div>
@@ -804,9 +1364,13 @@ Important
 </section>
 <section id="statistical-inference" class="level3" data-number="2.5.2">
 <h3 data-number="2.5.2" class="anchored" data-anchor-id="statistical-inference"><span class="header-section-number">2.5.2</span> Statistical inference</h3>
-<p>We calculated the Moran’s I test statistic, to determine whether spatial patterns of species richness, abundance and endemism for Mygals are distributed in a way that is not expected by random chance. It is a statistical measure used to assess spatial autocorrelation, which is the degree to which a set of spatial features e.g occurrences or polygons are clustered, dispersed, or randomly distributed across a geographic area (ref).</p>
-<p>Allows for detection of whether areas with high endemism (regions with many unique species) are spatially clustered. This helps in identifying biodiversity hotspots that require conservation efforts</p>
-<p>Moran’s I quantifies how similar or dissimilar values are at nearby locations. It ranges from -1 to 1: 1: Perfect positive spatial autocorrelation (values are highly clustered). 0: No spatial autocorrelation (random distribution). -1: Perfect negative spatial autocorrelation (values are perfectly dispersed)12.</p>
+<p>We calculated the Moran’s I test statistic, to determine whether spatial patterns of species richness, abundance and endemism for Mygalomorphs are distributed in a way that is not expected by random chance. Moran’s I is a statistical measure used to assess spatial autocorrelation, which is the degree to which a set of spatial features e.g occurrences or polygons are clustered, dispersed, or randomly distributed across a geographic area (ref).</p>
+<p>Moran’s I ranges from -1 to 1:</p>
+<ul>
+<li>1: Perfect positive spatial autocorrelation (values are highly clustered).</li>
+<li>0: No spatial autocorrelation (random distribution).</li>
+<li>-1: Perfect negative spatial autocorrelation (values are perfectly dispersed).</li>
+</ul>
 </section>
 </section>
 <section id="data-and-code-availability" class="level2" data-number="2.6">
