@@ -124,13 +124,6 @@ myg_conr_nest <- myg_spiders_cleaned |>
 test <- ConR_ahull(myg_conr_nest$occ[[1]], sf_transform = TRUE)
 
 
-# Iterative across list 
-spider_list <- myg_spiders_cleaned |> 
-  dplyr::select(decimalLatitude, decimalLongitude, scientificName) |> 
-  split(~scientificName)
-
-myg_conr_nest$conr_ahull <- lapply(spider_list, possibly(ConR_ahull, sf_transform = TRUE))
-
 # A function to map over
 #Can't get this map working for some reason!
 myg_conr_nest <- myg_conr_nest |>

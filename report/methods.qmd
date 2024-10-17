@@ -356,8 +356,7 @@ The following criterion were used to identify and remove records for the endemis
 - Any subspecies level identifications were reclassified to species level
 - Duplicates
 
-
-#### Taxonomic Errors
+### Taxonomic Errors
 
 #### Invalid names
 
@@ -422,7 +421,7 @@ After removing the taxonomic errors, we have `r nrow(myg_spiders_no_unmatched)` 
 :::
 
 
-#### Introduced Species
+### Introduced Species
 
 Any species which are not native to Australia were removed from our dataset. To identify all introduced species in the dataset, we used species lists from the [World Spider Catalogue (WSC)](https://wsc.nmbe.ch/) and the [Global Register of Invasive and Introduced Species (GRIIS)]((http://griis.org/)).
 
@@ -466,7 +465,7 @@ There are no arachnids in the Australian GRIIS list
 For the purpose of this project, we conclude there are no introduced spiders in our dataset.
 :::
 
-#### Marine Species
+### Marine Species
 
 ```{r, include=FALSE}
 wormsOutput <- readRDS(here("output/2024-10-17_worrms_myg_wm_records_taxamatch.rds"))
@@ -480,7 +479,7 @@ Using the [`worrms` R package](https://docs.ropensci.org/worrms/), we supplied o
 In the case of this project, we found `r length(which(wormsOutput$match_type %in% "exact"))` taxa that matched with marine species in the WoRMS database. 
 :::
 
-#### Geographic Errors
+### Geographic Errors
 
 ```{r}
 aus <- st_transform(ozmaps::ozmap_country, 4326)
@@ -520,21 +519,26 @@ tibble(Test = names(cc_summary),
 
 CoordinateCleaner, identified a large number of duplicates which we have a separate workflow in @sec-dups so we decided to ignore the duplicates flagged by CoordinateCleaner.
 
-After some consideration, `r cc_summary[".cap"] |> as.vector()` records excluded due to being near a capital vicinity (`r (( cc_summary[".cap"] |> as.vector() / nrow(myg_spiders)) *100 ) |> round(2)`%) and `r cc_summary[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions (`r (( cc_summary[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
+After some consideration: 
+
+- `r cc_summary[".cap"] |> as.vector()` records excluded due to being near a capital vicinity (`r (( cc_summary[".cap"] |> as.vector() / nrow(myg_spiders)) *100 ) |> round(2)`%)
+- `r cc_summary[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions (`r (( cc_summary[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
+- `r cc_summary[".sea"] |> as.vector()` records excluded due to being in sea (`r (( cc_summary[".sea"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
 
 We will consult the taxonomic experts regarding records flagged as being in the sea and found in urban areas. At this stage, given the number records are precious, we decide to include these records for the analyses
 
 ```{r, include=FALSE}
 myg_spiders_geo_clean <- cc_tests |> 
   filter(!.cap == FALSE,
-         !.inst == FALSE)
+         !.inst == FALSE, 
+         !.sea == FALSE)
 ```
 
 ::: {.callout-note}
 After removing these geographic errors, we have `r nrow(myg_spiders_geo_clean)` observations after the exclusion, `r unique(myg_spiders_geo_clean$scientificName) |> length()` species.
 :::
 
-#### Duplicate Records {#sec-dups}
+### Duplicate Records {#sec-dups}
 
 Duplicate records can affect statistical analyses by pseudoreplication (increasing sample size but not adding information). We noticed that some records that had the _same_ coordinate values for a large number of _different_ species. These records were typically from museum record providers, we suspect this was due to the sampling method e.g. pitfall traps. For this reason, we decided to remove records if the record was duplicated at the: 
 
@@ -542,20 +546,17 @@ Duplicate records can affect statistical analyses by pseudoreplication (increasi
 - same exact coordinates
 - time of collection 
 
-```{r}
+```{r, include=FALSE}
 deduplicated_myg_spiders <- myg_spiders_geo_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |> 
    group_by(scientificName, decimalLatitude, decimalLongitude, eventDate) |> 
    filter(n() == 1) |> 
   ungroup()
 
-
 dups <- myg_spiders_geo_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |> 
    group_by(scientificName, decimalLatitude, decimalLongitude, eventDate) |> 
    filter(!n() == 1) 
-
-
 ```
 
 ::: {.callout-important}
@@ -570,7 +571,7 @@ After deduplication, we have `r nrow(deduplicated_myg_spiders)` observations aft
 
 The final step in our data cleaning workflow is to exclude any species that have fewer than three observations as this is a key requirement for the generation of alpha hulls. 
 
-```{r}
+```{r, include=FALSE}
 # Which ones have less than or equal 3 
 less_than_3_obs <- deduplicated_myg_spiders |> 
   group_by(scientificName) |> 
@@ -585,7 +586,7 @@ myg_sp_enoughobs <- deduplicated_myg_spiders |>
 ```
 
 ::: {.callout-important}
-We identified `r length(less_than_3_obs)` species with fewer than three observations. This resulted in an exclusion of `r deduplicated_myg_spiders |> filter(scientificName %in% less_than_3_obs) |> nrow()` observations (`(( nrow(deficient) / nrow(myg_spiders) )*100) |> round(2)`%).  
+We identified `r length(less_than_3_obs)` species with fewer than three observations. This resulted in an exclusion of `r deduplicated_myg_spiders |> filter(scientificName %in% less_than_3_obs) |> nrow()` observations (`r (( nrow(deficient) / nrow(myg_spiders) )*100) |> round(2)`%).  
 :::
 
 ::: {.callout-note}
