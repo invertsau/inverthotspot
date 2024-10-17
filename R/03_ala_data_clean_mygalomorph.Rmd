@@ -546,6 +546,14 @@ myg_sp_enoughobs |>
   nrow()
 ```
 
+## Exclude citizen science data
+
+```{r}
+expert_records <- myg_sp_enoughobs |> 
+  filter(!basisOfRecord == "HUMAN_OBSERVATION")
+```
+
+
 ## Export cleaned data as a .parquet
 
 <!-- Filename should contain the date of the parquet we read in at the start, export to output folder -->
@@ -553,5 +561,7 @@ myg_sp_enoughobs |>
 file_name <- str_split_1(get_latest_download(), "/")[3] 
 
 write_parquet(myg_sp_enoughobs, here(paste0("output/data/cleaned_", file_name)))
+
+write_parquet(expert_records, here(paste0("output/data/cleaned_expert_records", file_name)))
 ```
 
