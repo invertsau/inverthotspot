@@ -578,18 +578,19 @@ less_than_3_obs <- deduplicated_myg_spiders |>
   filter(n <= 3) |> 
   pull(scientificName)
 
+deficient <- deduplicated_myg_spiders |> filter(scientificName %in% less_than_3_obs)
 
-
-```
-
-::: {.callout-important}
-We identified `r length(less_than_3_obs)` species with three or fewer observations. This resulted in an exclusion of `r deduplicated_myg_spiders |> filter(scientificName %in% less_than_3_obs) |> nrow()` observations ().  
-:::
-
-```{r}
 myg_sp_enoughobs <- deduplicated_myg_spiders |> 
   filter(!scientificName %in% less_than_3_obs)
 ```
+
+::: {.callout-important}
+We identified `r length(less_than_3_obs)` species with fewer than three observations. This resulted in an exclusion of `r deduplicated_myg_spiders |> filter(scientificName %in% less_than_3_obs) |> nrow()` observations (`(( nrow(deficient) / nrow(myg_spiders) )*100) |> round(2)`%).  
+:::
+
+::: {.callout-note}
+After removing data-deficient taxa, we have `r nrow(myg_sp_enoughobs)` observations after the exclusion, `r unique(myg_sp_enoughobs$scientificName) |> length()` species.
+:::
 
 ## Generation of $\alpha$ hulls
 
