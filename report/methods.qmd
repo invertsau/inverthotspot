@@ -140,9 +140,9 @@ as.data.frame(myg_fams)|>
 
 ### Taxonomic overview by state
 
-Top 3 most recorded species in each state:
-
 ```{r, echo = FALSE, message=FALSE}
+#| fig-cap: 
+#|   - "Top 3 most recorded species in each state"
 # number of records by state, for species with at least three overall records
 myg_records_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
@@ -159,9 +159,9 @@ slice_head(myg_records_by_state, n = 3) |>
   print(n = Inf)
 ```
 
-Barplot showing the number of species and families by state:
-
 ```{r, echo = FALSE, message=FALSE}
+#| fig-cap: 
+#|   - "Barplot showing the number of species and families by state"
 # number of species by state, for species with at least three overall records
 myg_spp_by_state <- myg_records_by_state |> 
   tabyl(stateProvince) |>
@@ -200,7 +200,7 @@ as.data.frame(myg_spp_fam_by_state)|>
         axis.line = element_line(colour = "black"))
 ```
 
-Map showing the number of species by state:
+
 
 ```{r, include = FALSE}
 # map of Australia with states
@@ -221,6 +221,8 @@ myg_spp_aus <- myg_spp_by_state |>
 ```
 
 ```{r, echo=FALSE}
+#| fig-cap: 
+#|   - "Map showing the number of species by state"
 # plotting number of species by state
 ggplot() + 
   geom_sf(data = myg_spp_aus,
@@ -244,9 +246,8 @@ ggplot() +
         legend.key.width = unit(12, 'mm'))  
 ```
 
-Map showing the number of families by state:
-
 ```{r, include = FALSE}
+
 # map of Australia with states
 aus <- st_transform(ozmaps::ozmap_states, 4326)
 
@@ -259,6 +260,8 @@ hist(myg_fam_by_state$n)
 ```
 
 ```{r, echo=FALSE}
+#| fig-cap: 
+#|   - "Map showing the number of families by state"
 # joining map with species count data
 myg_fam_aus <- myg_fam_by_state |>
   full_join(y = aus, by = c("stateProvince" = "NAME")) |>
@@ -505,7 +508,7 @@ We used the `clean_coordinates()` function and tested whether any of our coordin
 - Duplicated values
 - Plain zeros
 
-Here is a table of the number of observations flagged by CoordinateCleaner's testing suite: 
+Table of the number of observations flagged by CoordinateCleaner's testing suite: 
 
 ```{r, echo=FALSE, eval=TRUE}
 cc_tests <- readRDS(here("output/CoordinateCleaner_flagged.rds"))
@@ -595,6 +598,10 @@ After removing data-deficient taxa, we have `r nrow(myg_sp_enoughobs)` observati
 
 ## Generation of $\alpha$ hulls
 
+::: {.callout-tip title="Source code"}
+The alpha-hull workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd)
+:::
+
 Spatial data for invertebrates are typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods such as species distribution models. 
 
 One way to retain as many species as possible in a spatial analysis is to represent species range with alpha-hulls, a form of spatial polygon. An alpha-hull can be computed using a minimum of three data points, which allows the inclusion of data-deficient invertebrates in our endemism analysis
@@ -605,11 +612,17 @@ Alpha-hulls were converted into `SpatialPolgyon` objects using the [`sp`](https:
 
 ## Biodiversity metrics
 
+::: {.callout-tip title="Source code"}
+The biodiversity metrics workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/05_endemism_mygalomorph.Rmd)
+:::
+
 In order to quantify patterns of species richness and endemism, we need to convert our point based (i.e. coordinates for each occurrence of a species) into a community matrix, whereby each row in the matrix corresponds to a different site, while each column represents a different species. The entries in the matrix indicate whether a species is present at a particular site (often with a 1 for presence and 0 for absence) or how abundant the species is at that site. See [here](https://cran.r-project.org/web//packages/phyloregion/vignettes/phyloregion-intro.html) for further information.
 
 We converted our alpha-hulls into a community matrix using the `poly2comm()` function in the `phyloregion` R package. The resolution or grid size is set at 0.5 decimal degrees. The `poly2comm()` also computes abundance (the number of individuals in each cell) and species rich (number of species in each cell).
 
 ```{r, include=FALSE}
+#| fig-cap: 
+#|   - "Alpha-hulls of Mygalomorphae spiders from our cleaned dataset"
 pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis)
 
 species_polys <- readRDS(here("output/spatial/Spatial_alpha_hulls_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds"))
@@ -635,6 +648,8 @@ all_myg_alpha_sf <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_cl
 ```
 
 ```{r, echo=FALSE}
+#| fig-cap: 
+#|   - "Community matrix of Mygalomorphae spiders from our cleaned dataset"
 # Base map 
  base_map  + 
   geom_sf(data = all_myg_alpha_sf, 
@@ -667,17 +682,13 @@ We calculated CWE by dividing the WE in each grid cell by species richness.
 
 ### Statistical inference
 
-We calculated the Moran’s I test statistic, to determine whether spatial patterns of species richness, abundance and endemism for Mygals are distributed in a way that is not expected  by random chance. It is a statistical measure used to assess spatial autocorrelation, which is the degree to which a set of spatial features e.g occurrences or polygons are clustered, dispersed, or randomly distributed across a geographic area (ref).
+We calculated the Moran’s I test statistic, to determine whether spatial patterns of species richness, abundance and endemism for Mygalomorphs are distributed in a way that is not expected  by random chance. Moran’s I is a statistical measure used to assess spatial autocorrelation, which is the degree to which a set of spatial features e.g occurrences or polygons are clustered, dispersed, or randomly distributed across a geographic area (ref).
 
-Allows for detection of whether areas with high endemism (regions with many unique species) are spatially clustered. This helps in identifying biodiversity hotspots that require conservation efforts
-
-
- Moran’s I quantifies how similar or dissimilar values are at nearby locations. It ranges from -1 to 1:
-1: Perfect positive spatial autocorrelation (values are highly clustered).
-0: No spatial autocorrelation (random distribution).
--1: Perfect negative spatial autocorrelation (values are perfectly dispersed)12.
-
-
+Moran’s I ranges from -1 to 1:
+ 
+- 1: Perfect positive spatial autocorrelation (values are highly clustered).
+- 0: No spatial autocorrelation (random distribution).
+- -1: Perfect negative spatial autocorrelation (values are perfectly dispersed).
 
 ## Data and code availability
 
