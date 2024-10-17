@@ -140,9 +140,7 @@ as.data.frame(myg_fams)|>
 
 ### Taxonomic overview by state
 
-```{r, echo = FALSE, message=FALSE}
-#| fig-cap: 
-#|   - "Top 3 most recorded species in each state"
+```{r, include=FALSE}
 # number of records by state, for species with at least three overall records
 myg_records_by_state <- myg_spiders |>
   filter(!is.na(species)) |>
@@ -155,9 +153,15 @@ myg_records_by_state <- myg_spiders |>
   arrange(stateProvince, desc(n))
 
 # Top 3 most recorded species in each state
-slice_head(myg_records_by_state, n = 3) |>
-  print(n = Inf)
+tab <- slice_head(myg_records_by_state, n = 3) |>
+  print(n = Inf) |> 
+  group_by(stateProvince)
 ```
+
+```{r, echo = FALSE}
+ tab |> gt()
+```
+
 
 ```{r, echo = FALSE, message=FALSE}
 #| fig-cap: 
@@ -302,7 +306,7 @@ myg_spiders |>
   tabyl(basisOfRecord) |>
   mutate(percent = percent*100) |>
   arrange(desc(n)) |>
-  adorn_rounding(digits = 2, columns = percent)
+  adorn_rounding(digits = 2, columns = percent) |> gt()
 ```
 
 `PRESERVED_SPECIMEN`: An occurrence record describing a preserved specimen.\
@@ -402,7 +406,7 @@ issynonym_count = is.na(fuzzy_matched$AFD_synonyms) |> table() |> _[1]
 The potential synonym matches are as follows: 
 
 ```{r, echo=FALSE}
-fuzzy_matched
+fuzzy_matched |> gt()
 ```
 
 These will be verified by experts to determine how to best handle them. For now,taxa in our dataset that are not matched in the AFD will be excluded.
@@ -484,7 +488,7 @@ In the case of this project, we found `r length(which(wormsOutput$match_type %in
 
 ### Geographic Errors
 
-```{r}
+```{r, include=FALSE}
 aus <- st_transform(ozmaps::ozmap_country, 4326)
 
 base_map <- ggplot() + 
