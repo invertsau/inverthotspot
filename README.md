@@ -5,9 +5,7 @@ We are using the Infraorder Mygalmorphae Spiders as a case study to develop a wo
 
 ## Reproducibility
 
-1. Install dependencies using `renv`
-
-`renv::restore()`
+Restore dependencies using `renv` by running `renv::restore()`
 
 ## Render the report locally
 

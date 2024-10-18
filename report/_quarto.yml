@@ -14,6 +14,7 @@ book:
     - discussion.qmd
     - conclusions.qmd
     - references.qmd
+    downloads: [pdf]
 
 bibliography: references.bib
 
