@@ -9,7 +9,7 @@
 <meta name="author" content="Josh Nitschke, Ashley Browse, Payal Bal, Fonti Kar">
 <meta name="dcterms.date" content="2024-04-22">
 
-<title>Mygalomorphae Spider Hot Spot Report</title>
+<title>Mygalomorphae Spider Hot Spots</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -42,6 +42,9 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -97,7 +100,7 @@ ul.task-list li input[type="checkbox"] {
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header">
     <div class="sidebar-title mb-0 py-0">
-      <a href="./">Mygalomorphae Spider Hot Spot Report</a> 
+      <a href="./">Mygalomorphae Spider Hot Spots</a> 
     </div>
       </div>
         <div class="mt-2 flex-shrink-0 align-items-center">
@@ -159,7 +162,14 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#executive-summary" id="toc-executive-summary" class="nav-link active" data-scroll-target="#executive-summary">Executive Summary</a></li>
+  <li><a href="#executive-summary" id="toc-executive-summary" class="nav-link active" data-scroll-target="#executive-summary">Executive Summary</a>
+  <ul class="collapse">
+  <li><a href="#aim" id="toc-aim" class="nav-link" data-scroll-target="#aim">Aim</a></li>
+  <li><a href="#method" id="toc-method" class="nav-link" data-scroll-target="#method">Method</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
+  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions">Conclusions</a></li>
+  <li><a href="#acknowledgements" id="toc-acknowledgements" class="nav-link" data-scroll-target="#acknowledgements">Acknowledgements</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -168,7 +178,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Mygalomorphae Spider Hot Spot Report</h1>
+<h1 class="title">Mygalomorphae Spider Hot Spots</h1>
 </div>
 
 
@@ -197,12 +207,68 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="logo/IA_banner.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="logo/IA_banner.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:80.0%"></a></p>
+</figure>
+</div>
 <section id="executive-summary" class="level1 unnumbered">
 <h1 class="unnumbered">Executive Summary</h1>
-<p>This is an Invertebrates Australia Research Report.</p>
-<p>Authors:</p>
+<section id="aim" class="level3">
+<h3 class="anchored" data-anchor-id="aim">Aim</h3>
+<p>The goal of this project is to design a fully reproducible, end-to-end workflow to identify biodiversity hotspots for Australian Invertebrates. Here, the workflow was applied to <em>Mygalomorphae</em> spiders, a group known to consist of trapdoor spiders, funnel webs and tarantlas).</p>
+</section>
+<section id="method" class="level3">
+<h3 class="anchored" data-anchor-id="method">Method</h3>
+<p>We used occurrence data from the <a href="https://www.ala.org.au/">Atlas of Living Australia</a> for this analysis. We created two datasets for analyses:</p>
+<ol type="1">
+<li>‘Citizen science + preserved specimen’ dataset (number of species = 219, number of observations = 6051)</li>
+<li>‘Preserved specimen only’ (number of species = 213, number of observations = 4663)</li>
+</ol>
+<p>We computed alpha-hulls, a form of spatial polygon to represent each species distribution for endemism analyses.</p>
+<p>Species richness (SR), weighted endemism (WE) and corrected weighted endemsim (CEW) were used as metrics to define hotspots. [Briefly describe each of these]</p>
+<p>Moran’s I test was used to test whether spatial patterns were statistically significant.</p>
+</section>
+<section id="results" class="level3">
+<h3 class="anchored" data-anchor-id="results">Results</h3>
+<ul>
+<li>Overall signals for ‘hotspots’ were weak for <em>Mygalomorphae</em> spiders.</li>
+<li>No ‘hotspots’ were identified using the ‘citizen science + preserved specimen’ dataset</li>
+<li>In the ‘preserved specimen only’ dataset, there was some evidence of ‘hotspots’ using WE and CWE</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="index_files/figure-html/unnamed-chunk-4-1.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2" title="Maps showing (left) weighted endemism and (right) corrected weighted endemism of Mygalmorphae spiders. These maps were created using the ‘preserved specimen data only’"><img src="index_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="768" alt="Maps showing (left) weighted endemism and (right) corrected weighted endemism of Mygalmorphae spiders. These maps were created using the ‘preserved specimen data only’"></a></p>
+<figcaption>Maps showing (left) weighted endemism and (right) corrected weighted endemism of Mygalmorphae spiders. These maps were created using the ‘preserved specimen data only’</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="conclusions" class="level3">
+<h3 class="anchored" data-anchor-id="conclusions">Conclusions</h3>
+<p>Preserved specimen data provided better detection rates of endemism hotspots in <em>Mygalomorphae</em> spiders</p>
+<p>Notable endemism hotspots identified for <em>Mygalomorphae</em> spiders in this analyses include:</p>
+<ul>
+<li>Tropical far north Queensland</li>
+<li>South East coast of New South Wales</li>
+<li>Rural Victoria</li>
+<li>Adelaide and Kangaroo Island</li>
+<li>South West coast of Perth</li>
+<li>Southern coast of Perth</li>
+</ul>
+<p>There is still value for citizen science data for endemism analyses particularly for taxonomic groups that can be identified to species level using photographs.</p>
+</section>
+<section id="acknowledgements" class="level3">
+<h3 class="anchored" data-anchor-id="acknowledgements">Acknowledgements</h3>
+<p>This project was conducted on the unceded lands of the Bedegal and Gadigal people of the Eora Nation (Sydney), the Kaurna people (South Australia), the Whadjuk people of the Nyoongar nation (Perth), the Wurundjeri Woi-wurrung and Bunurong people of the Kulin nation (Melbourne). We recognise the original scientists of the native lands and their connection to the ecosystem.</p>
+<p>We thank <a href="https://www.nespthreatenedspecies.edu.au/people/jessica-marsh">Dr.&nbsp;Jessica Marsh</a>, <a href="https://www.buzatto.info/">Dr.&nbsp;Bruno Buzatto</a>, <a href="https://aarongreenville.com/">Dr.&nbsp;Aaron Greenville</a> and <a href="https://www.unsw.edu.au/staff/shawn-laffan">Professor Shawn Laffan</a> for their expertise and advice on this project.</p>
+<p>This report is licensed under a <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
@@ -636,6 +702,38 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   </div>
 </nav>
 </div> <!-- /content -->
+<script>var lightboxQuarto = GLightbox({"selector":".lightbox","openEffect":"zoom","closeEffect":"zoom","loop":false,"descPosition":"bottom"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
 
 
 
