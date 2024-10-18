@@ -23,15 +23,14 @@ bibliography: references.bib
 format:
   html:
     mainfont: avenir
-    linkcolor: "#BF8DBA"
+    # linkcolor: "#BF8DBA"
   pdf:
     prefer-html: true
-    # toc: true
-    # toc-depth: 3
 
 theme:
-    light: flatly
-    dark: darkly
+    light: [flatly, style.scss]
+    dark: [darkly, style.scss]
+    
     
 
 editor: source
