@@ -31,7 +31,7 @@ theme:
     light: [flatly, style.scss]
     dark: [darkly, style.scss]
     
-    
+draft: true
 
 editor: source
 
