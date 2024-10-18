@@ -647,6 +647,7 @@ We converted our alpha-hulls into a community matrix using the `poly2comm()` fun
 ```{r, include=FALSE}
 #| fig-cap: 
 #|   - "Alpha-hulls of Mygalomorphae spiders from our cleaned dataset"
+#| column: margin
 pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis)
 
 species_polys <- readRDS(here("output/spatial/Spatial_alpha_hulls_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds"))
@@ -674,6 +675,7 @@ all_myg_alpha_sf <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_cl
 ```{r, echo=FALSE}
 #| fig-cap: 
 #|   - "Community matrix of Mygalomorphae spiders from our cleaned dataset"
+#| column: margin
 # Base map 
  base_map  + 
   geom_sf(data = all_myg_alpha_sf, 
