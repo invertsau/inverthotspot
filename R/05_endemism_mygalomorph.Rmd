@@ -158,7 +158,7 @@ Endm.mygalomorph.poly_ex <- phyloregion::weighted_endemism(comm.poly_ex$comm_dat
 str(Endm.mygalomorph.poly_ex)
 
 ## Join results back to spatial community data matrix
-m1.poly_ex <- merge(comm.poly_ex$map, data.frame(grids=names(Endm.mygalomorph.poly), WE=Endm.mygalomorph.poly_ex), by="grids")
+m1.poly_ex <- merge(comm.poly_ex$map, data.frame(grids=names(Endm.mygalomorph.poly_ex), WE=Endm.mygalomorph.poly_ex), by="grids")
 
 # Drop NA in WE
 m1.poly_ex <- m1.poly_ex[!is.na(m1.poly_ex$WE),]
