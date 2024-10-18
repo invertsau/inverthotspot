@@ -90,6 +90,26 @@
     ]
   },
   {
+    "objectID": "results.html",
+    "href": "results.html",
+    "title": "3  Results",
+    "section": "",
+    "text": "3.1 All data from ALA",
+    "crumbs": [
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Results</span>"
+    ]
+  },
+  {
+    "objectID": "results.html#all-data-from-ala",
+    "href": "results.html#all-data-from-ala",
+    "title": "3  Results",
+    "section": "",
+    "text": "3.1.1 Species richness\n\n\n\n\n\nFigure 1: Map showing species richness estimated of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == HUMAN_OBSERVATION) Right: Only expert data is used (basis of record == PRESERVED_SPECIMEN only)\n\n\n\n\n\n\n\n\n\n\nNote\n\n\n\nThere was no evidence for spatial clustering in species richness in either the combined dataset or in the preserved specimen only dataset (Table 1).\n\n\nTable 1. Summary statistics for species richness in both datasets\n\n\n\n\n\n\n\n\nDataset\nZ statistic\nP value\nN species\nN observations\n\n\n\n\nCitizen Science + Preserved Specimen\n-0.00087\n0.35\n219\n6051\n\n\nPreserved Specimen only\n-0.00092\n0.27\n213\n4663\n\n\n\n\n\n\n\n\n\n3.1.2 Weighted endemism\n\n\n\n\n\nFigure 2: Map showing weighted endemism estimated of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == HUMAN_OBSERVATION) Right: Only expert data is used (basis of record == PRESERVED_SPECIMEN only)\n\n\n\n\n\n\n\n\n\n\nNote\n\n\n\nThere was some evidence for spatial clustering in weighted endemism in the preserved specimen only dataset (Table 2).\n\n\nTable 2. Test statistic and p value for weighted endemsim\n\n\n\n\n\n\n\n\nDataset\nZ statistic\nP value\nN species\nN observations\n\n\n\n\nCitizen Science + Preserved Specimen\n-0.00087\n0.560\n219\n6051\n\n\nPreserved Specimen only\n-0.00092\n0.015\n213\n4663\n\n\n\n\n\n\n\n\n\n3.1.3 Corrected weighted endemism\n\n\n\n\n\nFigure 2: Map showing corrected weighted endemism estimated of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == HUMAN_OBSERVATION) Right: Only expert data is used (basis of record == PRESERVED_SPECIMEN only)\n\n\n\n\n\n\n\n\n\n\nNote\n\n\n\nThere was some evidence for spatial clustering in corrected weighted endemism in the preserved specimen only dataset (Table 3).\n\n\nTable 3. Test statistic and p value for corrected weighted endemsim\n\n\n\n\n\n\n\n\nDataset\nZ statistic\nP value\nN species\nN observations\n\n\n\n\nCitizen Science + Preserved Specimen\n-0.00087\n1.00\n219\n6051\n\n\nPreserved Specimen only\n-0.00092\n0.02\n213\n4663",
+    "crumbs": [
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Results</span>"
+    ]
+  },
+  {
     "objectID": "conclusions.html",
     "href": "conclusions.html",
     "title": "5  Summary",
