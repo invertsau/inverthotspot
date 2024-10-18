@@ -16,12 +16,23 @@ book:
     - references.qmd
   output-file: "Invertebrates-Australia-Hotspots-Report"
   downloads: [pdf]
+  search: true
 
 bibliography: references.bib
 
 format:
   html:
-    theme: journal
+    mainfont: avenir
+    linkcolor: "#BF8DBA"
+  pdf:
+    prefer-html: true
+    # toc: true
+    # toc-depth: 3
+
+theme:
+    light: flatly
+    dark: darkly
+    
 
 editor: source
 
