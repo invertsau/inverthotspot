@@ -14,7 +14,8 @@ book:
     - discussion.qmd
     - conclusions.qmd
     - references.qmd
-    downloads: [pdf]
+  output-file: "Invertebrates-Australia-Hotspots-Report"
+  downloads: [pdf]
 
 bibliography: references.bib
 
