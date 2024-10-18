@@ -3,9 +3,9 @@ project:
   output-dir: docs
 
 book:
-  title: "Mygalomorphae Spider Hot Spot Report"
+  title: "Mygalomorphae Spider Hot Spots"
   author: "Josh Nitschke, Ashley Browse, Payal Bal, Fonti Kar"
-  date: "4/22/2024"
+  date: 2024-04-22
   chapters:
     - index.qmd
     - intro.qmd

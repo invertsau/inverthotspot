@@ -58,6 +58,7 @@ m1_sf <-
 
 
 ```{r}
+# Export only data
 # Combine into one large spatial dataframe
 combinedShp_ex <- do.call(what = rbind, args=species_polys_expert)
 

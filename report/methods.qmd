@@ -532,8 +532,6 @@ After some consideration:
 - `r cc_summary[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions (`r (( cc_summary[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
 - `r cc_summary[".sea"] |> as.vector()` records excluded due to being in sea (`r (( cc_summary[".sea"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
 
-We will consult the taxonomic experts regarding records flagged as being in the sea and found in urban areas. At this stage, given the number records are precious, we decide to include these records for the analyses
-
 ```{r, include=FALSE}
 myg_spiders_geo_clean <- cc_tests |> 
   filter(!.cap == FALSE,
@@ -604,7 +602,7 @@ After removing data-deficient taxa, we have `r nrow(myg_sp_enoughobs)` observati
 
 While citizen science  is an increasingly important source of data that informs research, it's accuracy and quality impact statistical inference. This is likely due to improper species identification.
 
-As such, we decided to execute the endemism analysis using the cleaned data that includes citizen science data (e.g. basis of record = `"HUMAN_OBSERVATION"`), as well as a dataset with we exclude citizen science data.
+As such, we decided to conduct the endemism analysis using the cleaned data that includes citizen science data (e.g. basis of record = `"HUMAN_OBSERVATION"`), as well as a dataset with we exclude citizen science data (e.g. basis of record = `"PRESERVED_SPECIMEN"`)
 
 ```{r, include = FALSE}
 expert_records <- myg_sp_enoughobs |> 
@@ -615,7 +613,7 @@ citsci <- myg_sp_enoughobs |>
 ```
 
 ::: {.callout-important}
-There were  `r nrow(citsci)` records that were flagged with basis of record = `"HUMAN_OBSERVATION"`. This resulted in an exclusion of `r (( nrow(citsci) / nrow(myg_spiders) )*100) |> round(2)`% of the original data).  
+There were  `r nrow(citsci)` records that were flagged with basis of record = `"HUMAN_OBSERVATION"`. This resulted in an exclusion of `r (( nrow(citsci) / nrow(myg_spiders) )*100) |> round(2)`% of the original data) in the "preserved specimen only" dataset.  
 :::
 
 ::: {.callout-note}

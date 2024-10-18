@@ -1,5 +1,128 @@
+---
+lightbox: true
+---
+
+![](logo/IA_banner.png){width=80% fig-align='center'}
+
 # Executive Summary {.unnumbered}
 
-This is an Invertebrates Australia Research Report.
+```{r, include=FALSE}
+pacman::p_load(arrow, here, stringr, purrr, ggplot2, sp, phyloregion, terra, ozmaps, patchwork)
 
-Authors: 
+# Load helper functions
+source(here("R/utils.R"))
+
+# Load cleaned data (includes citizen science data)
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
+
+# Load cleaned expert data 
+myg_spiders_cleaned_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1])
+
+species_polys_expert <- readRDS(here("output/spatial/Spatial_alpha_hulls_expertcleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds")) |> discard(is.null)
+```
+
+```{r, include=FALSE}
+# Export only data
+# Combine into one large spatial dataframe
+combinedShp_ex <- do.call(what = rbind, args=species_polys_expert)
+
+## Assign species names
+combinedShp_ex <- terra::vect(combinedShp_ex)
+names(combinedShp_ex) <- "species"
+
+comm.poly_ex <- phyloregion::polys2comm(dat = combinedShp_ex, species = "species", trace=1, res = 0.5)
+
+Endm.mygalomorph.poly_ex <- phyloregion::weighted_endemism(comm.poly_ex$comm_dat)
+
+## Join results back to spatial community data matrix
+m1.poly_ex <- merge(comm.poly_ex$map, data.frame(grids=names(Endm.mygalomorph.poly_ex), WE=Endm.mygalomorph.poly_ex), by="grids")
+
+# Drop NA in WE
+m1.poly_ex <- m1.poly_ex[!is.na(m1.poly_ex$WE),]
+
+m1.poly_ex$corrected_endemism <- m1.poly_ex$WE/m1.poly_ex$richness
+
+m1_sf_ex <- 
+  sf::st_as_sf(m1.poly_ex) |> 
+  sf::st_transform(4326)
+```
+
+### Aim
+
+The goal of this project is to design a fully reproducible, end-to-end workflow to identify biodiversity hotspots for Australian Invertebrates. Here, the workflow was applied to _Mygalomorphae_ spiders, a group known to consist of trapdoor spiders, funnel webs and tarantlas). 
+
+### Method
+
+We used occurrence data from the [Atlas of Living Australia](https://www.ala.org.au/) for this analysis. We created two datasets for analyses: 
+
+1. 'Citizen science + preserved specimen' dataset (number of species = `r myg_spiders_cleaned$species |> unique() |> length()`, number of observations = `r nrow(myg_spiders_cleaned)`)
+2. 'Preserved specimen only' (number of species = `r myg_spiders_cleaned_expert$species |> unique() |> length()`, number of observations = `r nrow(myg_spiders_cleaned_expert)`)
+
+We computed alpha-hulls, a form of spatial polygon to represent each species distribution for endemism analyses.
+
+Species richness (SR), weighted endemism (WE) and corrected weighted endemsim (CEW) were used as metrics to define hotspots. [Briefly describe each of these]
+
+
+Moran's I test was used to test whether spatial patterns were statistically significant.
+
+### Results
+
+- Overall signals for 'hotspots' were weak for _Mygalomorphae_ spiders. 
+- No 'hotspots' were identified using the 'citizen science + preserved specimen' dataset
+- In the 'preserved specimen only' dataset, there was some evidence of 'hotspots' using WE and CWE
+
+```{r, include=FALSE}
+# Expert data
+fig2b <-ggplot() +
+  geom_sf(data = m1_sf_ex, aes(fill = WE)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1, name = "Weighted Endemism") + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Weighted Endemism")
+
+# "Expert Correct Endemism"
+fig3b <-ggplot() +
+  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1, 
+                              name = "Corrected Weighted Endemism") + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Corrected Weighted Endemism")
+```
+
+```{r, echo=FALSE}
+#| fig-width: 8
+#| fig-cap: 
+#|   - "Maps showing (left) weighted endemism  and (right) corrected weighted endemism of Mygalmorphae spiders. These maps were created using the 'preserved specimen data only'"
+
+fig2b + fig3b
+```
+
+### Conclusions
+
+Preserved specimen data provided better detection rates of endemism hotspots in _Mygalomorphae_ spiders
+
+Notable endemism hotspots identified for _Mygalomorphae_ spiders in this analyses include: 
+
+- Tropical far north Queensland
+- South East coast of New South Wales
+- Rural Victoria
+- Adelaide and Kangaroo Island
+- South West coast of Perth 
+- Southern coast of Perth
+
+There is still value for citizen science data for endemism analyses particularly for taxonomic groups that can be identified to species level using photographs.
+
+### Acknowledgements
+
+This project was conducted on the unceded lands of the Bedegal and Gadigal people of the Eora Nation (Sydney), the Kaurna people (South Australia), the Whadjuk people of the Nyoongar nation (Perth), the Wurundjeri Woi-wurrung and Bunurong people of the Kulin nation (Melbourne). We recognise the original scientists of the native lands and their connection to the ecosystem. 
+
+We thank [Dr. Jessica Marsh](https://www.nespthreatenedspecies.edu.au/people/jessica-marsh), [Dr. Bruno Buzatto](https://www.buzatto.info/), [Dr. Aaron Greenville](https://aarongreenville.com/) and [Professor Shawn Laffan](https://www.unsw.edu.au/staff/shawn-laffan) for their expertise and advice on this project. 
+
+This report is licensed under a  [Creative Commons Attribution-NonCommercial 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
