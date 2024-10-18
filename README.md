@@ -3,6 +3,12 @@
 This repository contains all the data and analyses for the Invertebrate Hot Spots project. 
 We are using the Infraorder Mygalmorphae Spiders as a case study to develop a workflow to identify areas of interest for the taxonomic group.
 
+## Reproducibility
+
+1. Install dependencies using `renv`
+
+`renv::restore()`
+
 ## Render the report locally
 
 1. Install Quarto using [these instructions](https://quarto.org/docs/get-started/)
