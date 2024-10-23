@@ -159,7 +159,7 @@ tab <- slice_head(myg_records_by_state, n = 3) |>
 ```
 
 ```{r, echo = FALSE}
- tab |> gt()
+ tab |> gt(row_group_as_column = TRUE)
 ```
 
 
