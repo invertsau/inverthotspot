@@ -159,7 +159,7 @@ tab <- slice_head(myg_records_by_state, n = 3) |>
 ```
 
 ```{r, echo = FALSE}
- tab |> gt(row_group_as_column = TRUE)
+ tab |> gt::gt(row_group_as_column = TRUE)
 ```
 
 
@@ -306,7 +306,7 @@ myg_spiders |>
   tabyl(basisOfRecord) |>
   mutate(percent = percent*100) |>
   arrange(desc(n)) |>
-  adorn_rounding(digits = 2, columns = percent) |> gt()
+  adorn_rounding(digits = 2, columns = percent) |> gt::gt()
 ```
 
 `PRESERVED_SPECIMEN`: An occurrence record describing a preserved specimen.\
@@ -521,7 +521,7 @@ cc_summary <- CoordinateCleaner:::summary.spatialvalid(cc_tests)
 
 tibble(Test = names(cc_summary), 
          `Number of Observations` = as.vector(cc_summary)) |> 
-  gt()
+  gt::gt()
 ```
 
 CoordinateCleaner, identified a large number of duplicates which we have a separate workflow in @sec-dups so we decided to ignore the duplicates flagged by CoordinateCleaner.
