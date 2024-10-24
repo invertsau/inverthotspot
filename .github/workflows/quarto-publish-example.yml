@@ -48,7 +48,8 @@ jobs:
       - name: Install webshot2 and webshot 
         run: |
           install.packages(c("webshot2", "webshot"))
-          options(chromote.timeout = 60)
+          Sys.unsetenv("HTTP_PROXY")
+          options(chromote.timeout = 120)
         shell: Rscript {0}      
 
       # NOTE: If Publishing to GitHub Pages, set the permissions correctly (see top of this yaml)
