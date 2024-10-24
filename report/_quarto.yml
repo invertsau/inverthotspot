@@ -31,8 +31,8 @@ theme:
     light: [flatly, style.scss]
     dark: [darkly, style.scss]
     
-draft: true
-draft-mode: visible
+# draft: true
+# draft-mode: visible
 
 editor: source
 
