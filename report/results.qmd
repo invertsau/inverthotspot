@@ -1,6 +1,7 @@
 ---
 execute:
   echo: false
+  freeze: auto
 ---
 
 # Results
