@@ -8,7 +8,6 @@ IUCN_results.xlsx
 /.quarto/
 README_files/
 .Rproj.user
-*.pdf
 report/site_libs/
 report/_books/
 report/docs/
