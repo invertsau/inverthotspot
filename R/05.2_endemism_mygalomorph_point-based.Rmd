@@ -10,7 +10,9 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr)
+pacman::p_load(galah, arrow, here, phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr)
+
+source("R/utils.R")
 ```
 
 ## Read in data
@@ -18,72 +20,12 @@ pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, vir
 ```{r}
 get_latest_cleaned_data()
 
-myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data()) 
+myg_spiders_cleaned <- read_parquet(here("output/data/cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.parquet")) 
 
 myg_spiders_expert <- read_parquet(here("output/data/cleaned_expert_recordscleaned_Mygalomorphae_withassertions_2024-03-13_ALA")) 
 ```
 
-### obs as sf to plot all on a map
-
-```{r}
-# Transform projection
-aus <- st_transform(ozmaps::ozmap_country, 4326)
-
-# Base map 
-base_map <- ggplot() + 
-  geom_sf(data = aus, fill = NA, colour = "black") + 
-  theme_minimal()
-
-#obs as sf
-myg_spiders_points_sf <- myg_spiders_expert |> 
-  select(species, decimalLongitude, decimalLatitude) |> 
-  sf::st_sfc()
-
-# Save output
-# Clean up the name
-file_name <- str_split_1(get_latest_cleaned_data(), "/")[3] |> str_remove(".parquet")
-
-saveRDS(all_myg_alpha_sf, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_", file_name, ".rds")))
-
-# Base map 
-base_map  + 
-  geom_sf(data = all_myg_alpha_sf, 
-          aes(geometry = x),
-           # colour = "black",
-          colour = "#609966") + 
-  coord_sf(c(110, 155)) +
-  theme_minimal() |> 
-  theme(legend.position = "none")
-
-```
-
-### Load alpha hull spatial polygons
-
-These are estimated from {ConR}, this is a massive list, each element is a spatial polygon dataframe
-
-```{r}
-# species_polys <- readRDS("output/myg_spiders_conr_sp.rds")
-
-species_polys <- readRDS("output/spatial/Spatial_alpha_hulls_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds")
-
-species_polys_expert <- readRDS("output/spatial/Spatial_alpha_hulls_expertcleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds") |> 
-  discard(is.null)
-```
-
 ## ALL DATA
-
-### Pre-processing
-
-```{r}
-# Combine into one large spatial dataframe
-combinedShp <- do.call(what = rbind, args=species_polys)
-
-## Assign species names
-combinedShp <- terra::vect(combinedShp)
-names(combinedShp) <- "species"
-
-combinedShp
-```
 
 ### Calculate Community Matrix
 
@@ -91,24 +33,24 @@ Convert raw input distribution data to community at 0.5 decimal degrees
 `trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
 
 ```{r}
-comm.poly <- phyloregion::polys2comm(dat = combinedShp, species = "species", trace=1, res = 0.5)
-str(comm.poly)
-plot(comm.poly$map)
+comm.point <- phyloregion::points2comm(dat = myg_spiders_cleaned, res = 0.5, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
+str(comm.point)
+plot(comm.point$map)
 ```
 
 ### Calulate weighed endemism 
 
 ```{r}
-Endm.mygalomorph.poly <- phyloregion::weighted_endemism(comm.poly$comm_dat)
-str(Endm.mygalomorph.poly)
+Endm.mygalomorph.point <- phyloregion::weighted_endemism(comm.point$comm_dat)
+str(Endm.mygalomorph.point)
 
 ## Join results back to spatial community data matrix
-m1.poly <- merge(comm.poly$map, data.frame(grids=names(Endm.mygalomorph.poly), WE=Endm.mygalomorph.poly), by="grids")
+m1.point <- merge(comm.point$map, data.frame(grids=names(Endm.mygalomorph.point), WE=Endm.mygalomorph.point), by="grids")
 
 # Drop NA in WE
-m1.poly <- m1.poly[!is.na(m1.poly$WE),]
+m1.point <- m1.point[!is.na(m1.point$WE),]
 
-m1.poly
+m1.point
 ```
 
 
@@ -117,7 +59,7 @@ m1.poly
 Weighted endemism tally per cell divided by the species richness of that cell
 
 ```{r}
-m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
+m1.point$corrected_endemism <- m1.point$WE/m1.point$richness
 ```
 
 ### Create a endemism map
@@ -126,8 +68,17 @@ Convert to `sf`
 
 ```{r}
 m1_sf <- 
-  sf::st_as_sf(m1.poly) |> 
+  sf::st_as_sf(m1.point) |> 
   sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = m1_sf, aes(fill = WE)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
 ggplot() +
   geom_sf(data = m1_sf, aes(fill = corrected_endemism)) + 
@@ -174,42 +125,29 @@ saveRDS(WE_MI, "output/analysis/Cleaned_Mygalomorphae_WE_MI.rds")
 
 ## EXPERT DATA ONLY
 
-
-```{r}
-# Combine into one large spatial dataframe
-combinedShp_ex <- do.call(what = rbind, args=species_polys_expert)
-
-## Assign species names
-combinedShp_ex <- terra::vect(combinedShp_ex)
-names(combinedShp_ex) <- "species"
-
-combinedShp_ex
-```
-
 ### Calculate Community Matrix
 
 Convert raw input distribution data to community at 0.5 decimal degrees
 `trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
 
 ```{r}
-comm.poly_ex <- phyloregion::polys2comm(dat = combinedShp_ex, species = "species", trace=1, res = 0.5)
-str(comm.poly_ex)
-plot(comm.poly_ex$map)
+comm.point_ex <- phyloregion::points2comm(dat = myg_spiders_expert, res = 0.5, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
+plot(comm.point_ex$map)
 ```
 
 ### Calulate weighed endemism 
 
 ```{r}
-Endm.mygalomorph.poly_ex <- phyloregion::weighted_endemism(comm.poly_ex$comm_dat)
-str(Endm.mygalomorph.poly_ex)
+Endm.mygalomorph.point_ex <- phyloregion::weighted_endemism(comm.point_ex$comm_dat)
+str(Endm.mygalomorph.point_ex)
 
 ## Join results back to spatial community data matrix
-m1.poly_ex <- merge(comm.poly_ex$map, data.frame(grids=names(Endm.mygalomorph.poly_ex), WE=Endm.mygalomorph.poly_ex), by="grids")
+m1.point_ex <- merge(comm.point_ex$map, data.frame(grids=names(Endm.mygalomorph.point_ex), WE=Endm.mygalomorph.point_ex), by="grids")
 
 # Drop NA in WE
-m1.poly_ex <- m1.poly_ex[!is.na(m1.poly_ex$WE),]
+m1.point_ex <- m1.point_ex[!is.na(m1.point_ex$WE),]
 
-m1.poly_ex
+m1.point_ex
 ```
 
 
@@ -218,7 +156,7 @@ m1.poly_ex
 Weighted endemism tally per cell divided by the species richness of that cell
 
 ```{r}
-m1.poly_ex$corrected_endemism <- m1.poly_ex$WE/m1.poly_ex$richness
+m1.point_ex$corrected_endemism <- m1.point_ex$WE/m1.point_ex$richness
 ```
 
 ### Create a endemism map
@@ -227,7 +165,7 @@ Convert to `sf`
 
 ```{r}
 m1_sf_ex <- 
-  sf::st_as_sf(m1.poly_ex) |> 
+  sf::st_as_sf(m1.point_ex) |> 
   sf::st_transform(4326)
 
 ggplot() +
