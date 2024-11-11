@@ -103,7 +103,7 @@ https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Mo
 
 ```{r}
 # extract the center of each polygon
-coo <- terra::centroids(m1.poly)
+coo <- terra::centroids(m1.point)
 
 coo <- coo |> sf::st_as_sf(crs = 4326)
 
@@ -114,13 +114,13 @@ S.dist  <-  dnearneigh(coo, 0, 200000)
 lw <- nb2listw(S.dist, style="W",zero.policy=T) 
 
 # Run the MC simulation
-RI  <-  moran.mc(m1.poly$richness, lw, nsim=9999,zero.policy=T)
-MI  <-  moran.mc(m1.poly$corrected_endemism, lw, nsim=9999,zero.policy=T)
-WE_MI  <-  moran.mc(m1.poly$WE, lw, nsim=9999,zero.policy=T)
+RI  <-  moran.mc(m1.point$richness, lw, nsim=9999,zero.policy=T)
+MI  <-  moran.mc(m1.point$corrected_endemism, lw, nsim=9999,zero.policy=T)
+WE_MI  <-  moran.mc(m1.point$WE, lw, nsim=9999,zero.policy=T)
 
-saveRDS(RI, "output/analysis/Cleaned_Mygalomorphae_RI.rds")
-saveRDS(MI, "output/analysis/Cleaned_Mygalomorphae_MI.rds")
-saveRDS(WE_MI, "output/analysis/Cleaned_Mygalomorphae_WE_MI.rds")
+# saveRDS(RI, "output/analysis/Cleaned_Mygalomorphae_point_RI.rds")
+# saveRDS(MI, "output/analysis/Cleaned_Mygalomorphae_point_MI.rds")
+# saveRDS(WE_MI, "output/analysis/Cleaned_Mygalomorphae_point_WE_MI.rds")
 ```
 
 ## EXPERT DATA ONLY
@@ -200,7 +200,7 @@ https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Mo
 
 ```{r}
 # extract the center of each polygon
-coo <- terra::centroids(m1.poly_ex)
+coo <- terra::centroids(m1.point_ex)
 
 coo <- coo |> sf::st_as_sf(crs = 4326)
 
@@ -211,11 +211,11 @@ S.dist  <-  dnearneigh(coo, 0, 200000)
 lw <- nb2listw(S.dist, style="W",zero.policy=T) 
 
 # Run the MC simulation
-RI_ex  <-  moran.mc(m1.poly_ex$richness, lw, nsim=9999,zero.policy=T)
-MI_ex <-  moran.mc(m1.poly_ex$corrected_endemism, lw, nsim=9999,zero.policy=T)
-WE_MI_ex  <-  moran.mc(m1.poly_ex$WE, lw, nsim=9999,zero.policy=T)
+RI_ex  <-  moran.mc(m1.point_ex$richness, lw, nsim=9999,zero.policy=T)
+MI_ex <-  moran.mc(m1.point_ex$corrected_endemism, lw, nsim=9999,zero.policy=T)
+WE_MI_ex  <-  moran.mc(m1.point_ex$WE, lw, nsim=9999,zero.policy=T)
 
-saveRDS(RI_ex, "output/analysis/Cleaned_Mygalomorphae_RI_expert.rds")
-saveRDS(MI_ex, "output/analysis/Cleaned_Mygalomorphae_MI_expert.rds")
-saveRDS(WE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_WE_MI_expert.rds")
+# saveRDS(RI_ex, "output/analysis/Cleaned_Mygalomorphae_point_RI_expert.rds")
+# saveRDS(MI_ex, "output/analysis/Cleaned_Mygalomorphae_point_MI_expert.rds")
+# saveRDS(WE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_point_WE_MI_expert.rds")
 ```
