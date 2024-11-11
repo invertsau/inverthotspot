@@ -107,8 +107,10 @@ coo <- terra::centroids(m1.point)
 
 coo <- coo |> sf::st_as_sf(crs = 4326)
 
+st_is_longlat(coo)
+
 # Search radius to include all neighboring polygon (0 - 200km)
-S.dist  <-  dnearneigh(coo, 0, 200000)  
+S.dist  <-  dnearneigh(coo, 0, 200)  
 
 #identify all neighboring polygons for each polygon in the dataset.
 lw <- nb2listw(S.dist, style="W",zero.policy=T) 
@@ -205,7 +207,7 @@ coo <- terra::centroids(m1.point_ex)
 coo <- coo |> sf::st_as_sf(crs = 4326)
 
 # Search radius to include all neighboring polygon (0 - 200km)
-S.dist  <-  dnearneigh(coo, 0, 200000)  
+S.dist  <-  dnearneigh(coo, 0, 200)  
 
 #identify all neighboring polygons for each polygon in the dataset.
 lw <- nb2listw(S.dist, style="W",zero.policy=T) 
