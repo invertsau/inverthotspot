@@ -221,3 +221,61 @@ WE_MI_ex  <-  moran.mc(m1.point_ex$WE, lw, nsim=9999,zero.policy=T)
 # saveRDS(MI_ex, "output/analysis/Cleaned_Mygalomorphae_point_MI_expert.rds")
 # saveRDS(WE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_point_WE_MI_expert.rds")
 ```
+
+Local Moran's I - to identify clusters
+```{r}
+RI_ex_local <- localmoran(m1.point_ex$WE, lw, alternative = "two.sided")
+
+m1_sf_ex$lmI <- RI_ex_local[, "Ii"] # local Moran's I
+m1_sf_ex$lmZ <- RI_ex_local[, "Z.Ii"] # z-scores
+# p-values corresponding to alternative greater
+m1_sf_ex$lmp <- RI_ex_local[, "Pr(z != E(Ii))"]
+
+p1 <- tm_shape(m1_sf_ex) +
+  tm_polygons(col = "WE", title = "WE", style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+
+p2 <- tm_shape(m1_sf_ex) +
+  tm_polygons(col = "lmI", title = "Local Moran's I",
+              style = "quantile") +
+  tm_layout(legend.outside = TRUE)
+
+p3 <- tm_shape(m1_sf_ex) +
+  tm_polygons(col = "lmZ", title = "Z-score",
+              breaks = c(-Inf, 1.65, Inf)) +
+  tm_layout(legend.outside = TRUE)
+
+p4 <- tm_shape(m1_sf_ex) +
+  tm_polygons(col = "lmp", title = "p-value",
+              breaks = c(-Inf, 0.05, Inf)) +
+  tm_layout(legend.outside = TRUE)
+
+tmap_arrange(p1, p2, p3, p4)
+
+# moran's I scatterplot
+mp <- moran.plot(as.vector(scale(m1_sf_ex$richness)), lw)
+
+#designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
+m1_sf_ex$quadrant <- NA
+# high-high
+m1_sf_ex[(mp$x >= 0 & mp$wx >= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.05), "quadrant"]<- 1
+# low-low
+m1_sf_ex[(mp$x <= 0 & mp$wx <= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.05), "quadrant"]<- 2
+# high-low
+m1_sf_ex[(mp$x >= 0 & mp$wx <= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.05), "quadrant"]<- 3
+# low-high
+m1_sf_ex[(mp$x <= 0 & mp$wx >= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.05), "quadrant"]<- 4
+# non-significant
+m1_sf_ex[(!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp > 0.05), "quadrant"] <- 5
+
+#mapping clusters
+tm_shape(m1_sf_ex) + tm_fill(col = "quadrant", title = "",
+breaks = c(1, 2, 3, 4, 5, 6),
+palette =  c("red", "blue", "lightpink", "skyblue2", "white"),
+labels = c("High-High", "Low-Low", "High-Low",
+           "Low-High", "Non-significant")) +
+tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
+tm_layout(frame = FALSE,  title = "Clusters")  +
+tm_layout(legend.outside = TRUE)
+```
+
