@@ -145,7 +145,7 @@ m1_sf[(mp$x >= 0 & mp$wx >= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "qua
 # low-low
 m1_sf[(mp$x <= 0 & mp$wx <= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 2
 # high-low
-m1_sf_ex[(mp$x >= 0 & mp$wx <= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 3
+m1_sf[(mp$x >= 0 & mp$wx <= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 3
 # low-high
 m1_sf[(mp$x <= 0 & mp$wx >= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 4
 # non-significant
