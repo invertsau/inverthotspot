@@ -144,19 +144,14 @@ m1_sf$quadrant <- NA
 m1_sf[(mp$x >= 0 & mp$wx >= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 1
 # low-low
 m1_sf[(mp$x <= 0 & mp$wx <= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 2
-# high-low
-m1_sf[(mp$x >= 0 & mp$wx <= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 3
-# low-high
-m1_sf[(mp$x <= 0 & mp$wx >= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 4
 # non-significant
-m1_sf[(!is.na(m1_sf$lmp) & m1_sf$lmp > 0.0001), "quadrant"] <- 5
+m1_sf[(!is.na(m1_sf$lmp) & m1_sf$lmp > 0.0001), "quadrant"] <- 3
 
 #mapping clusters
 tm_shape(m1_sf) + tm_fill(col = "quadrant", title = "",
-breaks = c(1, 2, 3, 4, 5, 6),
-palette =  c("red", "blue", "lightpink", "skyblue2", "white"),
-labels = c("High-High", "Low-Low", "High-Low",
-           "Low-High", "Non-significant")) +
+breaks = c(1, 2, 3, 4),
+palette =  c("red", "blue", "white"),
+labels = c("High-High", "Low-Low", "Non-significant")) + 
 tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
 tm_layout(frame = FALSE,  title = "Clusters")  +
 tm_layout(legend.outside = TRUE)
@@ -278,19 +273,14 @@ m1_sf_ex$quadrant <- NA
 m1_sf_ex[(mp$x >= 0 & mp$wx >= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 1
 # low-low
 m1_sf_ex[(mp$x <= 0 & mp$wx <= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 2
-# high-low
-m1_sf_ex[(mp$x >= 0 & mp$wx <= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 3
-# low-high
-m1_sf_ex[(mp$x <= 0 & mp$wx >= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 4
 # non-significant
-m1_sf_ex[(!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp > 0.0001), "quadrant"] <- 5
+m1_sf_ex[(!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp > 0.0001), "quadrant"] <- 3
 
 #mapping clusters
 tm_shape(m1_sf_ex) + tm_fill(col = "quadrant", title = "",
-breaks = c(1, 2, 3, 4, 5, 6),
-palette =  c("red", "blue", "lightpink", "skyblue2", "white"),
-labels = c("High-High", "Low-Low", "High-Low",
-           "Low-High", "Non-significant")) +
+breaks = c(1, 2, 3, 4),
+palette =  c("red", "blue", "white"),
+labels = c("High-High", "Low-Low", "Non-significant")) +
 tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
 tm_layout(frame = FALSE,  title = "Clusters")  +
 tm_layout(legend.outside = TRUE)

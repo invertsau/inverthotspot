@@ -719,6 +719,12 @@ Moran’s I ranges from -1 to 1:
 - 0: No spatial autocorrelation (random distribution).
 - -1: Perfect negative spatial autocorrelation (values are perfectly dispersed).
 
+Calculation of Moran's I requires a list of neighbours for each spatial unit, along with weights denoting the spatial proximity between units. Neighbouring spatial units (cells for point-based analysis) were identified as those within a 200 km radius.
+
+The significance of Moran's I test statistic was assessed by Monte Carlo randomisation, where the values of the biodiversity metric in question (e.g. weighted endemism) are randomly reassigned among the spatial units and Moran's I is calculated. This is repeated numerous times to create a randomisation distribution for Moran's I, against which the observed value is compared. We used 9999 Monte Carlo simulations.
+
+After testing for spatial autocorrelation across the whole study region (Australia), Local Moran's I was used to assess the significance of clustering of similar values around each spatial unit, thereby allowing specific hotspots to be identified. 
+
 ## Data and code availability
 
 All data and code to reproduce the R portion of our analyses can be found at our [Github repository](https://github.com/invertsau/inverthotspot).
