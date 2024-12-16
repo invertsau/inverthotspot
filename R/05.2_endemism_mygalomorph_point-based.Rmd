@@ -1,0 +1,298 @@
+---
+title: "Endemism analysis"
+author: "Fonti Kar, Payal Bal, Aaron Greenfield"
+date: "2023-12-16"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+pacman::p_load(galah, arrow, here, phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr)
+
+source("R/utils.R")
+```
+
+## Read in data
+
+```{r}
+get_latest_cleaned_data()
+
+myg_spiders_cleaned <- read_parquet(here("output/data/cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.parquet")) 
+
+myg_spiders_expert <- read_parquet(here("output/data/cleaned_expert_recordscleaned_Mygalomorphae_withassertions_2024-03-13_ALA")) 
+```
+
+## ALL DATA
+
+### Calculate Community Matrix
+
+Convert raw input distribution data to community at 0.5 decimal degrees
+`trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
+
+```{r}
+comm.point <- phyloregion::points2comm(dat = myg_spiders_cleaned, res = 0.5, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
+str(comm.point)
+plot(comm.point$map)
+```
+
+### Calulate weighed endemism 
+
+```{r}
+Endm.mygalomorph.point <- phyloregion::weighted_endemism(comm.point$comm_dat)
+str(Endm.mygalomorph.point)
+
+## Join results back to spatial community data matrix
+m1.point <- merge(comm.point$map, data.frame(grids=names(Endm.mygalomorph.point), WE=Endm.mygalomorph.point), by="grids")
+
+# Drop NA in WE
+m1.point <- m1.point[!is.na(m1.point$WE),]
+
+m1.point
+```
+
+
+### Calulate corrected weighted endemism
+
+Weighted endemism tally per cell divided by the species richness of that cell
+
+```{r}
+m1.point$corrected_endemism <- m1.point$WE/m1.point$richness
+```
+
+### Create a endemism map
+
+Convert to `sf` 
+
+```{r}
+m1_sf <- 
+  sf::st_as_sf(m1.point) |> 
+  sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = m1_sf, aes(fill = WE)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = m1_sf, aes(fill = corrected_endemism)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = m1_sf, aes(fill = richness)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Moran's%20I%20values%20significantly%20above,negative%20spatial%20autocorrelation%20or%20dispersion.
+
+```{r}
+# extract the center of each polygon
+coo <- terra::centroids(m1.point)
+
+coo <- coo |> sf::st_as_sf(crs = 4326)
+
+st_is_longlat(coo)
+
+# Search radius to include all neighboring polygon (0 - 200km)
+S.dist  <-  dnearneigh(coo, 0, 200)  
+
+#identify all neighboring polygons for each polygon in the dataset.
+lw <- nb2listw(S.dist, style="W",zero.policy=T) 
+
+# Run the MC simulation
+RI  <-  moran.mc(m1.point$richness, lw, nsim=9999,zero.policy=T)
+MI  <-  moran.mc(m1.point$corrected_endemism, lw, nsim=9999,zero.policy=T)
+WE_MI  <-  moran.mc(m1.point$WE, lw, nsim=9999,zero.policy=T)
+
+# saveRDS(RI, "output/analysis/Cleaned_Mygalomorphae_point_RI.rds")
+# saveRDS(MI, "output/analysis/Cleaned_Mygalomorphae_point_MI.rds")
+# saveRDS(WE_MI, "output/analysis/Cleaned_Mygalomorphae_point_WE_MI.rds")
+```
+
+Local Moran's I - to identify significant clusters
+```{r}
+tmap_mode("view")
+
+RI_local <- localmoran(m1.point$corrected_endemism, lw, alternative = "greater")
+
+m1_sf$lmI <- RI_local[, "Ii"] # local Moran's I
+m1_sf$lmZ <- RI_local[, "Z.Ii"] # z-scores
+m1_sf$lmp <- RI_local[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
+
+# moran's I scatterplot
+mp <- moran.plot(as.vector(scale(m1_sf$corrected_endemism)), lw)
+
+#designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
+m1_sf$quadrant <- NA
+# high-high
+m1_sf[(mp$x >= 0 & mp$wx >= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 1
+# low-low
+m1_sf[(mp$x <= 0 & mp$wx <= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 2
+# high-low
+m1_sf[(mp$x >= 0 & mp$wx <= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 3
+# low-high
+m1_sf[(mp$x <= 0 & mp$wx >= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 4
+# non-significant
+m1_sf[(!is.na(m1_sf$lmp) & m1_sf$lmp > 0.0001), "quadrant"] <- 5
+
+#mapping clusters
+tm_shape(m1_sf) + tm_fill(col = "quadrant", title = "",
+breaks = c(1, 2, 3, 4, 5, 6),
+palette =  c("red", "blue", "lightpink", "skyblue2", "white"),
+labels = c("High-High", "Low-Low", "High-Low",
+           "Low-High", "Non-significant")) +
+tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
+tm_layout(frame = FALSE,  title = "Clusters")  +
+tm_layout(legend.outside = TRUE)
+```
+
+## EXPERT DATA ONLY
+
+### Calculate Community Matrix
+
+Convert raw input distribution data to community at 0.5 decimal degrees
+`trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
+
+```{r}
+comm.point_ex <- phyloregion::points2comm(dat = myg_spiders_expert, res = 0.5, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
+plot(comm.point_ex$map)
+```
+
+### Calulate weighed endemism 
+
+```{r}
+Endm.mygalomorph.point_ex <- phyloregion::weighted_endemism(comm.point_ex$comm_dat)
+str(Endm.mygalomorph.point_ex)
+
+## Join results back to spatial community data matrix
+m1.point_ex <- merge(comm.point_ex$map, data.frame(grids=names(Endm.mygalomorph.point_ex), WE=Endm.mygalomorph.point_ex), by="grids")
+
+# Drop NA in WE
+m1.point_ex <- m1.point_ex[!is.na(m1.point_ex$WE),]
+
+m1.point_ex
+```
+
+
+### Calulate corrected weighted endemism
+
+Weighted endemism tally per cell divided by the species richness of that cell
+
+```{r}
+m1.point_ex$corrected_endemism <- m1.point_ex$WE/m1.point_ex$richness
+```
+
+### Create a endemism map
+
+Convert to `sf` 
+
+```{r}
+m1_sf_ex <- 
+  sf::st_as_sf(m1.point_ex) |> 
+  sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = m1_sf_ex, aes(fill = WE)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = m1_sf_ex, aes(fill = richness)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Moran's%20I%20values%20significantly%20above,negative%20spatial%20autocorrelation%20or%20dispersion.
+
+```{r}
+# extract the center of each polygon
+coo <- terra::centroids(m1.point_ex)
+
+coo <- coo |> sf::st_as_sf(crs = 4326)
+
+# Search radius to include all neighboring polygon (0 - 200km)
+S.dist  <-  dnearneigh(coo, 0, 200)  
+
+#identify all neighboring polygons for each polygon in the dataset.
+lw <- nb2listw(S.dist, style="W",zero.policy=T) 
+
+# Run the MC simulation
+RI_ex  <-  moran.mc(m1.point_ex$richness, lw, nsim=9999,zero.policy=T)
+MI_ex <-  moran.mc(m1.point_ex$corrected_endemism, lw, nsim=9999,zero.policy=T)
+WE_MI_ex  <-  moran.mc(m1.point_ex$WE, lw, nsim=9999,zero.policy=T)
+
+# saveRDS(RI_ex, "output/analysis/Cleaned_Mygalomorphae_point_RI_expert.rds")
+# saveRDS(MI_ex, "output/analysis/Cleaned_Mygalomorphae_point_MI_expert.rds")
+# saveRDS(WE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_point_WE_MI_expert.rds")
+```
+
+Local Moran's I - to identify significant clusters
+```{r}
+tmap_mode("view")
+
+RI_ex_local <- localmoran(m1.point_ex$corrected_endemism, lw, alternative = "greater")
+
+m1_sf_ex$lmI <- RI_ex_local[, "Ii"] # local Moran's I
+m1_sf_ex$lmZ <- RI_ex_local[, "Z.Ii"] # z-scores
+m1_sf_ex$lmp <- RI_ex_local[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
+
+# moran's I scatterplot
+mp <- moran.plot(as.vector(scale(m1_sf_ex$corrected_endemism)), lw)
+
+#designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
+m1_sf_ex$quadrant <- NA
+# high-high
+m1_sf_ex[(mp$x >= 0 & mp$wx >= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 1
+# low-low
+m1_sf_ex[(mp$x <= 0 & mp$wx <= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 2
+# high-low
+m1_sf_ex[(mp$x >= 0 & mp$wx <= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 3
+# low-high
+m1_sf_ex[(mp$x <= 0 & mp$wx >= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 4
+# non-significant
+m1_sf_ex[(!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp > 0.0001), "quadrant"] <- 5
+
+#mapping clusters
+tm_shape(m1_sf_ex) + tm_fill(col = "quadrant", title = "",
+breaks = c(1, 2, 3, 4, 5, 6),
+palette =  c("red", "blue", "lightpink", "skyblue2", "white"),
+labels = c("High-High", "Low-Low", "High-Low",
+           "Low-High", "Non-significant")) +
+tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
+tm_layout(frame = FALSE,  title = "Clusters")  +
+tm_layout(legend.outside = TRUE)
+```
+
