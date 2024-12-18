@@ -8,7 +8,7 @@ execute:
 
 ```{r setup, include=FALSE, eval=TRUE}
 ## Setting up
- pacman::p_load(arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2,sp, purrr, ConR, dplyr, DT, zoomerjoin, gt, patchwork, tmap)
+ pacman::p_load(arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2,sp, purrr, ConR, dplyr, DT, zoomerjoin, gt, patchwork, tmap, spdep)
 
 tmap_mode("view")
 
@@ -394,14 +394,27 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
 
 ```{r}
 # full dataset
-RI_local <- localmoran(m1.point$richness, lw, alternative = "greater")
+# extract the center of each polygon
+coo <- terra::centroids(m1.point)
+
+coo <- coo |> sf::st_as_sf(crs = 4326)
+
+st_is_longlat(coo)
+
+# Search radius to include all neighboring polygon (0 - 200km)
+S.dist  <-  dnearneigh(coo, 0, 200)  
+
+#identify all neighboring polygons for each polygon in the dataset.
+nb_weights <- nb2listw(S.dist, style="W",zero.policy=T) 
+
+RI_local <- localmoran(m1.point$richness, nb_weights, alternative = "greater")
 
 m1.point_sf$lmI <- RI_local[, "Ii"] # local Moran's I
 m1.point_sf$lmZ <- RI_local[, "Z.Ii"] # z-scores
 m1.point_sf$lmp <- RI_local[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
 
 # moran's I scatterplot
-RI_mp <- moran.plot(as.vector(scale(m1.point_sf$richness)), lw)
+RI_mp <- moran.plot(as.vector(scale(m1.point_sf$richness)), nb_weights)
 
 #designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
 m1.point_sf$quadrant <- NA
@@ -427,14 +440,25 @@ tm_layout(legend.outside = TRUE)
 
 ```{r}
 # preserved specimen only dataset
-RI_local_ex <- localmoran(m1.point_ex$richness, lw, alternative = "greater")
+# extract the center of each polygon
+coo_ex <- terra::centroids(m1.point_ex)
+
+coo_ex <- coo_ex |> sf::st_as_sf(crs = 4326)
+
+# Search radius to include all neighboring polygon (0 - 200km)
+S.dist_ex  <-  dnearneigh(coo_ex, 0, 200)
+
+#identify all neighboring polygons for each polygon in the dataset.
+nb_weights_ex <- nb2listw(S.dist_ex, style="W",zero.policy=T)
+
+RI_local_ex <- localmoran(m1.point_ex$richness, nb_weights_ex, alternative = "greater")
 
 m1.point_ex_sf$lmI <- RI_local_ex[, "Ii"] # local Moran's I
 m1.point_ex_sf$lmZ <- RI_local_ex[, "Z.Ii"] # z-scores
 m1.point_ex_sf$lmp <- RI_local_ex[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
 
 # moran's I scatterplot
-RI_ex_mp <- moran.plot(as.vector(scale(m1.point_ex_sf$richness)), lw)
+RI_ex_mp <- moran.plot(as.vector(scale(m1.point_ex_sf$richness)), nb_weights_ex)
 
 #designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
 m1.point_ex_sf$quadrant <- NA
@@ -461,14 +485,14 @@ tm_layout(legend.outside = TRUE)
 ```{r}
 #| fig-width: 8
 #| fig-cap: 
-#|   - "Figure 5: Map showing significant clusters of spatial cells (hotspots) sharing similar species richness of Mygalomorphae spiders using point-based data. Red clusters indicate areas of high species richness. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+#|   - "Figure 5: Map showing significant clusters of spatial cells (hotspots) sharing similar species richness of Mygalomorphae spiders using point-based data. Red clusters indicate areas of similarly high species richness. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
 RI_local_map + RI_local_ex_map + 
   plot_layout(guides = 'collect') &
   theme(legend.position='bottom')
 ```
 
 ::: {.callout-note}
-Hotspots of **species richness** were identified in... in both the combined dataset and the preserved specimen only dataset (Figure 5).
+Hotspots of **species richness** were identified in both the combined dataset and the preserved specimen only dataset: a large cluster centred around Brisbane, spanning south-east Queensland and north-east New South Wales, and another centred around Cairns in the Wet Tropics of Queensland (Figure 5).
 :::
 
 ### Weighted endemism
