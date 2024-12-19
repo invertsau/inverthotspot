@@ -495,7 +495,7 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
 Hotspots of **corrected weighted endemism** were identified in both the combined dataset and the preserved specimen only dataset (Figure 9).
 :::
 
-Both datasets showed a large hotspot in south-west Western Australia. The full dataset showed a small hotspot in far north Queensland at the tip of Cape York, while the preserved specimen only dataset also showed a small cluster located between Canberra and Sydney in New South Wales (Figure 9).
+Both datasets showed a hotspot in south-west Western Australia, although this was larger in the preserved specimen only dataset. The full dataset showed a small hotspot in far north Queensland at the tip of Cape York, while the preserved specimen only dataset also showed a small cluster located between Canberra and Sydney in New South Wales (Figure 9).
 
 ```{r, include = FALSE}
 # full dataset
