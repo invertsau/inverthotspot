@@ -20,7 +20,27 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="site_libs/quarto-nav/quarto-nav.js"></script>
@@ -83,7 +103,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./discussion.html"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Discussion</span></a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./discussion.html"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Setting up</span></a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -139,7 +159,7 @@ ul.task-list li input[type="checkbox"] {
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./discussion.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Discussion</span></span></a>
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Setting up</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -184,13 +204,49 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p>The identification and management of endemism hotspots, i.e.&nbsp;areas where range-restricted species are concentrated, is an important strategy for curbing the likely high rate of invertebrate extinctions in Australia (Woinarski recent paper). Our analytical framework is a useful tool for identifying such areas, that can be applied to different taxonomic groups.</p>
-<p>Two main hotspots of species richness and weighted endemism were identified and were highly congruent across the two datasets: a large cluster centred around Brisbane, spanning south-east Queensland and north-east New South Wales, and another centred around Cairns in the Wet Tropics of Queensland. Corrected weighted endemism was clustered in different hotspots, and there were some discrepancies between the datasets. Both datasets revealed a large hotspot in south-west Western Australia, although this hotspot was of a larger extent in the preserved specimen only dataset. The preserved specimen only dataset also showed a small cluster located between Canberra and Sydney in New South Wales, while the full dataset instead showed a small hotspot in far north Queensland at the tip of Cape York. With the exception of Cape York, these hotspots align with internationally recognised global biodiversity hotspots: the Forests of East Australia, and the Southwest Australia Ecoregion (https://www.conservation.org/priorities/biodiversity-hotspots). This provides further support for the need for conservation of these areas, which are predominantly recognised for their plant and vertebrate fauna diversity. These global biodiversity hotspots are recognised as having lost at least 70% of their original natural vegetation (https://www.conservation.org/priorities/biodiversity-hotspots), highlighting that the hotspots we have identified for Mygalomorph spiders may face similar threats.</p>
-<p>There were marked discrepancies in the hotspots identified by the two endemism metrics. Corrected weighted endemism accounts for species richness, thereby preventing areas being identified as hotspots of endemism simply because they have more species overall . However, this then risks important endemics being masked by the influence of species richness in cases where short-range species exist in areas of high species richness. Therefore advocate in favour of weighted endemism when the focus is on identification and conservation of endemism hotspots. Our results highlight the discrepancy between the methods, and show that using a variety of metrics can help identify different areas of interest. For example, weighted endemism on its own would have overlooked the hotspot in south-west Western Australia, which is characterised by a higher proportion of short-range endemics, despite being less species rich than the hotspots in north-eastern Australia.</p>
-<p>Another caveat of the methods is that small hotspots may not be picked up in the spatial autocorrelation analysis. Moran’s I is useful for identifying clusters of similar spatial units but small hotspots may be missed due to the spatial scale of the analysis or sampling bias, i.e.&nbsp;if a high endemism area is restricted to a single grid cell and not correlated with surrounding cells (maybe surrounding cells have not been sampled) then it will not be highlighted by local Moran’s I. These cells can still be identified for further investigation using the maps of the respective biodiversity metrics. The size of spatial units can be adjusted, however this should be considered carefully as spatial patterns in metrics are influenced by the designation of spatial units (the Modifiable Areal Unit Problem (MAUP); ).</p>
-<p>When applying this analytical framework, the characteristics of the target taxon should be considered, such as the distinctiveness of constituent species and the potential for errors in identification. This will affect the choice of whether to include citizen science data in the analysis. For Mygalomorph spiders, there was a high degree of congruence between the hotspots identified using the two datasets (full dataset and preserved specimen (expert) only), indicating that the citizen science records did not change the broad patterns of biodiversity. Citizen science data may be more influential for taxa that have a higher proportion of records from citizen science sources (our prop). In cases where there are discrepancies between datasets, rather than being discounted, citizen science data can identify potential areas of interest, where further investigation and expert resources can be directed.</p>
+<p>Globally, but particularly in Australia, invertebrates suffer from a paucity of ecological knowledge, which hinders their management and conservation <span class="citation" data-cites="new12 taylor18">(<a href="references.html#ref-new12" role="doc-biblioref">New and Yen 2012</a>; <a href="references.html#ref-taylor18" role="doc-biblioref">Taylor et al. 2018</a>)</span>. Landscape approaches such as habitat protection are a key principal of conservation, helping to protect species and ecological communities from broadscale threats <span class="citation" data-cites="samways07 kearney18">(<a href="references.html#ref-samways07" role="doc-biblioref">Samways 2007</a>; <a href="references.html#ref-kearney18" role="doc-biblioref">Kearney et al. 2020</a>)</span>. Despite this, invertebrates are rarely considered in the designation of protected areas <span class="citation" data-cites="chowdhury23">(<a href="references.html#ref-chowdhury23" role="doc-biblioref">Chowdhury et al. 2023</a>)</span>. Prioritizing biodiversity hotspots in spatial conservation planning will enhance the effectiveness of protected areas for biodiversity conservation. The identification and management of endemism hotspots, i.e.&nbsp;areas where range-restricted species are concentrated, is an important strategy for curbing the likely high rate of invertebrate extinctions in Australia <span class="citation" data-cites="woinarski24">(<a href="references.html#ref-woinarski24" role="doc-biblioref">Woinarski et al. 2024</a>)</span>. Our analytical framework is a useful tool for identifying these hotspots and can be applied to different taxonomic groups.</p>
+<p>For Mygalomorph spiders, two main hotspots of species richness and weighted endemism were identified and were highly congruent across the two datasets: a large cluster centred around Brisbane, spanning south-east Queensland and north-east New South Wales, and another centred around Cairns in the Wet Tropics of Queensland. Corrected weighted endemism was clustered in different hotspots, and there were some discrepancies between the datasets. Both datasets revealed a large hotspot in south-west Western Australia, although this hotspot was of a larger extent in the preserved specimen only dataset. The preserved specimen only dataset also showed a small cluster located between Canberra and Sydney in New South Wales, while the full dataset instead showed a small hotspot in far north Queensland at the tip of Cape York. With the exception of Cape York, these hotspots align with internationally recognised <a href="https://www.conservation.org/priorities/biodiversity-hotspots">global biodiversity hotspots</a>: the Forests of East Australia, and the Southwest Australia Ecoregion <span class="citation" data-cites="mittermeier11">(<a href="references.html#ref-mittermeier11" role="doc-biblioref">Mittermeier et al. 2011</a>)</span>. This provides further support for the need for conservation of these areas, which are predominantly recognised for their plant and vertebrate fauna diversity <span class="citation" data-cites="myers00">(<a href="references.html#ref-myers00" role="doc-biblioref">Myers et al. 2000</a>)</span>. These global biodiversity hotspots are recognised as having lost at least 70% of their original natural vegetation <span class="citation" data-cites="mittermeier11">(<a href="references.html#ref-mittermeier11" role="doc-biblioref">Mittermeier et al. 2011</a>)</span>, highlighting that the hotspots we have identified for Mygalomorph spiders may face similar threats.</p>
+<p>There were marked discrepancies in the hotspots identified by the two endemism metrics. Corrected weighted endemism accounts for species richness, thereby preventing areas being identified as hotspots of endemism simply because they have more species overall <span class="citation" data-cites="crisp01">(<a href="references.html#ref-crisp01" role="doc-biblioref">Crisp et al. 2001</a>)</span>. However, this then risks important endemics being masked by the influence of species richness in cases where short-range species exist in areas of high species richness. <span class="citation" data-cites="shipley22">Shipley and McGuire (<a href="references.html#ref-shipley22" role="doc-biblioref">2022</a>)</span> therefore advocate in favour of weighted endemism when the focus is on identification and conservation of endemism hotspots. Our results highlight the discrepancy between the methods, and show that using a variety of metrics can help identify different areas of interest. For example, weighted endemism on its own would have overlooked the hotspot in south-west Western Australia, which is characterised by a higher proportion of short-range endemics, despite being less species rich than the hotspots in north-eastern Australia.</p>
+<p>Another caveat of the methods is that small hotspots may not be picked up in the spatial autocorrelation analysis. Moran’s I is useful for identifying clusters of similar spatial units but small hotspots may be missed due to the spatial scale of the analysis or sampling bias, i.e.&nbsp;if a high endemism area is restricted to a single grid cell and not correlated with surrounding cells (maybe surrounding cells have not been sampled) then it will not be highlighted by local Moran’s I. These cells can still be identified for further investigation using the maps of the respective biodiversity metrics. The size of spatial units can be adjusted, however this should be considered carefully as spatial patterns in metrics are influenced by the designation of spatial units (the Modifiable Areal Unit Problem (MAUP); <span class="citation" data-cites="jelinski96">Jelinski and Wu (<a href="references.html#ref-jelinski96" role="doc-biblioref">1996</a>)</span>).</p>
+<p>When applying this analytical framework, the characteristics of the target taxon should be considered, such as the distinctiveness of constituent species and the potential for errors in identification. This will affect the choice of whether to include citizen science data in the analysis. For Mygalomorph spiders, there was a high degree of congruence between the hotspots identified using the two datasets (full dataset and preserved specimen (expert) only), indicating that the citizen science records did not change the broad patterns of biodiversity. Citizen science data may be more influential for taxa that have a higher proportion of records from citizen science sources (23% for Mygalomorphae). In cases where there are discrepancies between datasets, rather than being discounted, citizen science data can identify potential areas of interest, where further investigation and expert resources can be directed.</p>
+<p>Efforts to increase the knowledge base of invertebrate ecology in Australia, such as increased monitoring of invertebrate populations, along with taxonomic research, will improve hotspot identification and conservation.</p>
 
 
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list" style="display: none">
+<div id="ref-chowdhury23" class="csl-entry" role="listitem">
+Chowdhury, Shawan, Michael D. Jennions, Myron P. Zalucki, Martine Maron, James E. M. Watson, and Richard A. Fuller. 2023. <span>“Protected Areas and the Future of Insect Conservation.”</span> Journal Article. <em>Trends in Ecology &amp; Evolution</em> 38 (1): 85–95. <a href="https://doi.org/10.1016/j.tree.2022.09.004">https://doi.org/10.1016/j.tree.2022.09.004</a>.
+</div>
+<div id="ref-crisp01" class="csl-entry" role="listitem">
+Crisp, M. D., S. Laffan, H. P. Linder, and A. Monro. 2001. <span>“Endemism in the Australian Flora.”</span> Journal Article. <em>Journal of Biogeography</em> 28 (2): 183–98. https://doi.org/<a href="https://doi.org/10.1046/j.1365-2699.2001.00524.x">https://doi.org/10.1046/j.1365-2699.2001.00524.x</a>.
+</div>
+<div id="ref-jelinski96" class="csl-entry" role="listitem">
+Jelinski, Dennis E., and Jianguo Wu. 1996. <span>“The Modifiable Areal Unit Problem and Implications for Landscape Ecology.”</span> Journal Article. <em>Landscape Ecology</em> 11 (3): 129–40. <a href="https://doi.org/10.1007/BF02447512">https://doi.org/10.1007/BF02447512</a>.
+</div>
+<div id="ref-kearney18" class="csl-entry" role="listitem">
+Kearney, Stephen G., Vanessa M. Adams, Richard A. Fuller, Hugh P. Possingham, and James E. M. Watson. 2020. <span>“Estimating the Benefit of Well-Managed Protected Areas for Threatened Species Conservation.”</span> Journal Article. <em>Oryx</em> 54 (2): 276–84. <a href="https://doi.org/10.1017/S0030605317001739">https://doi.org/10.1017/S0030605317001739</a>.
+</div>
+<div id="ref-mittermeier11" class="csl-entry" role="listitem">
+Mittermeier, Russell A., Will R. Turner, Frank W. Larsen, Thomas M. Brooks, and Claude Gascon. 2011. <span>“Global Biodiversity Conservation: The Critical Role of Hotspots.”</span> Book Section. In <em>Biodiversity Hotspots: Distribution and Protection of Conservation Priority Areas</em>, edited by Frank E. Zachos and Jan Christian Habel, 3–22. Berlin, Heidelberg: Springer Berlin Heidelberg. <a href="https://doi.org/10.1007/978-3-642-20992-5_1">https://doi.org/10.1007/978-3-642-20992-5_1</a>.
+</div>
+<div id="ref-myers00" class="csl-entry" role="listitem">
+Myers, Norman, Russell A. Mittermeier, Cristina G. Mittermeier, Gustavo A. B. da Fonseca, and Jennifer Kent. 2000. <span>“Biodiversity Hotspots for Conservation Priorities.”</span> Journal Article. <em>Nature</em> 403 (6772): 853–58. <a href="https://doi.org/10.1038/35002501">https://doi.org/10.1038/35002501</a>.
+</div>
+<div id="ref-new12" class="csl-entry" role="listitem">
+New, Tim R., and Alan L. Yen. 2012. <span>“Insect Conservation in Australia.”</span> Book Section. In <em>Insect Conservation: Past, Present and Prospects</em>, edited by Tim R. New, 193–212. Dordrecht: Springer Netherlands. <a href="https://doi.org/10.1007/978-94-007-2963-6_9">https://doi.org/10.1007/978-94-007-2963-6_9</a>.
+</div>
+<div id="ref-samways07" class="csl-entry" role="listitem">
+Samways, Michael J. 2007. <span>“Insect Conservation: A Synthetic Management Approach.”</span> Journal Article. <em>Annual Review of Entomology</em> 52 (Volume 52, 2007): 465–87. https://doi.org/<a href="https://doi.org/10.1146/annurev.ento.52.110405.091317">https://doi.org/10.1146/annurev.ento.52.110405.091317</a>.
+</div>
+<div id="ref-shipley22" class="csl-entry" role="listitem">
+Shipley, Benjamin R., and Jenny L. McGuire. 2022. <span>“Interpreting and Integrating Multiple Endemism Metrics to Identify Hotspots for Conservation Priorities.”</span> Journal Article. <em>Biological Conservation</em> 265: 109403. https://doi.org/<a href="https://doi.org/10.1016/j.biocon.2021.109403">https://doi.org/10.1016/j.biocon.2021.109403</a>.
+</div>
+<div id="ref-taylor18" class="csl-entry" role="listitem">
+Taylor, Gary S., Michael F. Braby, Melinda L. Moir, Mark S. Harvey, Don P. A. Sands, Tim R. New, Roger L. Kitching, et al. 2018. <span>“Strategic National Approach for Improving the Conservation Management of Insects and Allied Invertebrates in Australia.”</span> Journal Article. <em>Austral Entomology</em> 57 (2): 124–49. https://doi.org/<a href="https://doi.org/10.1111/aen.12343">https://doi.org/10.1111/aen.12343</a>.
+</div>
+<div id="ref-woinarski24" class="csl-entry" role="listitem">
+Woinarski, John C. Z., Michael F. Braby, Heloise Gibb, Mark S. Harvey, Sarah M. Legge, Jessica R. Marsh, Melinda L. Moir, Tim R. New, Michael G. Rix, and Brett P. Murphy. 2024. <span>“This Is the Way the World Ends; Not with a Bang but a Whimper: Estimating the Number and Ongoing Rate of Extinctions of Australian Non-Marine Invertebrates.”</span> Journal Article. <em>Cambridge Prisms: Extinction</em> 2: e23. <a href="https://doi.org/10.1017/ext.2024.26">https://doi.org/10.1017/ext.2024.26</a>.
+</div>
+</div>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
