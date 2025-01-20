@@ -20,9 +20,9 @@ source("R/utils.R")
 ```{r}
 get_latest_cleaned_data()
 
-myg_spiders_cleaned <- read_parquet(here("output/data/cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.parquet")) 
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
 
-myg_spiders_expert <- read_parquet(here("output/data/cleaned_expert_recordscleaned_Mygalomorphae_withassertions_2024-03-13_ALA")) 
+myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1]) 
 ```
 
 ## ALL DATA
@@ -116,13 +116,14 @@ S.dist  <-  dnearneigh(coo, 0, 200)
 lw <- nb2listw(S.dist, style="W",zero.policy=T) 
 
 # Run the MC simulation
-RI  <-  moran.mc(m1.point$richness, lw, nsim=9999,zero.policy=T)
-MI  <-  moran.mc(m1.point$corrected_endemism, lw, nsim=9999,zero.policy=T)
-WE_MI  <-  moran.mc(m1.point$WE, lw, nsim=9999,zero.policy=T)
+R_MI_point  <-  moran.mc(m1.point$richness, lw, nsim=9999,zero.policy=T)
+WE_MI_point  <-  moran.mc(m1.point$WE, lw, nsim=9999,zero.policy=T)
+CWE_MI_point  <-  moran.mc(m1.point$corrected_endemism, lw, nsim=9999,zero.policy=T)
 
-# saveRDS(RI, "output/analysis/Cleaned_Mygalomorphae_point_RI.rds")
-# saveRDS(MI, "output/analysis/Cleaned_Mygalomorphae_point_MI.rds")
-# saveRDS(WE_MI, "output/analysis/Cleaned_Mygalomorphae_point_WE_MI.rds")
+# saveRDS(R_MI_point, "output/analysis/Cleaned_Mygalomorphae_point_R_MI.rds")
+# saveRDS(WE_MI_point, "output/analysis/Cleaned_Mygalomorphae_point_WE_MI.rds")
+# saveRDS(CWE_MI_point, "output/analysis/Cleaned_Mygalomorphae_point_CWE_MI.rds")
+
 ```
 
 Local Moran's I - to identify significant clusters
@@ -144,19 +145,14 @@ m1_sf$quadrant <- NA
 m1_sf[(mp$x >= 0 & mp$wx >= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 1
 # low-low
 m1_sf[(mp$x <= 0 & mp$wx <= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 2
-# high-low
-m1_sf[(mp$x >= 0 & mp$wx <= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 3
-# low-high
-m1_sf[(mp$x <= 0 & mp$wx >= 0) & (!is.na(m1_sf$lmp) & m1_sf$lmp <= 0.0001), "quadrant"]<- 4
 # non-significant
-m1_sf[(!is.na(m1_sf$lmp) & m1_sf$lmp > 0.0001), "quadrant"] <- 5
+m1_sf[(!is.na(m1_sf$lmp) & m1_sf$lmp > 0.0001), "quadrant"] <- 3
 
 #mapping clusters
 tm_shape(m1_sf) + tm_fill(col = "quadrant", title = "",
-breaks = c(1, 2, 3, 4, 5, 6),
-palette =  c("red", "blue", "lightpink", "skyblue2", "white"),
-labels = c("High-High", "Low-Low", "High-Low",
-           "Low-High", "Non-significant")) +
+breaks = c(1, 2, 3, 4),
+palette =  c("red", "blue", "white"),
+labels = c("High-High", "Low-Low", "Non-significant")) + 
 tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
 tm_layout(frame = FALSE,  title = "Clusters")  +
 tm_layout(legend.outside = TRUE)
@@ -239,38 +235,38 @@ https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Mo
 
 ```{r}
 # extract the center of each polygon
-coo <- terra::centroids(m1.point_ex)
+coo_ex <- terra::centroids(m1.point_ex)
 
-coo <- coo |> sf::st_as_sf(crs = 4326)
+coo_ex <- coo_ex |> sf::st_as_sf(crs = 4326)
 
 # Search radius to include all neighboring polygon (0 - 200km)
-S.dist  <-  dnearneigh(coo, 0, 200)  
+S.dist_ex  <-  dnearneigh(coo_ex, 0, 200)  
 
 #identify all neighboring polygons for each polygon in the dataset.
-lw <- nb2listw(S.dist, style="W",zero.policy=T) 
+lw_ex <- nb2listw(S.dist_ex, style="W",zero.policy=T) 
 
 # Run the MC simulation
-RI_ex  <-  moran.mc(m1.point_ex$richness, lw, nsim=9999,zero.policy=T)
-MI_ex <-  moran.mc(m1.point_ex$corrected_endemism, lw, nsim=9999,zero.policy=T)
-WE_MI_ex  <-  moran.mc(m1.point_ex$WE, lw, nsim=9999,zero.policy=T)
+R_MI_point_ex  <-  moran.mc(m1.point_ex$richness, lw_ex, nsim=9999,zero.policy=T)
+WE_MI_point_ex  <-  moran.mc(m1.point_ex$WE, lw_ex, nsim=9999,zero.policy=T)
+CWE_MI_point_ex <-  moran.mc(m1.point_ex$corrected_endemism, lw_ex, nsim=9999,zero.policy=T)
 
-# saveRDS(RI_ex, "output/analysis/Cleaned_Mygalomorphae_point_RI_expert.rds")
-# saveRDS(MI_ex, "output/analysis/Cleaned_Mygalomorphae_point_MI_expert.rds")
-# saveRDS(WE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_point_WE_MI_expert.rds")
+# saveRDS(R_MI_point_ex, "output/analysis/Cleaned_Mygalomorphae_point_R_MI_expert.rds")
+# saveRDS(WE_MI_point_ex, "output/analysis/Cleaned_Mygalomorphae_point_WE_MI_expert.rds")
+# saveRDS(CWE_MI_point_ex, "output/analysis/Cleaned_Mygalomorphae_point_CWE_MI_expert.rds")
 ```
 
 Local Moran's I - to identify significant clusters
 ```{r}
 tmap_mode("view")
 
-RI_ex_local <- localmoran(m1.point_ex$corrected_endemism, lw, alternative = "greater")
+RI_ex_local <- localmoran(m1.point_ex$corrected_endemism, lw_ex, alternative = "greater")
 
 m1_sf_ex$lmI <- RI_ex_local[, "Ii"] # local Moran's I
 m1_sf_ex$lmZ <- RI_ex_local[, "Z.Ii"] # z-scores
 m1_sf_ex$lmp <- RI_ex_local[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
 
 # moran's I scatterplot
-mp <- moran.plot(as.vector(scale(m1_sf_ex$corrected_endemism)), lw)
+mp <- moran.plot(as.vector(scale(m1_sf_ex$corrected_endemism)), lw_ex)
 
 #designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
 m1_sf_ex$quadrant <- NA
@@ -278,19 +274,14 @@ m1_sf_ex$quadrant <- NA
 m1_sf_ex[(mp$x >= 0 & mp$wx >= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 1
 # low-low
 m1_sf_ex[(mp$x <= 0 & mp$wx <= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 2
-# high-low
-m1_sf_ex[(mp$x >= 0 & mp$wx <= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 3
-# low-high
-m1_sf_ex[(mp$x <= 0 & mp$wx >= 0) & (!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp <= 0.0001), "quadrant"]<- 4
 # non-significant
-m1_sf_ex[(!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp > 0.0001), "quadrant"] <- 5
+m1_sf_ex[(!is.na(m1_sf_ex$lmp) & m1_sf_ex$lmp > 0.0001), "quadrant"] <- 3
 
 #mapping clusters
 tm_shape(m1_sf_ex) + tm_fill(col = "quadrant", title = "",
-breaks = c(1, 2, 3, 4, 5, 6),
-palette =  c("red", "blue", "lightpink", "skyblue2", "white"),
-labels = c("High-High", "Low-Low", "High-Low",
-           "Low-High", "Non-significant")) +
+breaks = c(1, 2, 3, 4),
+palette =  c("red", "blue", "white"),
+labels = c("High-High", "Low-Low", "Non-significant")) +
 tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
 tm_layout(frame = FALSE,  title = "Clusters")  +
 tm_layout(legend.outside = TRUE)

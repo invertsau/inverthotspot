@@ -711,13 +711,19 @@ We calculated CWE by dividing the WE in each grid cell by species richness.
 
 ### Statistical inference
 
-We calculated the Moran’s I test statistic, to determine whether spatial patterns of species richness, abundance and endemism for Mygalomorphs are distributed in a way that is not expected  by random chance. Moran’s I is a statistical measure used to assess spatial autocorrelation, which is the degree to which a set of spatial features e.g occurrences or polygons are clustered, dispersed, or randomly distributed across a geographic area (ref).
+We calculated the Moran’s I test statistic, to determine whether spatial patterns of species richness, abundance and endemism for Mygalomorphs are distributed in a way that is not expected  by random chance. Moran’s I is a statistical measure used to assess spatial autocorrelation, which is the degree to which a set of spatial features e.g occurrences or polygons are clustered, dispersed, or randomly distributed across a geographic area [@moran50].
 
 Moran’s I ranges from -1 to 1:
  
 - 1: Perfect positive spatial autocorrelation (values are highly clustered).
 - 0: No spatial autocorrelation (random distribution).
 - -1: Perfect negative spatial autocorrelation (values are perfectly dispersed).
+
+Calculation of Moran's I requires a list of neighbours for each spatial unit, along with weights denoting the spatial proximity between units. Neighbouring spatial units (cells for point-based analysis) were identified as those within a 200 km radius.
+
+The significance of Moran's I test statistic was assessed by Monte Carlo randomisation, where the values of the biodiversity metric in question (e.g. weighted endemism) are randomly reassigned among the spatial units and Moran's I is calculated. This is repeated numerous times to create a randomisation distribution for Moran's I, against which the observed value is compared. We used 9999 Monte Carlo simulations.
+
+After testing for spatial autocorrelation across the whole study region (Australia), Local Moran's I [@anselin95] was used to assess the significance of clustering of similar values around each spatial unit, thereby allowing specific hotspots to be identified. To account for multiple comparisons, a significance level of P <= 0.0001 was used for local Moran’s I [@anselin95].
 
 ## Data and code availability
 
