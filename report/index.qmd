@@ -49,27 +49,27 @@ m1_sf_ex <-
 
 ### Aim
 
-The goal of this project is to design a fully reproducible, end-to-end workflow to identify biodiversity hotspots for Australian Invertebrates. Here, the workflow was applied to _Mygalomorphae_ spiders, a group known to consist of trapdoor spiders, funnel webs and tarantlas). 
+The goal of this project was to design a fully reproducible, end-to-end workflow to identify biodiversity hotspots for Australian invertebrates. Here, the workflow was applied to _Mygalomorphae_, a group of burrow-dwelling spiders including trapdoor spiders, funnel webs, and tarantulas. 
 
-### Method
+### Methods
 
 We used occurrence data from the [Atlas of Living Australia](https://www.ala.org.au/) for this analysis. We created two datasets for analyses: 
 
 1. 'Citizen science + preserved specimen' dataset (number of species = `r myg_spiders_cleaned$species |> unique() |> length()`, number of observations = `r nrow(myg_spiders_cleaned)`)
 2. 'Preserved specimen only' (number of species = `r myg_spiders_cleaned_expert$species |> unique() |> length()`, number of observations = `r nrow(myg_spiders_cleaned_expert)`)
 
-We computed alpha-hulls, a form of spatial polygon to represent each species distribution for endemism analyses.
+We computed alpha-hulls, a form of spatial polygon, to represent each species' distribution for endemism analyses.
 
-Species richness (SR), weighted endemism (WE) and corrected weighted endemsim (CEW) were used as metrics to define hotspots. [Briefly describe each of these]
+Species richness (RI), weighted endemism (WE) and corrected weighted endemsim (CWE) were used as metrics to define biodiversity hotspots. Species richness refers to the number of species in an area. Numerous definitions of endemism exist but generally a species is considered endemic to a particular area if it occurs only in that area. Weighted endemism is species richness inversely weighted by species' ranges, which gives higher weight to range-restricted species that are likely to be of conservation significance.
 
-
-Moran's I test was used to test whether spatial patterns were statistically significant.
+Moran's I statistic was used to identify spatial clustering in biodiversity metrics and test whether spatial patterns were statistically significant.
 
 ### Results
 
-- Overall signals for 'hotspots' were weak for _Mygalomorphae_ spiders. 
-- No 'hotspots' were identified using the 'citizen science + preserved specimen' dataset
-- In the 'preserved specimen only' dataset, there was some evidence of 'hotspots' using WE and CWE
+- Hotspots for _Mygalomorph_ spiders were identified in each biodiversity metric (RI, WE, and CWE), in both datasets.
+- CWE identified different hotspots compared to RI and WE.
+- Two main hotspots of RI and WE were identified: a large cluster centred around Brisbane, spanning south-east Queensland and north-east New South Wales, and another centred around Cairns in the Wet Tropics of Queensland.
+- Both datasets showed a hotspot of CWE in south-west Western Australia. The full dataset also showed a small hotspot in far north Queensland at the tip of Cape York, while the preserved specimen only dataset showed a small cluster located between Canberra and Sydney in New South Wales.
 
 ```{r, include=FALSE}
 # Expert data
@@ -106,18 +106,17 @@ fig2b + fig3b
 
 ### Conclusions
 
-Preserved specimen data provided better detection rates of endemism hotspots in _Mygalomorphae_ spiders
+Notable biodiversity hotspots were identified for _Mygalomorph_ spiders in Australia: 
 
-Notable endemism hotspots identified for _Mygalomorphae_ spiders in this analyses include: 
+- South-east Queensland/north-east New South Wales
+- Cairns area in the Wet Tropics of Queensland 
+- South-west Western Australia
 
-- Tropical far north Queensland
-- South East coast of New South Wales
-- Rural Victoria
-- Adelaide and Kangaroo Island
-- South West coast of Perth 
-- Southern coast of Perth
+Using a variety of biodiversity metrics can help to identify different hotspots.
 
-There is still value for citizen science data for endemism analyses particularly for taxonomic groups that can be identified to species level using photographs.
+The full dataset (including citizen science data) and the preserved specimen only dataset provided highly congruent results, however this may have been due to the relatively small proportion of citizen science data. Citizen science data may be valuable for endemism analyses, particularly for taxonomic groups that can be reliably identified to species level using photographs.
+
+This workflow can be applied to different taxonomic groups, which will help guide the conservation and management of Australian invertebrates.
 
 ### Acknowledgements
 

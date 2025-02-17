@@ -6,7 +6,9 @@ editor_options:
   chunk_output_type: console
 ---
 
+
 # Results
+
 
 ```{r setup, include=FALSE, eval=TRUE}
 ## Setting up
@@ -42,7 +44,9 @@ WE_MI_point_ex <- readRDS(here("output/analysis/Cleaned_Mygalomorphae_point_WE_M
 CWE_MI_point_ex <- readRDS(here("output/analysis/Cleaned_Mygalomorphae_point_CWE_MI_expert.rds"))
 ```
 
+
 ## Point-based analysis
+
 
 ```{r, include = FALSE}
 # Creating sf objects with biodiversity metrics for plotting
@@ -95,7 +99,9 @@ m1.point_ex_sf <-
 
 ```
 
+
 ### Species richness
+
 
 ```{r}
 # All data
@@ -121,7 +127,6 @@ fig4b <-ggplot() +
   ggtitle("Preserved specimen data only")
 ```
 
-
 ```{r}
 #| fig-width: 8
 #| fig-cap: 
@@ -131,11 +136,13 @@ fig4a + fig4b +
   theme(legend.position='bottom')
 ```
 
+
 ::: {.callout-note}
 There was **strong evidence** for spatial clustering in **species richness** in both the combined dataset and the preserved specimen only dataset (Table 4).
 :::
 
 Table 4. Spatial autocorrelation summary statistics for species richness for point-based data
+
 
 ```{r}
 tibble(dataset = c("Citizen Science + Preserved Specimen",
@@ -151,6 +158,7 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
   gt()
 ```
 
+
 #### Hotspots
 
 ::: {.callout-note}
@@ -158,6 +166,7 @@ Hotspots of **species richness** were identified in both the combined dataset an
 :::
 
 Two main clusters of high species richness were identified: a large cluster centred around Brisbane, spanning south-east Queensland and north-east New South Wales, and another centred around Cairns in the Wet Tropics of Queensland (Figure 5).
+
 
 ```{r, include = FALSE}
 # full dataset
@@ -256,7 +265,9 @@ tmap_arrange(RI_local_map, RI_local_ex_map, nrow = 1)
 
 ```
 
+
 ### Weighted endemism
+
 
 ```{r, include=FALSE}
 # All data
@@ -293,9 +304,11 @@ fig6a + fig6b +
   theme(legend.position='bottom')
 ```
 
+
 ::: {.callout-note}
 There was **strong evidence** for spatial clustering in **weighted endemism** in both the combined dataset and the preserved specimen only dataset (Table 5).
 :::
+
 
 ```{r,include=FALSE}
 WE_MI_point
@@ -303,7 +316,9 @@ WE_MI_point
 WE_MI_point_ex
 ```
 
+
 Table 5. Spatial autocorrelation summary statistics for weighted endemism for point-based data
+
 
 ```{r}
 tibble(dataset = c("Citizen Science + Preserved Specimen",
@@ -319,6 +334,7 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
   gt()
 ```
 
+
 #### Hotspots
 
 ::: {.callout-note}
@@ -326,6 +342,7 @@ Hotspots of **weighted endemism** were identified in both the combined dataset a
 :::
 
 Two main clusters of high weighted endemism were identified: a large cluster centred around Brisbane, spanning south-east Queensland and north-east New South Wales, and another centred around Cairns in the Wet Tropics of Queensland (Figure 7).
+
 
 ```{r, include = FALSE}
 # full dataset
@@ -424,7 +441,9 @@ tmap_arrange(WE_local_map, WE_local_ex_map, nrow = 1)
 
 ```
 
+
 ### Corrected weighted endemism
+
 
 ```{r}
 # All data
@@ -462,18 +481,19 @@ fig8a + fig8b +
   theme(legend.position='bottom')
 ```
 
-
 ```{r,include=FALSE}
 CWE_MI_point
 
 CWE_MI_point_ex
 ```
 
+
 ::: {.callout-note}
 There was **strong evidence** for spatial clustering in **corrected weighted endemism** in both the combined dataset and the preserved specimen only dataset (Table 6).
 :::
 
 Table 6. Spatial autocorrelation summary statistics for corrected weighted endemism for point-based data
+
 
 ```{r}
 tibble(dataset = c("Citizen Science + Preserved Specimen",
@@ -489,13 +509,15 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
   gt()
 ```
 
+
 #### Hotspots
 
 ::: {.callout-note}
 Hotspots of **corrected weighted endemism** were identified in both the combined dataset and the preserved specimen only dataset (Figure 9).
 :::
 
-Both datasets showed a hotspot in south-west Western Australia, although this was larger in the preserved specimen only dataset. The full dataset also showed a small hotspot in far north Queensland at the tip of Cape York, while the preserved specimen only dataset showed a small cluster located between Canberra and Sydney in New South Wales (Figure 9).
+Both datasets showed a hotspot in south-west Western Australia, although this was larger in the preserved specimen only dataset. The full dataset showed a small hotspot in far north Queensland at the tip of Cape York, while the preserved specimen only dataset also showed a small cluster located between Canberra and Sydney in New South Wales (Figure 9).
+
 
 ```{r, include = FALSE}
 # full dataset
@@ -594,7 +616,9 @@ tmap_arrange(CWE_local_map, CWE_local_ex_map, nrow = 1)
 
 ```
 
+
 ## Alpha hulls
+
 
 ```{r, include = FALSE}
 # Creating sf objects with biodiversity metrics for plotting
@@ -650,7 +674,9 @@ m1_sf_ex <-
   sf::st_transform(4326)
 ```
 
+
 ### Species richness
+
 
 ```{r}
 # All data
@@ -685,11 +711,13 @@ fig1a + fig1b +
   theme(legend.position='bottom')
 ```
 
+
 ::: {.callout-note}
 There was **no evidence** for spatial clustering in **species richness** in either the combined dataset or in the preserved specimen only dataset (Table 1).
 :::
 
 Table 1. Summary statistics for species richness in both datasets
+
 
 ```{r}
 tibble(dataset = c("Citizen Science + Preserved Specimen",
@@ -706,7 +734,9 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
   gt()
 ```
 
+
 ### Weighted endemism
+
 
 ```{r, include=FALSE}
 # All data
@@ -743,9 +773,11 @@ fig2a + fig2b +
   theme(legend.position='bottom')
 ```
 
+
 ::: {.callout-note}
 There was **some evidence** for spatial clustering in **weighted endemism** in the preserved specimen only dataset (Table 2).
 :::
+
 
 ```{r,include=FALSE}
 WE_I
@@ -753,7 +785,9 @@ WE_I
 WE_I_ex
 ```
 
+
 Table 2. Test statistic and p value for weighted endemsim
+
 
 ```{r}
 tibble(dataset = c("Citizen Science + Preserved Specimen",
@@ -770,7 +804,9 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
   gt()
 ```
 
+
 ### Corrected weighted endemism
+
 
 ```{r}
 # All data
@@ -814,11 +850,13 @@ CWE_I
 CWE_I_ex
 ```
 
+
 ::: {.callout-note}
 There was **some evidence** for spatial clustering in **corrected weighted endemism** in the preserved specimen only dataset (Table 3).
 :::
 
 Table 3. Test statistic and p value for corrected weighted endemsim
+
 
 ```{r}
 tibble(dataset = c("Citizen Science + Preserved Specimen",
@@ -834,3 +872,4 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
   clean_names(case = "sentence") |> 
   gt()
 ```
+
