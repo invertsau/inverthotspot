@@ -130,14 +130,14 @@ Local Moran's I - to identify significant clusters
 ```{r}
 tmap_mode("view")
 
-RI_local <- localmoran(m1.point$corrected_endemism, lw, alternative = "greater")
+RI_local <- localmoran(m1.point$richness, lw, alternative = "greater")
 
 m1_sf$lmI <- RI_local[, "Ii"] # local Moran's I
 m1_sf$lmZ <- RI_local[, "Z.Ii"] # z-scores
 m1_sf$lmp <- RI_local[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
 
 # moran's I scatterplot
-mp <- moran.plot(as.vector(scale(m1_sf$corrected_endemism)), lw)
+mp <- moran.plot(as.vector(scale(m1_sf$richness)), lw)
 
 #designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
 m1_sf$quadrant <- NA
@@ -150,6 +150,41 @@ m1_sf[(!is.na(m1_sf$lmp) & m1_sf$lmp > 0.0001), "quadrant"] <- 3
 
 #mapping clusters
 tm_shape(m1_sf) + tm_fill(col = "quadrant", title = "",
+breaks = c(1, 2, 3, 4),
+palette =  c("red", "blue", "white"),
+labels = c("High-High", "Low-Low", "Non-significant")) + 
+tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
+tm_layout(frame = FALSE,  title = "Clusters")  +
+tm_layout(legend.outside = TRUE)
+```
+
+Getis-Ord's G* - to identify significant clusters
+```{r}
+tmap_mode("plot")
+
+#identify all neighboring polygons for each polygon in the dataset (including self)
+lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
+
+# calculate Getis-Ord's G*
+RI_local_G <- localG(m1.point$corrected_endemism, lw_self, alternative = "greater")
+
+RI_local_G_att <- attributes(RI_local_G)
+
+m1_sf$gI <- RI_local_G_att$internals[, "G*i"] # Getis-Ord G
+m1_sf$gZ <- RI_local_G_att$internals[, "Z(G*i)"] # z-scores
+m1_sf$gp <- RI_local_G_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
+
+#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+m1_sf$quadrant_g <- NA
+# high-high
+m1_sf[m1_sf$gI > 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"]<- 1
+# low-low
+m1_sf[m1_sf$gI < 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"]<- 2
+# non-significant
+m1_sf[(!is.na(m1_sf$gp) & m1_sf$gp > 0.0001), "quadrant_g"] <- 3
+
+#mapping clusters
+tm_shape(m1_sf) + tm_fill(col = "quadrant_g", title = "",
 breaks = c(1, 2, 3, 4),
 palette =  c("red", "blue", "white"),
 labels = c("High-High", "Low-Low", "Non-significant")) + 
@@ -282,6 +317,41 @@ tm_shape(m1_sf_ex) + tm_fill(col = "quadrant", title = "",
 breaks = c(1, 2, 3, 4),
 palette =  c("red", "blue", "white"),
 labels = c("High-High", "Low-Low", "Non-significant")) +
+tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
+tm_layout(frame = FALSE,  title = "Clusters")  +
+tm_layout(legend.outside = TRUE)
+```
+
+Getis-Ord's G* - to identify significant clusters
+```{r}
+tmap_mode("plot")
+
+#identify all neighboring polygons for each polygon in the dataset (including self)
+lw_ex_self <- nb2listw(include.self(S.dist_ex), style="W",zero.policy=T) 
+
+# calculate Getis-Ord's G*
+RI_local_G_ex <- localG(m1.point_ex$corrected_endemism, lw_ex_self, alternative = "greater")
+
+RI_local_G_ex_att <- attributes(RI_local_G_ex)
+
+m1_sf_ex$gI <- RI_local_G_ex_att$internals[, "G*i"] # Getis-Ord G
+m1_sf_ex$gZ <- RI_local_G_ex_att$internals[, "Z(G*i)"] # z-scores
+m1_sf_ex$gp <- RI_local_G_ex_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
+
+#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+m1_sf_ex$quadrant_g <- NA
+# high-high
+m1_sf_ex[m1_sf_ex$gI > 0 & (!is.na(m1_sf_ex$gp) & m1_sf_ex$gp <= 0.0001), "quadrant_g"]<- 1
+# low-low
+m1_sf_ex[m1_sf_ex$gI < 0 & (!is.na(m1_sf_ex$gp) & m1_sf_ex$gp <= 0.0001), "quadrant_g"]<- 2
+# non-significant
+m1_sf_ex[(!is.na(m1_sf_ex$gp) & m1_sf_ex$gp > 0.0001), "quadrant_g"] <- 3
+
+#mapping clusters
+tm_shape(m1_sf_ex) + tm_fill(col = "quadrant_g", title = "",
+breaks = c(1, 2, 3, 4),
+palette =  c("red", "blue", "white"),
+labels = c("High-High", "Low-Low", "Non-significant")) + 
 tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
 tm_layout(frame = FALSE,  title = "Clusters")  +
 tm_layout(legend.outside = TRUE)
