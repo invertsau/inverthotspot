@@ -28,10 +28,9 @@ myg_spiders <- myg_spiders_all |>
 afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
 ```
 
-
 ## Data retrieval
 
-::: {.callout-note}
+::: callout-note
 We downloaded data for this report on the `r get_latest_download(paste0(here("data/galah/"), "/")) |> stringr::str_extract(pattern = regex("[0-9]{4}\\-[0-9]{2}\\-[0-9]{2}"))` and the raw download contained `r nrow(myg_spiders_all)` records
 :::
 
@@ -61,11 +60,9 @@ We also used ALA's data quality assertions to further refine our download. We ex
 
 See @sec-assertions to learn more about which assertions we used for this project.
 
-
-
 ## Data overview
 
-::: {.callout-note}
+::: callout-note
 The full data overview report can be found [here](https://posit.cloud/content/7700631)
 :::
 
@@ -167,7 +164,6 @@ tab <- slice_head(myg_records_by_state, n = 3) |>
  tab |> gt(row_group_as_column = TRUE)
 ```
 
-
 ```{r, echo = FALSE, message=FALSE}
 #| fig-cap: 
 #|   - "Barplot showing the number of species and families by state"
@@ -208,8 +204,6 @@ as.data.frame(myg_spp_fam_by_state)|>
         axis.text.y = element_text(colour = "black"),
         axis.line = element_line(colour = "black"))
 ```
-
-
 
 ```{r, include = FALSE}
 # map of Australia with states
@@ -301,7 +295,7 @@ ggplot() +
 
 ### [Basis of record](https://gbif.github.io/parsers/apidocs/org/gbif/api/vocabulary/BasisOfRecord.html)
 
-Total counts of basis of record types. 
+Total counts of basis of record types.
 
 ```{r, echo = FALSE}
 # Counts of basis of record types. "OCCURRENCE" and "OBSERVATION" types were excluded as they could not be traced back to a source.
@@ -348,10 +342,9 @@ The following assertions were used to identify taxonomic discrepancies in the da
 
 `TAXON_MATCH_FUZZY` - is flagged when the supplied scientific name (`raw_scientificName`) does not exactly match the taxonomic backbone of the Atlas.
 
-
 ## Data cleaning
 
-::: {.callout-note}
+::: callout-note
 The full data cleaning report can be found [here](https://posit.cloud/content/7700644)
 :::
 
@@ -361,12 +354,12 @@ The data overview workflow can be found [here](https://github.com/invertsau/inve
 
 The following criterion were used to identify and remove records for the endemism analyses:
 
-- Taxonomic errors, invalid species names or synonyms
-- Species introduced to Australia
-- Marine taxa
-- Records with geographic errors
-- Any subspecies level identifications were reclassified to species level
-- Duplicates
+-   Taxonomic errors, invalid species names or synonyms
+-   Species introduced to Australia
+-   Marine taxa
+-   Records with geographic errors
+-   Any subspecies level identifications were reclassified to species level
+-   Duplicates
 
 ### Taxonomic Errors
 
@@ -408,7 +401,7 @@ fuzzy_matched <- AFD_unmatched |>
 issynonym_count = is.na(fuzzy_matched$AFD_synonyms) |> table() |> _[1]
 ```
 
-The potential synonym matches are as follows: 
+The potential synonym matches are as follows:
 
 ```{r, echo=FALSE}
 fuzzy_matched |> gt()
@@ -424,14 +417,13 @@ unmatched_excluded <- myg_spiders |>
   filter(scientificName %in% AFD_unmatched)
 ```
 
-::: {.callout-important}
+::: callout-important
 As such, we decide to exclude these `r length(AFD_unmatched)` taxa from our dataset (`r nrow(unmatched_excluded)` observations, `r signif(nrow(unmatched_excluded)/nrow(myg_spiders),1)`% of raw dataset).
 :::
 
-::: {.callout-note}
+::: callout-note
 After removing the taxonomic errors, we have `r nrow(myg_spiders_no_unmatched)` observations after the exclusion, `r unique(myg_spiders_no_unmatched$scientificName) |> length()` species.
 :::
-
 
 ### Introduced Species
 
@@ -449,7 +441,7 @@ introduced_taxa_wfullname <- introduced_taxa |>
   mutate(scientific_name = paste(genus, species)) 
 ```
 
-::: {.callout-important}
+::: callout-important
 Introduced species in the WSC matched with `r length(which(myg_spiders_no_unmatched$scientificName %in% introduced_taxa_wfullname$scientific_name))` records in our data.
 :::
 
@@ -469,11 +461,11 @@ griis_all <- left_join(griis_distrib, griis_taxon, by = "id")  # Apply left_join
 str_subset(griis_all$class, "Arachnida") # there are no introduced arachnids in this list
 ```
 
-::: {.callout-important}
+::: callout-important
 There are no arachnids in the Australian GRIIS list
 :::
 
-::: {.callout-note}
+::: callout-note
 For the purpose of this project, we conclude there are no introduced spiders in our dataset.
 :::
 
@@ -485,10 +477,10 @@ wormsOutput <- readRDS(here("output/2024-10-17_worrms_myg_wm_records_taxamatch.r
 
 The World Register of Marine Species (WoRMS) was used to identify and remove marine species from the data. WoRMS provides a authoritative and comprehensive list of names of marine organisms, including currently valid and alternative names.
 
-Using the [`worrms` R package](https://docs.ropensci.org/worrms/), we supplied our list of `r unique(myg_spiders_no_unmatched$scientificName) |> length()` species to the `wm_records_taxamatch()` function to check whether any our taxa are classified as marine. 
+Using the [`worrms` R package](https://docs.ropensci.org/worrms/), we supplied our list of `r unique(myg_spiders_no_unmatched$scientificName) |> length()` species to the `wm_records_taxamatch()` function to check whether any our taxa are classified as marine.
 
-::: {.callout-note}
-In the case of this project, we found `r length(which(wormsOutput$match_type %in% "exact"))` taxa that matched with marine species in the WoRMS database. 
+::: callout-note
+In the case of this project, we found `r length(which(wormsOutput$match_type %in% "exact"))` taxa that matched with marine species in the WoRMS database.
 :::
 
 ### Geographic Errors
@@ -503,21 +495,21 @@ base_map <- ggplot() +
 
 Biodiversity data, especially citizen science data can have various geographic imperfections. For example, occurrence records may include data from institutions such as botanic gardens or zoos which may not be reflective of a specie's natural range. There may be data entry errors where the default location of a taxa is assumed to be the center of particular region. For these reasons, we used the R package [`CoordinateCleaner`](https://docs.ropensci.org/CoordinateCleaner/index.html) to investigate potential errors in our dataset.
 
-We used the `clean_coordinates()` function and tested whether any of our coordinates were the following: 
+We used the `clean_coordinates()` function and tested whether any of our coordinates were the following:
 
-- General coordinate validity
-- Country and province centroids
-- Capital coordinates
-- Coordinates of biodiversity institutions
-- Spatial outliers
-- Temporal outliers
-- Assigned to the location of the GBIF headquarters
-- Located in Urban areas
-- Located in the sea
-- Duplicated values
-- Plain zeros
+-   General coordinate validity
+-   Country and province centroids
+-   Capital coordinates
+-   Coordinates of biodiversity institutions
+-   Spatial outliers
+-   Temporal outliers
+-   Assigned to the location of the GBIF headquarters
+-   Located in Urban areas
+-   Located in the sea
+-   Duplicated values
+-   Plain zeros
 
-Table of the number of observations flagged by CoordinateCleaner's testing suite: 
+Table of the number of observations flagged by CoordinateCleaner's testing suite:
 
 ```{r, echo=FALSE, eval=TRUE}
 cc_tests <- readRDS(here("output/CoordinateCleaner_flagged.rds"))
@@ -531,11 +523,11 @@ tibble(Test = names(cc_summary),
 
 CoordinateCleaner, identified a large number of duplicates which we have a separate workflow in @sec-dups so we decided to ignore the duplicates flagged by CoordinateCleaner.
 
-After some consideration: 
+After some consideration:
 
-- `r cc_summary[".cap"] |> as.vector()` records excluded due to being near a capital vicinity (`r (( cc_summary[".cap"] |> as.vector() / nrow(myg_spiders)) *100 ) |> round(2)`%)
-- `r cc_summary[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions (`r (( cc_summary[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
-- `r cc_summary[".sea"] |> as.vector()` records excluded due to being in sea (`r (( cc_summary[".sea"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
+-   `r cc_summary[".cap"] |> as.vector()` records excluded due to being near a capital vicinity (`r (( cc_summary[".cap"] |> as.vector() / nrow(myg_spiders)) *100 ) |> round(2)`%)
+-   `r cc_summary[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions (`r (( cc_summary[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
+-   `r cc_summary[".sea"] |> as.vector()` records excluded due to being in sea (`r (( cc_summary[".sea"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
 
 ```{r, include=FALSE}
 myg_spiders_geo_clean <- cc_tests |> 
@@ -544,17 +536,17 @@ myg_spiders_geo_clean <- cc_tests |>
          !.sea == FALSE)
 ```
 
-::: {.callout-note}
+::: callout-note
 After removing these geographic errors, we have `r nrow(myg_spiders_geo_clean)` observations after the exclusion, `r unique(myg_spiders_geo_clean$scientificName) |> length()` species.
 :::
 
 ### Duplicate Records {#sec-dups}
 
-Duplicate records can affect statistical analyses by pseudoreplication (increasing sample size but not adding information). We noticed that some records that had the _same_ coordinate values for a large number of _different_ species. These records were typically from museum record providers, we suspect this was due to the sampling method e.g. pitfall traps. For this reason, we decided to remove records if they fulfiled the following critiera: 
+Duplicate records can affect statistical analyses by pseudoreplication (increasing sample size but not adding information). We noticed that some records that had the *same* coordinate values for a large number of *different* species. These records were typically from museum record providers, we suspect this was due to the sampling method e.g. pitfall traps. For this reason, we decided to remove records if they fulfiled the following critiera:
 
-- the record was duplicated at the species level
-- had same exact coordinates
-- had same time and date of collection 
+-   the record was duplicated at the species level
+-   had same exact coordinates
+-   had same time and date of collection
 
 ```{r, include=FALSE}
 deduplicated_myg_spiders <- myg_spiders_geo_clean |> 
@@ -569,17 +561,17 @@ dups <- myg_spiders_geo_clean |>
    filter(!n() == 1) 
 ```
 
-::: {.callout-important}
-Using this method, we excluded `r nrow(dups)` from the dataset (`r ((nrow(dups)/nrow(myg_spiders)) *100 )|> round(2)`%). 
+::: callout-important
+Using this method, we excluded `r nrow(dups)` from the dataset (`r ((nrow(dups)/nrow(myg_spiders)) *100 )|> round(2)`%).
 :::
 
-::: {.callout-note}
+::: callout-note
 After deduplication, we have `r nrow(deduplicated_myg_spiders)` observations after the exclusion, `r unique(deduplicated_myg_spiders$scientificName) |> length()` species.
 :::
 
-### Minimum number of observations 
+### Minimum number of observations
 
-The final step in our data cleaning workflow is to exclude any species that have fewer than three observations as this is a key requirement for the generation of alpha hulls. 
+The final step in our data cleaning workflow is to exclude any species that have fewer than three observations as this is a key requirement for the generation of alpha hulls.
 
 ```{r, include=FALSE}
 # Which ones have less than or equal 3 
@@ -595,17 +587,17 @@ myg_sp_enoughobs <- deduplicated_myg_spiders |>
   filter(!scientificName %in% less_than_3_obs)
 ```
 
-::: {.callout-important}
-We identified `r length(less_than_3_obs)` species with fewer than three observations. This resulted in an exclusion of `r deduplicated_myg_spiders |> filter(scientificName %in% less_than_3_obs) |> nrow()` observations (`r (( nrow(deficient) / nrow(myg_spiders) )*100) |> round(2)`%).  
+::: callout-important
+We identified `r length(less_than_3_obs)` species with fewer than three observations. This resulted in an exclusion of `r deduplicated_myg_spiders |> filter(scientificName %in% less_than_3_obs) |> nrow()` observations (`r (( nrow(deficient) / nrow(myg_spiders) )*100) |> round(2)`%).
 :::
 
-::: {.callout-note}
+::: callout-note
 After removing data-deficient taxa, we have `r nrow(myg_sp_enoughobs)` observations after the exclusion, `r unique(myg_sp_enoughobs$scientificName) |> length()` species.
 :::
 
 ### Citizen science data
 
-While citizen science  is an increasingly important source of data that informs research, it's accuracy and quality impact statistical inference. This is likely due to improper species identification.
+While citizen science is an increasingly important source of data that informs research, it's accuracy and quality impact statistical inference. This is likely due to improper species identification.
 
 As such, we decided to conduct the endemism analysis using the cleaned data that includes citizen science data (e.g. basis of record = `"HUMAN_OBSERVATION"`), as well as a dataset with we exclude citizen science data (e.g. basis of record = `"PRESERVED_SPECIMEN"`)
 
@@ -617,11 +609,11 @@ citsci <- myg_sp_enoughobs |>
   filter(basisOfRecord == "HUMAN_OBSERVATION")
 ```
 
-::: {.callout-important}
-There were  `r nrow(citsci)` records that were flagged with basis of record = `"HUMAN_OBSERVATION"`. This resulted in an exclusion of `r (( nrow(citsci) / nrow(myg_spiders) )*100) |> round(2)`% of the original data) in the "preserved specimen only" dataset.  
+::: callout-important
+There were `r nrow(citsci)` records that were flagged with basis of record = `"HUMAN_OBSERVATION"`. This resulted in an exclusion of `r (( nrow(citsci) / nrow(myg_spiders) )*100) |> round(2)`% of the original data) in the "preserved specimen only" dataset.
 :::
 
-::: {.callout-note}
+::: callout-note
 After removing data-deficient taxa, we have `r nrow(expert_records)` observations after the exclusion, `r unique(expert_records$scientificName) |> length()` species.
 :::
 
@@ -631,13 +623,13 @@ After removing data-deficient taxa, we have `r nrow(expert_records)` observation
 The alpha-hull workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd)
 :::
 
-Spatial data for invertebrates are typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods such as species distribution models. 
+Spatial data for invertebrates are typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods such as species distribution models.
 
 One way to retain as many species as possible in a spatial analysis is to represent species range with alpha-hulls, a form of spatial polygon. An alpha-hull can be computed using a minimum of three data points, which allows the inclusion of data-deficient invertebrates in our endemism analysis
 
-Using the cleaned data, we applied the `EOO.computing()` function from R package [`ConR`](https://github.com/gdauby/ConR) to quantify alpha-hulls for all species that had at least 3 records (n = `r # myg_spiders_cleaned$species |> unique() |> length()`). We used an alpha value of 2 and a buffer size of 0.000001 (which approximates to ~100m). The alpha-hull workflow is laid out in [this document](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd). 
+Using the cleaned data, we applied the `EOO.computing()` function from R package [`ConR`](https://github.com/gdauby/ConR) to quantify alpha-hulls for all species that had at least 3 records (n = `r # myg_spiders_cleaned$species |> unique() |> length()`). We used an alpha value of 2 and a buffer size of 0.000001 (which approximates to \~100m). The alpha-hull workflow is laid out in [this document](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd).
 
-Alpha-hulls were converted into `SpatialPolgyon` objects using the [`sp`](https://cran.r-project.org/package=sp) R package and exported for endemism analysis 
+Alpha-hulls were converted into `SpatialPolgyon` objects using the [`sp`](https://cran.r-project.org/package=sp) R package and exported for endemism analysis
 
 ## Biodiversity metrics
 
@@ -695,35 +687,35 @@ plot(comm.poly$map)
 
 ### Quantifying endemism
 
-Endemism is a measure of rarity relative to other species (refs). There are multiple metrics to assess which areas are of importance for Mygal spiders, each have their own caveats. In order to get a fuller picture of the distribution of species and importantly, rare species that are limited in their range, we need to use a combination of endemism metrics. 
+Endemism is a measure of rarity relative to other species (refs). There are multiple metrics to assess which areas are of importance for Mygal spiders, each have their own caveats. In order to get a fuller picture of the distribution of species and importantly, rare species that are limited in their range, we need to use a combination of endemism metrics.
 
 #### Weighted endemism
 
-Weighted endemism is species richness inversely weighted by species ranges(Crisp et al. 2001),(Laffan and Crisp 2003),(Barnabas H. Daru et al. 2020).  It gives higher weight to species with smaller ranges, emphasizing areas with many range-restricted species. WE highlights areas with a high concentration of rare species, which can be crucial for conservation efforts, however regions with high species richness can have inflated WE values simply because they have more species, not necessarily more endemics (https://www.jstor.org/stable/3554498).
+Weighted endemism is species richness inversely weighted by species ranges(Crisp et al. 2001),(Laffan and Crisp 2003),(Barnabas H. Daru et al. 2020). It gives higher weight to species with smaller ranges, emphasizing areas with many range-restricted species. WE highlights areas with a high concentration of rare species, which can be crucial for conservation efforts, however regions with high species richness can have inflated WE values simply because they have more species, not necessarily more endemics (https://www.jstor.org/stable/3554498).
 
-We calculated WE using the  `weighted_endemism()` from `phyloregion` package. 
+We calculated WE using the `weighted_endemism()` from `phyloregion` package.
 
 #### Corrected weighted endemism
 
-Corrected weighted endemism accounts for species richness in each cell.  This correction accounts for the fact that areas with more species are likely to have more endemics by chance alone (Crisp and Laffan). It provides a balanced measure, considering rarity and richness and range sizes.
+Corrected weighted endemism accounts for species richness in each cell. This correction accounts for the fact that areas with more species are likely to have more endemics by chance alone (Crisp and Laffan). It provides a balanced measure, considering rarity and richness and range sizes.
 
-We calculated CWE by dividing the WE in each grid cell by species richness. 
+We calculated CWE by dividing the WE in each grid cell by species richness.
 
 ### Statistical inference
 
-We calculated the Moran’s I test statistic, to determine whether spatial patterns of species richness, abundance and endemism for Mygalomorphs are distributed in a way that is not expected  by random chance. Moran’s I is a statistical measure used to assess spatial autocorrelation, which is the degree to which a set of spatial features e.g occurrences or polygons are clustered, dispersed, or randomly distributed across a geographic area [@moran50].
+We calculated the Moran's I test statistic, to determine whether spatial patterns of species richness, abundance and endemism for Mygalomorphs are distributed in a way that is not expected by random chance. Moran's I is a statistical measure used to assess spatial autocorrelation, which is the degree to which a set of spatial features e.g occurrences or polygons are clustered, dispersed, or randomly distributed across a geographic area [@moran50].
 
-Moran’s I ranges from -1 to 1:
- 
-- 1: Perfect positive spatial autocorrelation (values are highly clustered).
-- 0: No spatial autocorrelation (random distribution).
-- -1: Perfect negative spatial autocorrelation (values are perfectly dispersed).
+Moran's I ranges from -1 to 1:
+
+-   1: Perfect positive spatial autocorrelation (values are highly clustered).
+-   0: No spatial autocorrelation (random distribution).
+-   -1: Perfect negative spatial autocorrelation (values are perfectly dispersed).
 
 Calculation of Moran's I requires a list of neighbours for each spatial unit, along with weights denoting the spatial proximity between units. Neighbouring spatial units (cells for point-based analysis) were identified as those within a 200 km radius.
 
 The significance of Moran's I test statistic was assessed by Monte Carlo randomisation, where the values of the biodiversity metric in question (e.g. weighted endemism) are randomly reassigned among the spatial units and Moran's I is calculated. This is repeated numerous times to create a randomisation distribution for Moran's I, against which the observed value is compared. We used 9999 Monte Carlo simulations.
 
-After testing for spatial autocorrelation across the whole study region (Australia), Local Moran's I [@anselin95] was used to assess the significance of clustering of similar values around each spatial unit, thereby allowing specific hotspots to be identified. To account for multiple comparisons, a significance level of P <= 0.0001 was used for local Moran’s I [@anselin95].
+After testing for spatial autocorrelation across the whole study region (Australia), Getis-Ord Gi* [@getis92] was used to assess the significance of clustering of high values around each spatial unit, thereby allowing specific hotspots to be identified. To account for multiple comparisons, a significance level of P \<= 0.0001 was used [@anselin95].
 
 ## Data and code availability
 

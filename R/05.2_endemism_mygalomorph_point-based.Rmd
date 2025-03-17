@@ -166,7 +166,7 @@ tmap_mode("plot")
 lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
 
 # calculate Getis-Ord's G*
-RI_local_G <- localG(m1.point$corrected_endemism, lw_self, alternative = "greater")
+RI_local_G <- localG(m1.point$WE, lw_self, alternative = "greater")
 
 RI_local_G_att <- attributes(RI_local_G)
 
@@ -179,15 +179,15 @@ m1_sf$quadrant_g <- NA
 # high-high
 m1_sf[m1_sf$gI > 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"]<- 1
 # low-low
-m1_sf[m1_sf$gI < 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"]<- 2
+#m1_sf[m1_sf$gI < 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"]<- 2
 # non-significant
 m1_sf[(!is.na(m1_sf$gp) & m1_sf$gp > 0.0001), "quadrant_g"] <- 3
 
 #mapping clusters
 tm_shape(m1_sf) + tm_fill(col = "quadrant_g", title = "",
-breaks = c(1, 2, 3, 4),
-palette =  c("red", "blue", "white"),
-labels = c("High-High", "Low-Low", "Non-significant")) + 
+breaks = c(1, 3, 4),
+palette =  c("red", "white"),
+labels = c("High-High", "Non-significant")) + 
 tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
 tm_layout(frame = FALSE,  title = "Clusters")  +
 tm_layout(legend.outside = TRUE)
@@ -330,7 +330,7 @@ tmap_mode("plot")
 lw_ex_self <- nb2listw(include.self(S.dist_ex), style="W",zero.policy=T) 
 
 # calculate Getis-Ord's G*
-RI_local_G_ex <- localG(m1.point_ex$corrected_endemism, lw_ex_self, alternative = "greater")
+RI_local_G_ex <- localG(m1.point_ex$richness, lw_ex_self, alternative = "greater")
 
 RI_local_G_ex_att <- attributes(RI_local_G_ex)
 

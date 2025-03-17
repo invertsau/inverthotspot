@@ -171,34 +171,30 @@ st_is_longlat(coo)
 # Search radius to include all neighboring polygon (0 - 200km)
 S.dist  <-  dnearneigh(coo, 0, 200)  
 
-#identify all neighboring polygons for each polygon in the dataset.
-nb_weights <- nb2listw(S.dist, style="W",zero.policy=T) 
+#identify all neighboring polygons for each polygon in the dataset (including self)
+lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
 
-RI_local <- localmoran(m1.point$richness, nb_weights, alternative = "greater")
+# calculate Getis-Ord's G*
+RI_local_G <- localG(m1.point$richness, lw_self, alternative = "greater")
 
-m1.point_sf$lmI <- RI_local[, "Ii"] # local Moran's I
-m1.point_sf$lmZ <- RI_local[, "Z.Ii"] # z-scores
-m1.point_sf$lmp <- RI_local[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
+RI_local_G_att <- attributes(RI_local_G)
 
-# moran's I scatterplot
-RI_mp <- moran.plot(as.vector(scale(m1.point_sf$richness)), nb_weights)
+m1.point_sf$gI <- RI_local_G_att$internals[, "G*i"] # Getis-Ord G
+m1.point_sf$gZ <- RI_local_G_att$internals[, "Z(G*i)"] # z-scores
+m1.point_sf$gp <- RI_local_G_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
 
-#designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
-m1.point_sf$quadrant <- NA
+#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+m1.point_sf$quadrant_g <- NA
 # high-high
-m1.point_sf[(RI_mp$x >= 0 & RI_mp$wx >= 0) & (!is.na(m1.point_sf$lmp) & m1.point_sf$lmp <= 0.0001), "quadrant"]<- 1
-# low-low
-m1.point_sf[(RI_mp$x <= 0 & RI_mp$wx <= 0) & (!is.na(m1.point_sf$lmp) & m1.point_sf$lmp <= 0.0001), "quadrant"]<- 2
+m1.point_sf[m1.point_sf$gI > 0 & (!is.na(m1.point_sf$gp) & m1.point_sf$gp <= 0.0001), "quadrant_g"]<- 1
 # non-significant
-m1.point_sf[(!is.na(m1.point_sf$lmp) & m1.point_sf$lmp > 0.0001), "quadrant"] <- 3
+m1.point_sf[(!is.na(m1.point_sf$gp) & m1.point_sf$gp > 0.0001), "quadrant_g"] <- 2
 
 #mapping clusters
-RI_local_map <- tm_shape(m1.point_sf) + 
-tm_fill(col = "quadrant", 
-        title = "", 
-        breaks = c(1, 2, 3, 4), 
-        palette =  c("red", "blue", "white"),
-        labels = c("High-High", "Low-Low", "Non-significant")) + 
+RI_local_map <- tm_shape(m1.point_sf) + tm_fill(col = "quadrant_g", title = "",
+breaks = c(1, 2, 3),
+palette =  c("red", "white"),
+labels = c("High-High", "Non-significant")) + 
 tm_layout(legend.show = FALSE) + 
 tm_borders(alpha = 0.5) +
 tm_layout(frame = FALSE,  title = "Preserved specimen + citizen science")
@@ -214,34 +210,30 @@ coo_ex <- coo_ex |> sf::st_as_sf(crs = 4326)
 # Search radius to include all neighboring polygon (0 - 200km)
 S.dist_ex  <-  dnearneigh(coo_ex, 0, 200)
 
-#identify all neighboring polygons for each polygon in the dataset.
-nb_weights_ex <- nb2listw(S.dist_ex, style="W",zero.policy=T)
+#identify all neighboring polygons for each polygon in the dataset (including self)
+lw_ex_self <- nb2listw(include.self(S.dist_ex), style="W",zero.policy=T) 
 
-RI_local_ex <- localmoran(m1.point_ex$richness, nb_weights_ex, alternative = "greater")
+# calculate Getis-Ord's G*
+RI_local_G_ex <- localG(m1.point_ex$richness, lw_ex_self, alternative = "greater")
 
-m1.point_ex_sf$lmI <- RI_local_ex[, "Ii"] # local Moran's I
-m1.point_ex_sf$lmZ <- RI_local_ex[, "Z.Ii"] # z-scores
-m1.point_ex_sf$lmp <- RI_local_ex[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
+RI_local_G_ex_att <- attributes(RI_local_G_ex)
 
-# moran's I scatterplot
-RI_ex_mp <- moran.plot(as.vector(scale(m1.point_ex_sf$richness)), nb_weights_ex)
+m1.point_ex_sf$gI <- RI_local_G_ex_att$internals[, "G*i"] # Getis-Ord G
+m1.point_ex_sf$gZ <- RI_local_G_ex_att$internals[, "Z(G*i)"] # z-scores
+m1.point_ex_sf$gp <- RI_local_G_ex_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
 
-#designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
-m1.point_ex_sf$quadrant <- NA
+#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+m1.point_ex_sf$quadrant_g <- NA
 # high-high
-m1.point_ex_sf[(RI_ex_mp$x >= 0 & RI_ex_mp$wx >= 0) & (!is.na(m1.point_ex_sf$lmp) & m1.point_ex_sf$lmp <= 0.0001), "quadrant"]<- 1
-# low-low
-m1.point_ex_sf[(RI_ex_mp$x <= 0 & RI_ex_mp$wx <= 0) & (!is.na(m1.point_ex_sf$lmp) & m1.point_ex_sf$lmp <= 0.0001), "quadrant"]<- 2
+m1.point_ex_sf[m1.point_ex_sf$gI > 0 & (!is.na(m1.point_ex_sf$gp) & m1.point_ex_sf$gp <= 0.0001), "quadrant_g"]<- 1
 # non-significant
-m1.point_ex_sf[(!is.na(m1.point_ex_sf$lmp) & m1.point_ex_sf$lmp > 0.0001), "quadrant"] <- 3
+m1.point_ex_sf[(!is.na(m1.point_ex_sf$gp) & m1.point_ex_sf$gp > 0.0001), "quadrant_g"] <- 2
 
 #mapping clusters
-RI_local_ex_map <- tm_shape(m1.point_ex_sf) + 
-tm_fill(col = "quadrant", 
-        title = "", 
-        breaks = c(1, 2, 3, 4), 
-        palette =  c("red", "blue", "white"),
-        labels = c("High-High", "Low-Low", "Non-significant")) + 
+RI_local_ex_map <- tm_shape(m1.point_ex_sf) + tm_fill(col = "quadrant_g", title = "",
+breaks = c(1, 2, 3),
+palette =  c("red", "white"),
+labels = c("High-High", "Non-significant")) + 
 tm_layout(legend.text.size = 10) + 
 tm_borders(alpha = 0.5) +
 tm_layout(frame = TRUE,  title = "Preserved specimen only")
@@ -251,7 +243,7 @@ tm_layout(legend.outside = TRUE, scale = 2)
 ```{r}
 #| fig-width: 8
 #| fig-cap: 
-#|   - "Figure 5: Map showing significant clusters of spatial cells (hotspots) sharing similar species richness of Mygalomorphae spiders using point-based data. Red clusters indicate areas of similarly high species richness. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+#|   - "Figure 5: Map showing significant clusters of spatial cells (hotspots) sharing high species richness of Mygalomorphae spiders using point-based data. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
 tmap_arrange(RI_local_map, RI_local_ex_map, nrow = 1)
 
 ```
@@ -339,34 +331,30 @@ st_is_longlat(coo)
 # Search radius to include all neighboring polygon (0 - 200km)
 S.dist  <-  dnearneigh(coo, 0, 200)  
 
-#identify all neighboring polygons for each polygon in the dataset.
-nb_weights <- nb2listw(S.dist, style="W",zero.policy=T) 
+#identify all neighboring polygons for each polygon in the dataset (including self)
+lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
 
-WE_local <- localmoran(m1.point$WE, nb_weights, alternative = "greater")
+# calculate Getis-Ord's G*
+WE_local_G <- localG(m1.point$WE, lw_self, alternative = "greater")
 
-m1.point_sf$lmI <- WE_local[, "Ii"] # local Moran's I
-m1.point_sf$lmZ <- WE_local[, "Z.Ii"] # z-scores
-m1.point_sf$lmp <- WE_local[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
+WE_local_G_att <- attributes(WE_local_G)
 
-# moran's I scatterplot
-WE_mp <- moran.plot(as.vector(scale(m1.point_sf$WE)), nb_weights)
+m1.point_sf$gI <- WE_local_G_att$internals[, "G*i"] # Getis-Ord G
+m1.point_sf$gZ <- WE_local_G_att$internals[, "Z(G*i)"] # z-scores
+m1.point_sf$gp <- WE_local_G_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
 
-#designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
-m1.point_sf$quadrant <- NA
+#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+m1.point_sf$quadrant_g <- NA
 # high-high
-m1.point_sf[(WE_mp$x >= 0 & RI_mp$wx >= 0) & (!is.na(m1.point_sf$lmp) & m1.point_sf$lmp <= 0.0001), "quadrant"]<- 1
-# low-low
-m1.point_sf[(WE_mp$x <= 0 & RI_mp$wx <= 0) & (!is.na(m1.point_sf$lmp) & m1.point_sf$lmp <= 0.0001), "quadrant"]<- 2
+m1.point_sf[m1.point_sf$gI > 0 & (!is.na(m1.point_sf$gp) & m1.point_sf$gp <= 0.0001), "quadrant_g"]<- 1
 # non-significant
-m1.point_sf[(!is.na(m1.point_sf$lmp) & m1.point_sf$lmp > 0.0001), "quadrant"] <- 3
+m1.point_sf[(!is.na(m1.point_sf$gp) & m1.point_sf$gp > 0.0001), "quadrant_g"] <- 3
 
 #mapping clusters
-WE_local_map <- tm_shape(m1.point_sf) + 
-tm_fill(col = "quadrant", 
-        title = "", 
-        breaks = c(1, 2, 3, 4), 
-        palette =  c("red", "blue", "white"),
-        labels = c("High-High", "Low-Low", "Non-significant")) + 
+WE_local_map <- tm_shape(m1.point_sf) + tm_fill(col = "quadrant_g", title = "",
+breaks = c(1, 3, 4),
+palette =  c("red", "white"),
+labels = c("High-High", "Non-significant")) + 
 tm_layout(legend.show = FALSE) + 
 tm_borders(alpha = 0.5) +
 tm_layout(frame = FALSE,  title = "Preserved specimen + citizen science")
@@ -382,34 +370,30 @@ coo_ex <- coo_ex |> sf::st_as_sf(crs = 4326)
 # Search radius to include all neighboring polygon (0 - 200km)
 S.dist_ex  <-  dnearneigh(coo_ex, 0, 200)
 
-#identify all neighboring polygons for each polygon in the dataset.
-nb_weights_ex <- nb2listw(S.dist_ex, style="W",zero.policy=T)
+#identify all neighboring polygons for each polygon in the dataset (including self)
+lw_ex_self <- nb2listw(include.self(S.dist_ex), style="W",zero.policy=T) 
 
-WE_local_ex <- localmoran(m1.point_ex$WE, nb_weights_ex, alternative = "greater")
+# calculate Getis-Ord's G*
+WE_local_G_ex <- localG(m1.point_ex$WE, lw_ex_self, alternative = "greater")
 
-m1.point_ex_sf$lmI <- WE_local_ex[, "Ii"] # local Moran's I
-m1.point_ex_sf$lmZ <- WE_local_ex[, "Z.Ii"] # z-scores
-m1.point_ex_sf$lmp <- WE_local_ex[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
+WE_local_G_ex_att <- attributes(WE_local_G_ex)
 
-# moran's I scatterplot
-WE_ex_mp <- moran.plot(as.vector(scale(m1.point_ex_sf$WE)), nb_weights_ex)
+m1.point_ex_sf$gI <- WE_local_G_ex_att$internals[, "G*i"] # Getis-Ord G
+m1.point_ex_sf$gZ <- WE_local_G_ex_att$internals[, "Z(G*i)"] # z-scores
+m1.point_ex_sf$gp <- WE_local_G_ex_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
 
-#designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
-m1.point_ex_sf$quadrant <- NA
+#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+m1.point_ex_sf$quadrant_g <- NA
 # high-high
-m1.point_ex_sf[(WE_ex_mp$x >= 0 & WE_ex_mp$wx >= 0) & (!is.na(m1.point_ex_sf$lmp) & m1.point_ex_sf$lmp <= 0.0001), "quadrant"]<- 1
-# low-low
-m1.point_ex_sf[(WE_ex_mp$x <= 0 & WE_ex_mp$wx <= 0) & (!is.na(m1.point_ex_sf$lmp) & m1.point_ex_sf$lmp <= 0.0001), "quadrant"]<- 2
+m1.point_ex_sf[m1.point_ex_sf$gI > 0 & (!is.na(m1.point_ex_sf$gp) & m1.point_ex_sf$gp <= 0.0001), "quadrant_g"]<- 1
 # non-significant
-m1.point_ex_sf[(!is.na(m1.point_ex_sf$lmp) & m1.point_ex_sf$lmp > 0.0001), "quadrant"] <- 3
+m1.point_ex_sf[(!is.na(m1.point_ex_sf$gp) & m1.point_ex_sf$gp > 0.0001), "quadrant_g"] <- 2
 
 #mapping clusters
-WE_local_ex_map <- tm_shape(m1.point_ex_sf) + 
-tm_fill(col = "quadrant", 
-        title = "", 
-        breaks = c(1, 2, 3, 4), 
-        palette =  c("red", "blue", "white"),
-        labels = c("High-High", "Low-Low", "Non-significant")) + 
+WE_local_ex_map <- tm_shape(m1.point_ex_sf) + tm_fill(col = "quadrant_g", title = "",
+breaks = c(1, 2, 3),
+palette =  c("red", "white"),
+labels = c("High-High", "Non-significant")) + 
 tm_layout(legend.text.size = 10) + 
 tm_borders(alpha = 0.5) +
 tm_layout(frame = TRUE,  title = "Preserved specimen only")
@@ -419,7 +403,7 @@ tm_layout(legend.outside = TRUE, scale = 2)
 ```{r}
 #| fig-width: 8
 #| fig-cap: 
-#|   - "Figure 7: Map showing significant clusters of spatial cells (hotspots) sharing similar weighted endemism of Mygalomorphae spiders using point-based data. Red clusters indicate areas of similarly high weighted endemism. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+#|   - "Figure 7: Map showing significant clusters of spatial cells (hotspots) sharing high weighted endemism of Mygalomorphae spiders using point-based data. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
 tmap_arrange(WE_local_map, WE_local_ex_map, nrow = 1)
 
 ```
@@ -509,34 +493,30 @@ st_is_longlat(coo)
 # Search radius to include all neighboring polygon (0 - 200km)
 S.dist  <-  dnearneigh(coo, 0, 200)  
 
-#identify all neighboring polygons for each polygon in the dataset.
-nb_weights <- nb2listw(S.dist, style="W",zero.policy=T) 
+#identify all neighboring polygons for each polygon in the dataset (including self)
+lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
 
-CWE_local <- localmoran(m1.point$corrected_endemism, nb_weights, alternative = "greater")
+# calculate Getis-Ord's G*
+CWE_local_G <- localG(m1.point$corrected_endemism, lw_self, alternative = "greater")
 
-m1.point_sf$lmI <- CWE_local[, "Ii"] # local Moran's I
-m1.point_sf$lmZ <- CWE_local[, "Z.Ii"] # z-scores
-m1.point_sf$lmp <- CWE_local[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
+CWE_local_G_att <- attributes(CWE_local_G)
 
-# moran's I scatterplot
-CWE_mp <- moran.plot(as.vector(scale(m1.point_sf$corrected_endemism)), nb_weights)
+m1.point_sf$gI <- CWE_local_G_att$internals[, "G*i"] # Getis-Ord G
+m1.point_sf$gZ <- CWE_local_G_att$internals[, "Z(G*i)"] # z-scores
+m1.point_sf$gp <- CWE_local_G_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
 
-#designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
-m1.point_sf$quadrant <- NA
+#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+m1.point_sf$quadrant_g <- NA
 # high-high
-m1.point_sf[(CWE_mp$x >= 0 & CWE_mp$wx >= 0) & (!is.na(m1.point_sf$lmp) & m1.point_sf$lmp <= 0.0001), "quadrant"]<- 1
-# low-low
-m1.point_sf[(CWE_mp$x <= 0 & CWE_mp$wx <= 0) & (!is.na(m1.point_sf$lmp) & m1.point_sf$lmp <= 0.0001), "quadrant"]<- 2
+m1.point_sf[m1.point_sf$gI > 0 & (!is.na(m1.point_sf$gp) & m1.point_sf$gp <= 0.0001), "quadrant_g"]<- 1
 # non-significant
-m1.point_sf[(!is.na(m1.point_sf$lmp) & m1.point_sf$lmp > 0.0001), "quadrant"] <- 3
+m1.point_sf[(!is.na(m1.point_sf$gp) & m1.point_sf$gp > 0.0001), "quadrant_g"] <- 3
 
 #mapping clusters
-CWE_local_map <- tm_shape(m1.point_sf) + 
-tm_fill(col = "quadrant", 
-        title = "", 
-        breaks = c(1, 2, 3, 4), 
-        palette =  c("red", "blue", "white"),
-        labels = c("High-High", "Low-Low", "Non-significant")) + 
+CWE_local_map <- tm_shape(m1.point_sf) + tm_fill(col = "quadrant_g", title = "",
+breaks = c(1, 3, 4),
+palette =  c("red", "white"),
+labels = c("High-High", "Non-significant")) + 
 tm_layout(legend.show = FALSE) + 
 tm_borders(alpha = 0.5) +
 tm_layout(frame = FALSE,  title = "Preserved specimen + citizen science")
@@ -552,34 +532,30 @@ coo_ex <- coo_ex |> sf::st_as_sf(crs = 4326)
 # Search radius to include all neighboring polygon (0 - 200km)
 S.dist_ex  <-  dnearneigh(coo_ex, 0, 200)
 
-#identify all neighboring polygons for each polygon in the dataset.
-nb_weights_ex <- nb2listw(S.dist_ex, style="W",zero.policy=T)
+#identify all neighboring polygons for each polygon in the dataset (including self)
+lw_ex_self <- nb2listw(include.self(S.dist_ex), style="W",zero.policy=T) 
 
-CWE_local_ex <- localmoran(m1.point_ex$corrected_endemism, nb_weights_ex, alternative = "greater")
+# calculate Getis-Ord's G*
+CWE_local_G_ex <- localG(m1.point_ex$corrected_endemism, lw_ex_self, alternative = "greater")
 
-m1.point_ex_sf$lmI <- CWE_local_ex[, "Ii"] # local Moran's I
-m1.point_ex_sf$lmZ <- CWE_local_ex[, "Z.Ii"] # z-scores
-m1.point_ex_sf$lmp <- CWE_local_ex[, "Pr(z > E(Ii))"] # p-values corresponding to alternative
+CWE_local_G_ex_att <- attributes(CWE_local_G_ex)
 
-# moran's I scatterplot
-CWE_ex_mp <- moran.plot(as.vector(scale(m1.point_ex_sf$corrected_endemism)), nb_weights_ex)
+m1.point_ex_sf$gI <- CWE_local_G_ex_att$internals[, "G*i"] # Getis-Ord G
+m1.point_ex_sf$gZ <- CWE_local_G_ex_att$internals[, "Z(G*i)"] # z-scores
+m1.point_ex_sf$gp <- CWE_local_G_ex_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
 
-#designating points to quadrants based on their position in the moran's scatterplot and the significance of local moran's I
-m1.point_ex_sf$quadrant <- NA
+#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+m1.point_ex_sf$quadrant_g <- NA
 # high-high
-m1.point_ex_sf[(CWE_ex_mp$x >= 0 & CWE_ex_mp$wx >= 0) & (!is.na(m1.point_ex_sf$lmp) & m1.point_ex_sf$lmp <= 0.0001), "quadrant"]<- 1
-# low-low
-m1.point_ex_sf[(CWE_ex_mp$x <= 0 & CWE_ex_mp$wx <= 0) & (!is.na(m1.point_ex_sf$lmp) & m1.point_ex_sf$lmp <= 0.0001), "quadrant"]<- 2
+m1.point_ex_sf[m1.point_ex_sf$gI > 0 & (!is.na(m1.point_ex_sf$gp) & m1.point_ex_sf$gp <= 0.0001), "quadrant_g"]<- 1
 # non-significant
-m1.point_ex_sf[(!is.na(m1.point_ex_sf$lmp) & m1.point_ex_sf$lmp > 0.0001), "quadrant"] <- 3
+m1.point_ex_sf[(!is.na(m1.point_ex_sf$gp) & m1.point_ex_sf$gp > 0.0001), "quadrant_g"] <- 2
 
 #mapping clusters
-CWE_local_ex_map <- tm_shape(m1.point_ex_sf) + 
-tm_fill(col = "quadrant", 
-        title = "", 
-        breaks = c(1, 2, 3, 4), 
-        palette =  c("red", "blue", "white"),
-        labels = c("High-High", "Low-Low", "Non-significant")) + 
+CWE_local_ex_map <- tm_shape(m1.point_ex_sf) + tm_fill(col = "quadrant_g", title = "",
+breaks = c(1, 2, 3),
+palette =  c("red", "white"),
+labels = c("High-High", "Non-significant")) + 
 tm_layout(legend.text.size = 10) + 
 tm_borders(alpha = 0.5) +
 tm_layout(frame = TRUE,  title = "Preserved specimen only")
@@ -589,7 +565,7 @@ tm_layout(legend.outside = TRUE, scale = 2)
 ```{r}
 #| fig-width: 8
 #| fig-cap: 
-#|   - "Figure 9: Map showing significant clusters of spatial cells (hotspots) sharing similar corrected weighted endemism (CWE) of Mygalomorphae spiders using point-based data. Red clusters indicate areas of similarly high CWE. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+#|   - "Figure 9: Map showing significant clusters of spatial cells (hotspots) sharing high corrected weighted endemism (CWE) of Mygalomorphae spiders using point-based data. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
 tmap_arrange(CWE_local_map, CWE_local_ex_map, nrow = 1)
 
 ```
