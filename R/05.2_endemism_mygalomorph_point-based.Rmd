@@ -29,16 +29,16 @@ myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = 
 
 ### Calculate Community Matrix
 
-Convert raw input distribution data to community at 0.5 decimal degrees
+Convert raw input distribution data to community at 0.05 decimal degrees
 `trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
 
 ```{r}
-comm.point <- phyloregion::points2comm(dat = myg_spiders_cleaned, res = 0.5, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
+comm.point <- phyloregion::points2comm(dat = myg_spiders_cleaned, res = 0.05, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
 str(comm.point)
 plot(comm.point$map)
 ```
 
-### Calulate weighed endemism 
+### Calulate weighted endemism 
 
 ```{r}
 Endm.mygalomorph.point <- phyloregion::weighted_endemism(comm.point$comm_dat)
@@ -72,7 +72,7 @@ m1_sf <-
   sf::st_transform(4326)
 
 ggplot() +
-  geom_sf(data = m1_sf, aes(fill = WE)) + 
+  geom_sf(data = m1_sf, aes(fill = WE), col = NA) + 
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -160,7 +160,7 @@ tm_layout(legend.outside = TRUE)
 
 Getis-Ord's G* - to identify significant clusters
 ```{r}
-tmap_mode("plot")
+tmap_mode("view")
 
 #identify all neighboring polygons for each polygon in the dataset (including self)
 lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
@@ -184,12 +184,22 @@ m1_sf[m1_sf$gI > 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"]<- 1
 m1_sf[(!is.na(m1_sf$gp) & m1_sf$gp > 0.0001), "quadrant_g"] <- 3
 
 #mapping clusters
-tm_shape(m1_sf) + tm_fill(col = "quadrant_g", title = "",
-breaks = c(1, 3, 4),
-palette =  c("red", "white"),
-labels = c("High-High", "Non-significant")) + 
-tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
-tm_layout(frame = FALSE,  title = "Clusters")  +
+m1_sf$cluster_label <- factor(m1_sf$quadrant_g,
+  levels = c(1, 3),
+  labels = c("High-High", "Non-significant")
+)
+
+tm_shape(m1_sf) + tm_fill(fill = "cluster_label",
+                          fill.scale = tm_scale(values =  c("red", "white")),
+                          fill_alpha = 0.5,
+                          fill.legend = tm_legend(title = "Clusters"),
+                          col = "grey") +
+  tm_legend(text.size = 1)  + 
+  tm_borders(col = "cluster_label",
+                          col.scale = tm_scale(values = c("red", "grey")),
+                          col_alpha = 0.5,
+                          col.legend = tm_legend(show = FALSE)) +
+tm_layout(frame = FALSE) +
 tm_layout(legend.outside = TRUE)
 ```
 
@@ -197,11 +207,11 @@ tm_layout(legend.outside = TRUE)
 
 ### Calculate Community Matrix
 
-Convert raw input distribution data to community at 0.5 decimal degrees
+Convert raw input distribution data to community at 0.05 decimal degrees
 `trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
 
 ```{r}
-comm.point_ex <- phyloregion::points2comm(dat = myg_spiders_expert, res = 0.5, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
+comm.point_ex <- phyloregion::points2comm(dat = myg_spiders_expert, res = 0.05, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
 plot(comm.point_ex$map)
 ```
 
@@ -324,13 +334,13 @@ tm_layout(legend.outside = TRUE)
 
 Getis-Ord's G* - to identify significant clusters
 ```{r}
-tmap_mode("plot")
+tmap_mode("view")
 
 #identify all neighboring polygons for each polygon in the dataset (including self)
 lw_ex_self <- nb2listw(include.self(S.dist_ex), style="W",zero.policy=T) 
 
 # calculate Getis-Ord's G*
-RI_local_G_ex <- localG(m1.point_ex$richness, lw_ex_self, alternative = "greater")
+RI_local_G_ex <- localG(m1.point_ex$WE, lw_ex_self, alternative = "greater")
 
 RI_local_G_ex_att <- attributes(RI_local_G_ex)
 
@@ -348,12 +358,22 @@ m1_sf_ex[m1_sf_ex$gI < 0 & (!is.na(m1_sf_ex$gp) & m1_sf_ex$gp <= 0.0001), "quadr
 m1_sf_ex[(!is.na(m1_sf_ex$gp) & m1_sf_ex$gp > 0.0001), "quadrant_g"] <- 3
 
 #mapping clusters
-tm_shape(m1_sf_ex) + tm_fill(col = "quadrant_g", title = "",
-breaks = c(1, 2, 3, 4),
-palette =  c("red", "blue", "white"),
-labels = c("High-High", "Low-Low", "Non-significant")) + 
-tm_legend(text.size = 1)  + tm_borders(alpha = 0.5) +
-tm_layout(frame = FALSE,  title = "Clusters")  +
+m1_sf_ex$cluster_label <- factor(m1_sf_ex$quadrant_g,
+  levels = c(1, 3),
+  labels = c("High-High", "Non-significant")
+)
+
+tm_shape(m1_sf_ex) + tm_fill(fill = "cluster_label",
+                          fill.scale = tm_scale(values =  c("red", "white")),
+                          fill_alpha = 0.5,
+                          fill.legend = tm_legend(title = "Clusters"),
+                          col = "grey") +
+  tm_legend(text.size = 1)  + 
+  tm_borders(col = "cluster_label",
+                          col.scale = tm_scale(values = c("red", "grey")),
+                          col_alpha = 0.5,
+                          col.legend = tm_legend(show = FALSE)) +
+tm_layout(frame = FALSE) +
 tm_layout(legend.outside = TRUE)
 ```
 
