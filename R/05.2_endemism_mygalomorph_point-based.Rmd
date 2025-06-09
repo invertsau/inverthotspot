@@ -160,13 +160,13 @@ tm_layout(legend.outside = TRUE)
 
 Getis-Ord's G* - to identify significant clusters
 ```{r}
-tmap_mode("view")
+tmap_mode("plot")
 
 #identify all neighboring polygons for each polygon in the dataset (including self)
 lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
 
 # calculate Getis-Ord's G*
-RI_local_G <- localG(m1.point$WE, lw_self, alternative = "greater")
+RI_local_G <- localG(m1.point$corrected_endemism, lw_self, alternative = "greater")
 
 RI_local_G_att <- attributes(RI_local_G)
 

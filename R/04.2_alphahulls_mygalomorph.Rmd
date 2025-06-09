@@ -1,0 +1,117 @@
+---
+title: "Alphahulls v2"
+author: "Josh Nitschke"
+date: "2025-06-09"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loadpackages}
+# Install the package
+#install.packages("remotes")
+# remotes::install_github("beatrizpateiro/alphahull", ref="WIP-ahull.IUCN-feature")
+# remotes::install_github("babichmorrowc/hull2spatial")
+
+# Load packages
+#install.packages("pacman")
+pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf, ggplot2, skimr, alphahull, hull2spatial, sp, purrr, ConR, dplyr)
+
+source("R/utils.R")
+
+library(raster)
+library(rangeBuilder)
+library(fasterize)
+```
+
+## Read in data
+
+```{r}
+get_latest_cleaned_data()
+
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
+
+myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1]) 
+```
+
+# computing species' ranges as alpha hulls
+
+```{r}
+species <- unique(myg_spiders_cleaned$species)
+
+alpha_ranges <- list()
+
+for (i in species) {
+  print(i)
+  coords <- myg_spiders_cleaned %>% filter(species == i)
+  speciesname <- gsub(" ", "_", i)
+  coords <- coords %>%
+    dplyr::select("decimalLongitude", "decimalLatitude") %>% 
+    distinct()
+  
+  # Skip species with fewer than 3 unique coordinate pairs
+  if (nrow(coords) < 3) {
+    message("  Skipped: fewer than 3 unique coordinates.")
+    next
+  }
+  
+  #Alpha Hull
+  range <- getDynamicAlphaHull(coords, coordHeaders=c('decimalLongitude','decimalLatitude'), initialAlpha = 2,
+                               clipToCoast = 'terrestrial', buff = 0)
+  a.range <- range[[1]]
+  alpha_range <- st_as_sf(a.range) 
+  alpha_range <- st_make_valid(alpha_range)
+  
+  alpha_ranges[[speciesname]] <- alpha_range
+  
+  #writeRaster(a.hull, here("output/spatial/ahullsraster", paste0(speciesname, "_AH.tif")), NAflag=-9999)
+  
+}
+```
+
+# Save to .rds
+
+```{r}
+# Clean up the name
+file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2], "/")[10] |> str_remove(".parquet")
+
+# Save spatial dataframe
+write_rds(alpha_ranges, here("output/spatial", paste0("filled_alpha_hulls_sf_", file_name, ".rds")))
+
+```
+
+# Mapping
+
+```{r}
+# combining sf's to plot
+combined_sf <- bind_rows(
+  lapply(names(alpha_ranges), function(name) {
+    sf_obj <- alpha_ranges[[name]]
+    sf_obj$species <- name  # add species column
+    return(sf_obj)
+  })
+)
+
+# Transform projection of aus
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+
+# Base map 
+base_map <- ggplot() + 
+  geom_sf(data = aus, fill = NA, colour = "black") + 
+  theme_minimal()
+
+# Base map with alphahulls 
+base_map  + 
+  geom_sf(data = combined_sf, 
+          aes(geometry = x),
+           # colour = "black",
+          colour = "#609966") + 
+  coord_sf(c(110, 155)) +
+  theme_minimal() |> 
+  theme(legend.position = "none")
+```
+

@@ -1,0 +1,246 @@
+---
+title: "Endemism analysis"
+author: "Fonti Kar, Payal Bal, Aaron Greenfield"
+date: "2023-12-16"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr)
+```
+
+### Load alpha hull spatial polygons
+
+This is a massive list, each element is a spatial polygon dataframe
+
+```{r}
+species_polys <- readRDS("output/spatial/filled_alpha_hulls_sf_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds")
+
+# species_polys_expert <- readRDS("output/spatial/Spatial_alpha_hulls_expertcleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds") |> 
+#   discard(is.null)
+```
+
+## ALL DATA
+
+### Pre-processing
+
+```{r}
+
+# Combine into one large spatial dataframe
+combinedShp <- bind_rows(species_polys, .id = "species")
+
+combinedShp <- terra::vect(combinedShp)
+
+combinedShp
+
+```
+
+### Calculate Community Matrix
+
+Convert raw input distribution data to community at 0.5 decimal degrees
+`trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
+
+```{r}
+comm.poly <- phyloregion::polys2comm(dat = combinedShp , trace=1, res = 0.5)
+str(comm.poly)
+plot(comm.poly$map)
+```
+
+### Calulate weighed endemism 
+
+```{r}
+Endm.mygalomorph.poly <- phyloregion::weighted_endemism(comm.poly$comm_dat)
+str(Endm.mygalomorph.poly)
+
+## Join results back to spatial community data matrix
+m1.poly <- merge(comm.poly$map, data.frame(grids=names(Endm.mygalomorph.poly), WE=Endm.mygalomorph.poly), by="grids")
+
+# Drop NA in WE
+m1.poly <- m1.poly[!is.na(m1.poly$WE),]
+
+m1.poly
+```
+
+
+### Calulate corrected weighted endemism
+
+Weighted endemism tally per cell divided by the species richness of that cell
+
+```{r}
+m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
+```
+
+### Create a endemism map
+
+Convert to `sf` 
+
+```{r}
+m1_sf <- 
+  sf::st_as_sf(m1.poly) |> 
+  sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = m1_sf, aes(fill = WE)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = m1_sf, aes(fill = corrected_endemism)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = m1_sf, aes(fill = richness)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Moran's%20I%20values%20significantly%20above,negative%20spatial%20autocorrelation%20or%20dispersion.
+
+```{r}
+# extract the center of each polygon
+coo <- terra::centroids(m1.poly)
+
+coo <- coo |> sf::st_as_sf(crs = 4326)
+
+# Search radius to include all neighboring polygon (0 - 200km)
+S.dist  <-  dnearneigh(coo, 0, 200000)  
+
+#identify all neighboring polygons for each polygon in the dataset.
+lw <- nb2listw(S.dist, style="W",zero.policy=T) 
+
+# Run the MC simulation
+RI  <-  moran.mc(m1.poly$richness, lw, nsim=9999,zero.policy=T)
+MI  <-  moran.mc(m1.poly$corrected_endemism, lw, nsim=9999,zero.policy=T)
+WE_MI  <-  moran.mc(m1.poly$WE, lw, nsim=9999,zero.policy=T)
+
+saveRDS(RI, "output/analysis/Cleaned_Mygalomorphae_RI.rds")
+saveRDS(MI, "output/analysis/Cleaned_Mygalomorphae_MI.rds")
+saveRDS(WE_MI, "output/analysis/Cleaned_Mygalomorphae_WE_MI.rds")
+```
+
+## EXPERT DATA ONLY
+
+
+```{r}
+# Combine into one large spatial dataframe
+combinedShp_ex <- do.call(what = rbind, args=species_polys_expert)
+
+## Assign species names
+combinedShp_ex <- terra::vect(combinedShp_ex)
+names(combinedShp_ex) <- "species"
+
+combinedShp_ex
+```
+
+### Calculate Community Matrix
+
+Convert raw input distribution data to community at 0.5 decimal degrees
+`trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
+
+```{r}
+comm.poly_ex <- phyloregion::polys2comm(dat = combinedShp_ex, species = "species", trace=1, res = 0.5)
+str(comm.poly_ex)
+plot(comm.poly_ex$map)
+```
+
+### Calulate weighed endemism 
+
+```{r}
+Endm.mygalomorph.poly_ex <- phyloregion::weighted_endemism(comm.poly_ex$comm_dat)
+str(Endm.mygalomorph.poly_ex)
+
+## Join results back to spatial community data matrix
+m1.poly_ex <- merge(comm.poly_ex$map, data.frame(grids=names(Endm.mygalomorph.poly_ex), WE=Endm.mygalomorph.poly_ex), by="grids")
+
+# Drop NA in WE
+m1.poly_ex <- m1.poly_ex[!is.na(m1.poly_ex$WE),]
+
+m1.poly_ex
+```
+
+
+### Calulate corrected weighted endemism
+
+Weighted endemism tally per cell divided by the species richness of that cell
+
+```{r}
+m1.poly_ex$corrected_endemism <- m1.poly_ex$WE/m1.poly_ex$richness
+```
+
+### Create a endemism map
+
+Convert to `sf` 
+
+```{r}
+m1_sf_ex <- 
+  sf::st_as_sf(m1.poly_ex) |> 
+  sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = m1_sf_ex, aes(fill = WE)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = m1_sf_ex, aes(fill = richness)) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Moran's%20I%20values%20significantly%20above,negative%20spatial%20autocorrelation%20or%20dispersion.
+
+```{r}
+# extract the center of each polygon
+coo <- terra::centroids(m1.poly_ex)
+
+coo <- coo |> sf::st_as_sf(crs = 4326)
+
+# Search radius to include all neighboring polygon (0 - 200km)
+S.dist  <-  dnearneigh(coo, 0, 200000)  
+
+#identify all neighboring polygons for each polygon in the dataset.
+lw <- nb2listw(S.dist, style="W",zero.policy=T) 
+
+# Run the MC simulation
+RI_ex  <-  moran.mc(m1.poly_ex$richness, lw, nsim=9999,zero.policy=T)
+MI_ex <-  moran.mc(m1.poly_ex$corrected_endemism, lw, nsim=9999,zero.policy=T)
+WE_MI_ex  <-  moran.mc(m1.poly_ex$WE, lw, nsim=9999,zero.policy=T)
+
+saveRDS(RI_ex, "output/analysis/Cleaned_Mygalomorphae_RI_expert.rds")
+saveRDS(MI_ex, "output/analysis/Cleaned_Mygalomorphae_MI_expert.rds")
+saveRDS(WE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_WE_MI_expert.rds")
+```
