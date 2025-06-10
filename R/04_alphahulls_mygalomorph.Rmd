@@ -27,9 +27,9 @@ source("R/utils.R")
 ```{r}
 get_latest_cleaned_data()
 
-myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data()) 
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
 
-myg_spiders_expert <- read_parquet(here("output/data/cleaned_expert_recordscleaned_Mygalomorphae_withassertions_2024-03-13_ALA")) 
+myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1])
 ```
 
 # All data 
@@ -109,23 +109,32 @@ base_map <- ggplot() +
 
 #Unnest the sf
 all_myg_alpha_sf <- myg_conr_nest |> 
-  select(species, conr_ahull_sf) |> 
+  dplyr::select(species, conr_ahull_sf) |> 
   tidyr::unnest(cols = c(conr_ahull_sf)) |> 
-  select(-tax) |> 
+  dplyr::select(-tax) |> 
   sf::st_as_sf()
+
+# to get filled polygons instead of just the boundaries
+all_myg_alpha_sf <- all_myg_alpha_sf |> 
+  sf::st_cast("MULTILINESTRING") |>
+  sf::st_polygonize()
+
+# crop to land area only
+all_myg_alpha_sf_land <- st_intersection(all_myg_alpha_sf, aus)
 
 # Save output
 # Clean up the name
-file_name <- str_split_1(get_latest_cleaned_data(), "/")[3] |> str_remove(".parquet")
+file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2], "/")[10] |> str_remove(".parquet")
 
-saveRDS(all_myg_alpha_sf, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_", file_name, ".rds")))
+saveRDS(all_myg_alpha_sf_land, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_", file_name, ".rds")))
 
 # Base map 
 base_map  + 
-  geom_sf(data = all_myg_alpha_sf, 
+  geom_sf(data = all_myg_alpha_sf_land, 
           aes(geometry = x),
            # colour = "black",
-          colour = "#609966") + 
+          colour = "#609966",
+          fill = "lightgreen") +
   coord_sf(c(110, 155)) +
   theme_minimal() |> 
   theme(legend.position = "none")
@@ -169,23 +178,32 @@ myg_conr_nest_ex <- myg_conr_nest_ex |>
 ```{r}
 #Unnest the sf
 all_myg_alpha_sf_ex <- myg_conr_nest_ex |> 
-  select(species, conr_ahull_sf) |> 
+  dplyr::select(species, conr_ahull_sf) |> 
   tidyr::unnest(cols = c(conr_ahull_sf)) |> 
-  select(-tax) |> 
+  dplyr::select(-tax) |> 
   sf::st_as_sf()
+
+# to get filled polygons instead of just the boundaries
+all_myg_alpha_sf_ex <- all_myg_alpha_sf_ex |> 
+  sf::st_cast("MULTILINESTRING") |>
+  sf::st_polygonize()
+
+# crop to land area only
+all_myg_alpha_sf_ex_land <- st_intersection(all_myg_alpha_sf, aus)
 
 # Save output
 # Clean up the name
-file_name <- str_split_1(get_latest_cleaned_data(), "/")[3] |> str_remove(".parquet")
+file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1], "/")[10] |> str_remove(".parquet")
 
-saveRDS(all_myg_alpha_sf_ex, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_expert_", file_name, ".rds")))
+saveRDS(all_myg_alpha_sf_ex_land, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_expert_", file_name, ".rds")))
 
 # Base map 
 base_map  + 
-  geom_sf(data = all_myg_alpha_sf_ex, 
+  geom_sf(data = all_myg_alpha_sf_ex_land, 
           aes(geometry = x),
            # colour = "black",
-          colour = "#609966") + 
+          colour = "#609966",
+          fill = "lightgreen") + 
   coord_sf(c(110, 155)) +
   theme_minimal() |> 
   theme(legend.position = "none")
