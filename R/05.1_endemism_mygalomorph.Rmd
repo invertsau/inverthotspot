@@ -144,6 +144,10 @@ CWE_MI  <-  moran.mc(m1.poly$corrected_endemism, lw, nsim=9999,zero.policy=T)
 # saveRDS(CWE_MI, "output/analysis/Cleaned_Mygalomorphae_CWE_MI.rds")
 ```
 
+Nelson and Boots (2008) have some info on analysis scale/neighbour distance
+look into variograms for determining the spatial scale of dependence for setting a neighbour distance
+
+
 Getis-Ord's G* - to identify significant clusters
 ```{r}
 tmap_mode("plot")
@@ -152,7 +156,7 @@ tmap_mode("plot")
 lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
 
 # calculate Getis-Ord's G*
-RI_local_G <- localG(m1.poly$WE, lw_self, alternative = "greater")
+RI_local_G <- localG(m1.poly$corrected_endemism, lw_self, alternative = "greater")
 
 RI_local_G_att <- attributes(RI_local_G)
 
