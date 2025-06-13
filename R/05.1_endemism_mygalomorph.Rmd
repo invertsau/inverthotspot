@@ -10,7 +10,7 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr)
+pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr, gstat)
 ```
 
 ### Load alpha hull spatial polygons
@@ -128,8 +128,14 @@ coo <- terra::centroids(m1.poly)
 
 coo <- coo |> sf::st_as_sf(crs = 4326)
 
+# variogram to assess spatial scale of dependence, i.e. range (search radius in following step)
+sf_proj <- st_transform(coo, crs = 3577)
+
+variogram <- variogram(object = WE~1, data = sf_proj)
+plot(variogram)
+
 # Search radius to include all neighboring polygon (0 - 200km)
-S.dist  <-  dnearneigh(coo, 0, 200)  
+S.dist  <-  dnearneigh(coo, 0, 500)  
 
 #identify all neighboring polygons for each polygon in the dataset.
 lw <- nb2listw(S.dist, style="W",zero.policy=T) 
