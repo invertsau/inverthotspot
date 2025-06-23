@@ -80,6 +80,14 @@ Weighted endemism tally per cell divided by the species richness of that cell
 m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
 ```
 
+### Assigning hotspots based on percentile
+
+```{r}
+m1.poly$rich_perc <- m1.poly$richness > quantile(m1.poly$richness, probs = 0.975)
+m1.poly$WE_perc <- m1.poly$WE > quantile(m1.poly$WE, probs = 0.975)
+m1.poly$CWE_perc <- m1.poly$corrected_endemism > quantile(m1.poly$corrected_endemism, probs = 0.975)
+```
+
 ### Create a endemism map
 
 Convert to `sf` 
@@ -90,7 +98,9 @@ m1_sf <-
   sf::st_transform(4326)
 
 ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
   geom_sf(data = m1_sf, aes(fill = WE), col = NA) + 
+  geom_sf(data = subset(m1_sf, WE_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -99,7 +109,9 @@ ggplot() +
   theme(legend.position = "bottom")
 
 ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
   geom_sf(data = m1_sf, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = subset(m1_sf, CWE_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -108,7 +120,9 @@ ggplot() +
   theme(legend.position = "bottom")
 
 ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
   geom_sf(data = m1_sf, aes(fill = richness), col = NA) + 
+  geom_sf(data = subset(m1_sf, rich_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -128,26 +142,33 @@ coo <- terra::centroids(m1.poly)
 
 coo <- coo |> sf::st_as_sf(crs = 4326)
 
-# variogram to assess spatial scale of dependence, i.e. range (search radius in following step)
-sf_proj <- st_transform(coo, crs = 3577)
+# # variogram to assess spatial scale of dependence, i.e. range (search radius in following step)
+# sf_proj <- st_transform(coo, crs = 3577)
+# 
+# variogram <- variogram(object = corrected_endemism~1, data = sf_proj)
+# plot(variogram)
+```
 
-variogram <- variogram(object = WE~1, data = sf_proj)
-plot(variogram)
-
+```{r}
 # Search radius to include all neighboring polygon (0 - 200km)
-S.dist  <-  dnearneigh(coo, 0, 500)  
+# S.dist  <-  dnearneigh(coo, 0, 500)  
+# 
+S.dist <- readRDS("D:/USB/JNitschke/Invertebrates Australia/Cleaned_Mygalomorphae_dnearneigh500.rds")
 
-#identify all neighboring polygons for each polygon in the dataset.
-lw <- nb2listw(S.dist, style="W",zero.policy=T) 
+```
 
-# Run the MC simulation
-RI_MI  <-  moran.mc(m1.poly$richness, lw, nsim=9999,zero.policy=T)
-WE_MI  <-  moran.mc(m1.poly$WE, lw, nsim=9999,zero.policy=T)
-CWE_MI  <-  moran.mc(m1.poly$corrected_endemism, lw, nsim=9999,zero.policy=T)
-
-# saveRDS(RI_MI, "output/analysis/Cleaned_Mygalomorphae_RI_MI.rds")
-# saveRDS(WE_MI, "output/analysis/Cleaned_Mygalomorphae_WE_MI.rds")
-# saveRDS(CWE_MI, "output/analysis/Cleaned_Mygalomorphae_CWE_MI.rds")
+```{r}
+# #identify all neighboring polygons for each polygon in the dataset.(note: style = "W" means that weights are standardised by the number of neighbours (nb), ie. 1/nb, ensuring each observations influence is standardized regardless of number of neighbours)
+# lw <- nb2listw(S.dist, style="W",zero.policy=T) 
+# 
+# # Run the MC simulation
+# RI_MI  <-  moran.mc(m1.poly$richness, lw, nsim=9999,zero.policy=T)
+# WE_MI  <-  moran.mc(m1.poly$WE, lw, nsim=9999,zero.policy=T)
+# CWE_MI  <-  moran.mc(m1.poly$corrected_endemism, lw, nsim=9999,zero.policy=T)
+# 
+# # saveRDS(RI_MI, "output/analysis/Cleaned_Mygalomorphae_RI_MI.rds")
+# # saveRDS(WE_MI, "output/analysis/Cleaned_Mygalomorphae_WE_MI.rds")
+# # saveRDS(CWE_MI, "output/analysis/Cleaned_Mygalomorphae_CWE_MI.rds")
 ```
 
 Nelson and Boots (2008) have some info on analysis scale/neighbour distance
@@ -162,7 +183,7 @@ tmap_mode("plot")
 lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
 
 # calculate Getis-Ord's G*
-RI_local_G <- localG(m1.poly$corrected_endemism, lw_self, alternative = "greater")
+RI_local_G <- localG(m1.poly$WE, lw_self, alternative = "greater")
 
 RI_local_G_att <- attributes(RI_local_G)
 
@@ -185,7 +206,7 @@ m1_sf$cluster_label <- factor(m1_sf$quadrant_g,
   labels = c("High-High", "Non-significant")
 )
 
-tm_shape(m1_sf) + tm_fill(fill = "cluster_label",
+tm_500 <- tm_shape(m1_sf) + tm_fill(fill = "cluster_label",
                           fill.scale = tm_scale(values =  c("red", "white")),
                           fill_alpha = 0.5,
                           fill.legend = tm_legend(title = "Clusters",
@@ -197,6 +218,8 @@ tm_shape(m1_sf) + tm_fill(fill = "cluster_label",
                           col.legend = tm_legend(show = FALSE)) +
 tm_layout(frame = FALSE) +
 tm_layout(legend.outside = TRUE)
+
+tm_500
 ```
 
 ## EXPERT DATA ONLY
