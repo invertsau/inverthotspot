@@ -189,7 +189,7 @@ all_myg_alpha_sf_ex <- all_myg_alpha_sf_ex |>
   sf::st_polygonize()
 
 # crop to land area only
-all_myg_alpha_sf_ex_land <- st_intersection(all_myg_alpha_sf, aus)
+all_myg_alpha_sf_ex_land <- st_intersection(all_myg_alpha_sf_ex, aus)
 
 # Save output
 # Clean up the name
@@ -210,7 +210,7 @@ base_map  +
 ```
 
 ```{r}
-# Save spatial dataframe
-write_rds(myg_conr_nest_ex$conr_ahull, here("output/spatial", paste0("Spatial_alpha_hulls_expert", file_name, ".rds")))
+# # Save spatial dataframe
+# write_rds(myg_conr_nest_ex$conr_ahull, here("output/spatial", paste0("Spatial_alpha_hulls_expert", file_name, ".rds")))
 ```
 

@@ -83,9 +83,9 @@ m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
 ### Assigning hotspots based on percentile
 
 ```{r}
-m1.poly$rich_perc <- m1.poly$richness > quantile(m1.poly$richness, probs = 0.975)
-m1.poly$WE_perc <- m1.poly$WE > quantile(m1.poly$WE, probs = 0.975)
-m1.poly$CWE_perc <- m1.poly$corrected_endemism > quantile(m1.poly$corrected_endemism, probs = 0.975)
+m1.poly$rich_perc <- m1.poly$richness > quantile(m1.poly$richness, probs = 0.95)
+m1.poly$WE_perc <- m1.poly$WE > quantile(m1.poly$WE, probs = 0.95)
+m1.poly$CWE_perc <- m1.poly$corrected_endemism > quantile(m1.poly$corrected_endemism, probs = 0.95)
 ```
 
 ### Create a endemism map
@@ -104,7 +104,8 @@ ggplot() +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
   theme(legend.position = "bottom")
 
@@ -150,16 +151,16 @@ coo <- coo |> sf::st_as_sf(crs = 4326)
 ```
 
 ```{r}
-# Search radius to include all neighboring polygon (0 - 200km)
-# S.dist  <-  dnearneigh(coo, 0, 500)  
-# 
-S.dist <- readRDS("D:/USB/JNitschke/Invertebrates Australia/Cleaned_Mygalomorphae_dnearneigh500.rds")
+# Search radius to include all neighboring polygon (0 - 20km)
+S.dist  <-  dnearneigh(coo, 0, 20)
+
+# S.dist <- readRDS("D:/USB/JNitschke/Invertebrates Australia/Cleaned_Mygalomorphae_dnearneigh500.rds")
 
 ```
 
 ```{r}
 # #identify all neighboring polygons for each polygon in the dataset.(note: style = "W" means that weights are standardised by the number of neighbours (nb), ie. 1/nb, ensuring each observations influence is standardized regardless of number of neighbours)
-# lw <- nb2listw(S.dist, style="W",zero.policy=T) 
+# lw <- nb2listw(S.dist, style="W",zero.policy=T)
 # 
 # # Run the MC simulation
 # RI_MI  <-  moran.mc(m1.poly$richness, lw, nsim=9999,zero.policy=T)
@@ -272,6 +273,14 @@ Weighted endemism tally per cell divided by the species richness of that cell
 m1.poly_ex$corrected_endemism <- m1.poly_ex$WE/m1.poly_ex$richness
 ```
 
+### Assigning hotspots based on percentile
+
+```{r}
+m1.poly_ex$rich_perc <- m1.poly_ex$richness > quantile(m1.poly_ex$richness, probs = 0.95)
+m1.poly_ex$WE_perc <- m1.poly_ex$WE > quantile(m1.poly_ex$WE, probs = 0.95)
+m1.poly_ex$CWE_perc <- m1.poly_ex$corrected_endemism > quantile(m1.poly_ex$corrected_endemism, probs = 0.95)
+```
+
 ### Create a endemism map
 
 Convert to `sf` 
@@ -282,16 +291,21 @@ m1_sf_ex <-
   sf::st_transform(4326)
 
 ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
   geom_sf(data = m1_sf_ex, aes(fill = WE), col = NA) + 
+  geom_sf(data = subset(m1_sf_ex, WE_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
   theme(legend.position = "bottom")
 
 ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
   geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = subset(m1_sf_ex, CWE_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -300,7 +314,9 @@ ggplot() +
   theme(legend.position = "bottom")
 
 ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
   geom_sf(data = m1_sf_ex, aes(fill = richness), col = NA) + 
+  geom_sf(data = subset(m1_sf_ex, rich_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
