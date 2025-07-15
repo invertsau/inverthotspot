@@ -639,50 +639,52 @@ The biodiversity metrics workflow can be found [here](https://github.com/inverts
 
 In order to quantify patterns of species richness and endemism, we need to convert our point based (i.e. coordinates for each occurrence of a species) into a community matrix, whereby each row in the matrix corresponds to a different site, while each column represents a different species. The entries in the matrix indicate whether a species is present at a particular site (often with a 1 for presence and 0 for absence) or how abundant the species is at that site. See [here](https://cran.r-project.org/web//packages/phyloregion/vignettes/phyloregion-intro.html) for further information.
 
-We converted our alpha-hulls into a community matrix using the `poly2comm()` function in the `phyloregion` R package. The resolution or grid size is set at 0.5 decimal degrees. The `poly2comm()` also computes abundance (the number of individuals in each cell) and species rich (number of species in each cell).
+We converted our alpha-hulls into a community matrix using the `poly2comm()` function in the `phyloregion` R package. The resolution or grid size is set at 0.05 decimal degrees. The `poly2comm()` also computes abundance (the number of individuals in each cell) and species rich (number of species in each cell).
 
 ```{r, include=FALSE}
-#| fig-cap: 
-#|   - "Alpha-hulls of Mygalomorphae spiders from our cleaned dataset"
+
 pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis)
 
-species_polys <- readRDS(here("output/spatial/Spatial_alpha_hulls_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds"))
+species_polys <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds"))
 
-# Combine into one large spatial dataframe
-combinedShp <- do.call(what = rbind, args=species_polys)
+# Extract POLYGONs from GEOMETRYCOLLECTIONs
+species_polys_clean <- species_polys |>
+  st_collection_extract() |>
+  group_by(species) |>
+  summarise(geometry = st_union(x))
 
-## Assign species names
-combinedShp <- terra::vect(combinedShp)
-names(combinedShp) <- "species"
-
-combinedShp
+combinedShp <- terra::vect(species_polys_clean)
 
 aus <- st_transform(ozmaps::ozmap_country, 4326)
 
 # Base map 
 base_map <- ggplot() + 
-  geom_sf(data = aus, fill = NA, colour = "black") + 
+  geom_sf(data = aus, fill = "white", colour = "black") + 
   theme_minimal()
-
-all_myg_alpha_sf <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds"))
 
 ```
 
 ```{r, echo=FALSE}
 #| fig-cap: 
-#|   - "Community matrix of Mygalomorphae spiders from our cleaned dataset"
-# Base map 
- base_map  + 
-  geom_sf(data = all_myg_alpha_sf, 
+#|   - "Alpha-hulls of Mygalomorphae spiders from our cleaned dataset"
+
+## alpha hulls
+base_map  + 
+  geom_sf(data = species_polys, 
           aes(geometry = x),
-           # colour = "black",
-          colour = "#609966") + 
+          fill = "grey",
+          alpha = 0.5,
+          colour = "darkgrey") + 
+  geom_sf(data = aus, fill = NA, colour = "black") + 
   coord_sf(c(110, 155)) +
   theme_minimal() |> 
   theme(legend.position = "none")
 
-comm.poly <- phyloregion::polys2comm(dat = combinedShp, species = "species", trace=1, res = 0.5)
-plot(comm.poly$map)
+# ## Community Matrix
+# #|   #| fig-cap: 
+# #|   - "Community matrix of Mygalomorphae spiders from our cleaned dataset"
+# comm.poly <- phyloregion::polys2comm(dat = combinedShp , trace=1, res = 0.05)
+# plot(comm.poly$map)
 ```
 
 ### Quantifying endemism
@@ -693,13 +695,13 @@ Endemism is a measure of rarity relative to other species (refs). There are mult
 
 Weighted endemism is species richness inversely weighted by species ranges(Crisp et al. 2001),(Laffan and Crisp 2003),(Barnabas H. Daru et al. 2020). It gives higher weight to species with smaller ranges, emphasizing areas with many range-restricted species. WE highlights areas with a high concentration of rare species, which can be crucial for conservation efforts, however regions with high species richness can have inflated WE values simply because they have more species, not necessarily more endemics (https://www.jstor.org/stable/3554498).
 
-We calculated WE using the `weighted_endemism()` from `phyloregion` package.
+We calculated WE using the `weighted_endemism()` from `phyloregion` package. WE was fourth-root transformed prior to mapping to aid visualization.
 
 #### Corrected weighted endemism
 
 Corrected weighted endemism accounts for species richness in each cell. This correction accounts for the fact that areas with more species are likely to have more endemics by chance alone (Crisp and Laffan). It provides a balanced measure, considering rarity and richness and range sizes.
 
-We calculated CWE by dividing the WE in each grid cell by species richness.
+We calculated CWE by dividing the WE in each grid cell by species richness. CWE was fourth-root transformed prior to mapping to aid visualization.
 
 ### Statistical inference
 
@@ -711,11 +713,15 @@ Moran's I ranges from -1 to 1:
 -   0: No spatial autocorrelation (random distribution).
 -   -1: Perfect negative spatial autocorrelation (values are perfectly dispersed).
 
-Calculation of Moran's I requires a list of neighbours for each spatial unit, along with weights denoting the spatial proximity between units. Neighbouring spatial units (cells for point-based analysis) were identified as those within a 200 km radius.
+Calculation of Moran's I requires a list of neighbours for each spatial unit, along with weights denoting the spatial proximity between units. Neighbouring spatial units (cells) were identified as those within a 20 km radius.
 
 The significance of Moran's I test statistic was assessed by Monte Carlo randomisation, where the values of the biodiversity metric in question (e.g. weighted endemism) are randomly reassigned among the spatial units and Moran's I is calculated. This is repeated numerous times to create a randomisation distribution for Moran's I, against which the observed value is compared. We used 9999 Monte Carlo simulations.
 
-After testing for spatial autocorrelation across the whole study region (Australia), Getis-Ord Gi* [@getis92] was used to assess the significance of clustering of high values around each spatial unit, thereby allowing specific hotspots to be identified. To account for multiple comparisons, a significance level of P \<= 0.0001 was used [@anselin95].
+<!-- After testing for spatial autocorrelation across the whole study region (Australia), Getis-Ord Gi* [@getis92] was used to assess the significance of clustering of high values around each spatial unit, thereby allowing specific hotspots to be identified. To account for multiple comparisons, a significance level of P \<= 0.0001 was used [@anselin95]. -->
+
+### Hotspots
+
+'Hotspots' were identified for each of the biodiversity metrics as the cells with values greater than the 95th percentile.
 
 ## Data and code availability
 

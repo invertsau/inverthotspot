@@ -576,7 +576,7 @@ CWE_MI_point_ex <- readRDS(here("output/analysis/Cleaned_Mygalomorphae_point_CWE
 
 #### full dataset
 
-```{r}
+```{r, include = FALSE}
 # Extract POLYGONs from GEOMETRYCOLLECTIONs
 species_polys_clean <- species_polys |>
   st_collection_extract() |>
@@ -609,10 +609,15 @@ m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
 m1.poly$rich_perc <- m1.poly$richness > quantile(m1.poly$richness, probs = 0.95)
 m1.poly$WE_perc <- m1.poly$WE > quantile(m1.poly$WE, probs = 0.95)
 m1.poly$CWE_perc <- m1.poly$corrected_endemism > quantile(m1.poly$corrected_endemism, probs = 0.95)
+
+# Creating sf object
+m1_sf <- 
+  sf::st_as_sf(m1.poly) |> 
+  sf::st_transform(4326)
 ```
 
 #### expert-only data
-```{r}
+```{r, include = FALSE}
 # Extract POLYGONs from GEOMETRYCOLLECTIONs
 species_polys_expert_clean <- species_polys_expert |>
   st_collection_extract() |>
@@ -643,11 +648,16 @@ m1.poly_ex$corrected_endemism <- m1.poly_ex$WE/m1.poly_ex$richness
 m1.poly_ex$rich_perc <- m1.poly_ex$richness > quantile(m1.poly_ex$richness, probs = 0.95)
 m1.poly_ex$WE_perc <- m1.poly_ex$WE > quantile(m1.poly_ex$WE, probs = 0.95)
 m1.poly_ex$CWE_perc <- m1.poly_ex$corrected_endemism > quantile(m1.poly_ex$corrected_endemism, probs = 0.95)
+
+# creating sf object
+m1_sf_ex <- 
+  sf::st_as_sf(m1.poly_ex) |> 
+  sf::st_transform(4326)
 ```
 
 ### Species richness
 
-```{r}
+```{r, include = FALSE}
 # All data
 fig1a <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
@@ -748,7 +758,7 @@ fig1c + fig1d +
 # All data
 fig2a <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = WE), col = NA) + 
+  geom_sf(data = m1_sf, aes(fill = WE^0.25), col = NA) + 
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -762,7 +772,7 @@ fig2a <- ggplot() +
 # Expert data
 fig2b <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = WE), col = NA) + 
+  geom_sf(data = m1_sf_ex, aes(fill = WE^0.25), col = NA) + 
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -816,7 +826,7 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
 # All data
 fig2c <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = WE), col = NA) + 
+  geom_sf(data = m1_sf, aes(fill = WE^0.25), col = NA) + 
   geom_sf(data = subset(m1_sf, WE_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
@@ -830,7 +840,7 @@ fig2c <- ggplot() +
 # Expert data
 fig2d <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = WE), col = NA) + 
+  geom_sf(data = m1_sf_ex, aes(fill = WE^0.25), col = NA) + 
   geom_sf(data = subset(m1_sf_ex, WE_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
@@ -857,7 +867,7 @@ fig2c + fig2d +
 # All data
 fig3a <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = m1_sf, aes(fill = corrected_endemism^0.25), col = NA) + 
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -869,7 +879,7 @@ fig3a <- ggplot() +
 # "Expert Correct Endemism"
 fig3b <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism^0.25), col = NA) + 
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -922,7 +932,7 @@ tibble(dataset = c("Citizen Science + Preserved Specimen",
 # All data
 fig3c <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = m1_sf, aes(fill = corrected_endemism^0.25), col = NA) + 
   geom_sf(data = subset(m1_sf, CWE_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
@@ -935,7 +945,7 @@ fig3c <- ggplot() +
 # "Expert Correct Endemism"
 fig3d <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism^0.25), col = NA) + 
   geom_sf(data = subset(m1_sf_ex, CWE_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 

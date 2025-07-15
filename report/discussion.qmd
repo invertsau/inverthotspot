@@ -4,6 +4,8 @@ execute:
   eval: true
 ---
 
+# Discussion
+
 ```{r setup, include=FALSE, eval=TRUE}
 ## Setting up
  pacman::p_load(arrow, here, tidyverse, janitor, purrr, dplyr)
@@ -18,8 +20,6 @@ myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data =
 myg_spiders_cleaned_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1])
 
 ```
-
-# Discussion
 
 Globally, but particularly in Australia, invertebrates suffer from a paucity of ecological knowledge, which hinders their management and conservation [@new12; @taylor18]. Landscape approaches such as habitat protection are a key principal of conservation, helping to protect species and ecological communities from broadscale threats [@samways07; @kearney18]. Despite this, invertebrates are rarely considered in the designation of protected areas [@chowdhury23]. Prioritizing biodiversity hotspots in spatial conservation planning will enhance the effectiveness of protected areas for biodiversity conservation. The identification and management of endemism hotspots, i.e. areas where range-restricted species are concentrated, is an important strategy for curbing the likely high rate of invertebrate extinctions in Australia [@woinarski24]. Our analytical framework is a useful tool for identifying these hotspots and can be applied to different taxonomic groups. 
 

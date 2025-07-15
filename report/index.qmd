@@ -7,7 +7,7 @@ lightbox: true
 # Executive Summary {.unnumbered}
 
 ```{r, include=FALSE}
-pacman::p_load(arrow, here, stringr, purrr, ggplot2, sp, phyloregion, terra, ozmaps, patchwork)
+pacman::p_load(arrow, here, stringr, purrr, ggplot2, sp, phyloregion, terra, ozmaps, patchwork, dplyr, sf)
 
 # Load helper functions
 source(here("R/utils.R"))
@@ -18,21 +18,25 @@ myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data =
 # Load cleaned expert data 
 myg_spiders_cleaned_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1])
 
-species_polys_expert <- readRDS(here("output/spatial/Spatial_alpha_hulls_expertcleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds")) |> discard(is.null)
+species_polys_expert <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_expert_cleaned_expert_recordscleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds")) |>   discard(is.null)
 ```
 
 ```{r, include=FALSE}
-# Export only data
-# Combine into one large spatial dataframe
-combinedShp_ex <- do.call(what = rbind, args=species_polys_expert)
+# Expert only data
+# Extract POLYGONs from GEOMETRYCOLLECTIONs
+species_polys_expert_clean <- species_polys_expert |>
+  st_collection_extract() |>
+  group_by(species) |>
+  summarise(geometry = st_union(x))
+  
+combinedShp_ex <- terra::vect(species_polys_expert_clean)
 
-## Assign species names
-combinedShp_ex <- terra::vect(combinedShp_ex)
-names(combinedShp_ex) <- "species"
+### Calculate Community Matrix
+comm.poly_ex <- phyloregion::polys2comm(dat = combinedShp_ex, species = "species", trace=1, res = 0.05)
 
-comm.poly_ex <- phyloregion::polys2comm(dat = combinedShp_ex, species = "species", trace=1, res = 0.5)
-
+### Calulate weighted endemism 
 Endm.mygalomorph.poly_ex <- phyloregion::weighted_endemism(comm.poly_ex$comm_dat)
+str(Endm.mygalomorph.poly_ex)
 
 ## Join results back to spatial community data matrix
 m1.poly_ex <- merge(comm.poly_ex$map, data.frame(grids=names(Endm.mygalomorph.poly_ex), WE=Endm.mygalomorph.poly_ex), by="grids")
@@ -40,8 +44,10 @@ m1.poly_ex <- merge(comm.poly_ex$map, data.frame(grids=names(Endm.mygalomorph.po
 # Drop NA in WE
 m1.poly_ex <- m1.poly_ex[!is.na(m1.poly_ex$WE),]
 
+### Calulate corrected weighted endemism
 m1.poly_ex$corrected_endemism <- m1.poly_ex$WE/m1.poly_ex$richness
 
+# creating sf object
 m1_sf_ex <- 
   sf::st_as_sf(m1.poly_ex) |> 
   sf::st_transform(4326)
@@ -72,34 +78,36 @@ Moran's I and Getis-Ord Gi* statistics were used to identify spatial clustering 
 - Both datasets showed hotspots of CWE in south-west Western Australia and in the northern Cape York Peninsula, as well as a small hotspot in central Australia near the Warburton Range. The full dataset also showed a small hotspot located between Canberra and Sydney in New South Wales.
 
 ```{r, include=FALSE}
-# Expert data
-fig2b <-ggplot() +
-  geom_sf(data = m1_sf_ex, aes(fill = WE)) + 
+# Expert WE
+fig2b <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_ex, aes(fill = WE^0.25), col = NA) + 
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1, name = "Weighted Endemism") + 
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
   theme(legend.position = "bottom") + 
-  ggtitle("Weighted Endemism")
+  ggtitle("Preserved specimen data only")
 
 # "Expert Correct Endemism"
-fig3b <-ggplot() +
-  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism)) + 
+fig3b <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism^0.25), col = NA) + 
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1, 
-                              name = "Corrected Weighted Endemism") + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
   theme_minimal() +
   theme(legend.position = "bottom") + 
-  ggtitle("Corrected Weighted Endemism")
+  ggtitle("Preserved specimen data only")
 ```
 
 ```{r, echo=FALSE}
 #| fig-width: 8
 #| fig-cap: 
-#|   - "Maps showing (left) weighted endemism  and (right) corrected weighted endemism of Mygalmorphae spiders. These maps were created using the 'preserved specimen data only'"
+#|   - "Maps showing (left) weighted endemism  and (right) corrected weighted endemism of Mygalmorphae spiders. These maps were created using the 'preserved specimen data only.' Values were fourth-root transformed to aid visualization"
 
 fig2b + fig3b
 ```
