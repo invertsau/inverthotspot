@@ -78,10 +78,21 @@ job::job(
   buffer = 0.5, # account for neighbouring features
   restrict_sample = sf:::as_Spatial(aus)
   )
+    
+  # Project the bias effect in space
+model_bias_myg_proj <- sampbias::project_bias(model_bias_myg)
+
+# Map
+bias_map <- sampbias::map_bias(model_bias_myg_proj, type="log_sampling_rate")
   
   saveRDS(model_bias_myg, "output/sampbias_mygals.rds")
+  saveRDS(bias_map, "output/samp_bias_map.rds")
   }
 )
+```
+
+```{r}
+model_bias_myg <- readRDS("output/sampbias_mygals.rds")
 
 plot(model_bias_myg)
 ```
@@ -89,6 +100,8 @@ plot(model_bias_myg)
 Mapping spatial sampling bias
 
 ```{r}
+# need to do this within the same R session, i.e. entirely within job::job() as above, or entirely outside
+
 # Project the bias effect in space
 model_bias_myg_proj <- sampbias::project_bias(model_bias_myg)
 
