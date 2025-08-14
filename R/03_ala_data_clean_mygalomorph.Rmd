@@ -105,37 +105,50 @@ We used AFD data to ensure all species names in the ALA dataset are valid.
 <!-- Check names against a naming authority to make sure all species included in the analyses are valid -->
 
 ```{r, echo=FALSE}
-afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
+# afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
+# 
+# # Filter down to Arachnida
+# arachnids <- afd |>
+#   filter(CLASS == "ARACHNIDA") |>
+#   collect()
 
-# Filter down to Arachnida 
-arachnids <- afd |> 
-  filter(CLASS == "ARACHNIDA") |> 
-  collect()
+afd_myg <- read_csv(here("data/afd_myg_14-08-2025.csv"))
 ```
 
 <!-- Where is Mygalomorphae in the AFD? -->
 <!-- Filter down to Mygalomorphae using `HIGHER_CLASSIFICATION` -->
  
 ```{r, eval=FALSE, echo=F}
-arachnids |> 
-  pull(HIGHER_CLASSIFICATION) |> 
-  str_subset(pattern = "MYGALOMORPH")
+# arachnids |> 
+#   pull(HIGHER_CLASSIFICATION) |> 
+#   str_subset(pattern = "MYGALOMORPH")
 ```
 
 <!-- How many matches of ALA data do we have in the AFD? How many species did not match? Which species don't match? -->
 
 ```{r, echo=FALSE}
 # how many species in ALA data matched species in the AFD?
-AFD_matched <- myg_spiders |> 
-  filter(scientificName %in% arachnids$FULL_NAME) |> 
-  pull(scientificName) |> 
-  unique() |> 
-  length()  # put into sentence form
+AFD_matched <- myg_spiders |>
+  filter(
+    vapply(
+      scientificName,
+      \(x) any(grepl(paste0("\\b", x, "\\b"), afd_myg$SCIENTIFIC_NAME, ignore.case = TRUE)),
+      logical(1)
+    )
+  ) |>
+  pull(scientificName) |>
+  unique() |>
+  length()
 
-# Subset species in ALA data that DID NOT match with the AFD
-AFD_unmatched <- myg_spiders |> 
-  filter(! scientificName %in% arachnids$FULL_NAME) |> 
-  pull(scientificName) |> 
+AFD_unmatched <- myg_spiders |>
+  filter(!
+    vapply(
+      scientificName,
+      \(x) any(grepl(paste0("\\b", x, "\\b"), afd_myg$SCIENTIFIC_NAME, ignore.case = TRUE)),
+      logical(1)
+    )
+  ) |>
+  pull(scientificName) |>
   unique()
 
 # Compute reporting stats
@@ -151,10 +164,12 @@ We identified `r length(AFD_unmatched)`/`r unique(myg_spiders$scientificName) |>
 The AFD lists any applicable synonyms for each species within their database. The `r length(AFD_unmatched)` unmatched species might be synonyms of valid species.
 
 ```{r, echo=F}
-afd_synonyms <- word(arachnids$SYNONYMS, 1, 2)[complete.cases(word(arachnids$SYNONYMS, 1, 2))]
+AFD_synonyms <- afd_myg |> filter(!is.na(SPECIES),
+                                  NAME_TYPE == "Synonym")
+AFD_synonyms <- word(AFD_synonyms$SCIENTIFIC_NAME, 1,2, sep = " ")
 
 fuzzy_matched <- AFD_unmatched |> 
-  jaccard_left_join(afd_synonyms, n_bands = 20, band_width = 6, threshold = .8) |> 
+  jaccard_left_join(AFD_synonyms, n_bands = 20, band_width = 6, threshold = .8) |> 
   rename(ALA_names = value.x,
          AFD_synonyms = value.y)
 
@@ -170,7 +185,7 @@ fuzzy_matched
 These will be verified by experts to determine how to best handle them. For now,taxa in our dataset that are not matched in the AFD will be excluded.
 
 ```{r}
- myg_spiders_no_unmatched<- myg_spiders |> 
+ myg_spiders_no_unmatched <- myg_spiders |> 
   filter(! scientificName %in% AFD_unmatched)
 ```
 
