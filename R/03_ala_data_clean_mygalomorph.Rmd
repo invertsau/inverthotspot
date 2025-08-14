@@ -14,6 +14,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
 ```
 
+```{=html}
 <style>
 #toc ul.nav li ul li {
     display: none;
@@ -35,9 +36,7 @@ knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
     display: block !important;
 }
 </style>
-
-
-
+```
 # Cleaning data from ALA
 
 <!-- ## Load dependencies -->
@@ -50,8 +49,8 @@ source(here("R/utils.R"))
 
 ```
 
-
 <!-- Introduction message, and define variables  -->
+
 ```{r, echo=F}
 focus_taxon <- "Mygalomorphae spider"
 focus_taxon_short <- "Mygal"
@@ -59,7 +58,6 @@ focus_taxon_short <- "Mygal"
 ```
 
 This document lays out the workflow of cleaning **`r focus_taxon`** data from the ALA database using R.
-
 
 <!-- ## Read in parquet (observations retrieved from ALA) -->
 
@@ -88,17 +86,16 @@ Here we clean the data for taxonomic errors, such as misspelt and outdated names
 
 We verified that all records have species level taxonomic data.
 
-
 ### Read in Australian Faunal Directory (AFD) data to cross check out taxa
 
 The [Australian Faunal Directory (AFD)](https://biodiversity.org.au/afd/home) is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories.
 
-The AFD can provide information on: 
+The AFD can provide information on:
 
-- nomenclature and taxonomy of species (including current, previous, and synonyms of species names);
-- type data information;
-- bibliographic information for species;
-- distribution of species.
+-   nomenclature and taxonomy of species (including current, previous, and synonyms of species names);
+-   type data information;
+-   bibliographic information for species;
+-   distribution of species.
 
 We used AFD data to ensure all species names in the ALA dataset are valid.
 
@@ -116,8 +113,9 @@ afd_myg <- read_csv(here("data/afd_myg_14-08-2025.csv"))
 ```
 
 <!-- Where is Mygalomorphae in the AFD? -->
+
 <!-- Filter down to Mygalomorphae using `HIGHER_CLASSIFICATION` -->
- 
+
 ```{r, eval=FALSE, echo=F}
 # arachnids |> 
 #   pull(HIGHER_CLASSIFICATION) |> 
@@ -147,8 +145,7 @@ length(AFD_unmatched)
 unique(myg_spiders$scientificName) |> length()
 ```
 
-We identified `r length(AFD_unmatched)`/`r unique(myg_spiders$scientificName) |> length()` species in the ALA that did not match with names in the AFD (`r ( length(AFD_unmatched) / unique(myg_spiders$scientificName) |> length() )*100 |> round(2)`%). 
-
+We identified `r length(AFD_unmatched)`/`r unique(myg_spiders$scientificName) |> length()` species in the ALA that did not match with names in the AFD (`r ( length(AFD_unmatched) / unique(myg_spiders$scientificName) |> length() )*100 |> round(2)`%).
 
 <!-- Which of the ALA species not matched to AFD occur in the list of AFD arachnid species synonyms -->
 
@@ -167,17 +164,20 @@ fuzzy_matched <- AFD_unmatched |>
 issynonym_count = is.na(fuzzy_matched$AFD_synonyms) |> table() |> _[1]
 ```
 
-The potential synonym matches are as follows: 
+The potential synonym matches are as follows:
 
 ```{r}
 fuzzy_matched
 ```
 
-These will be verified by experts to determine how to best handle them. For now,taxa in our dataset that are not matched in the AFD will be excluded.
+These will be verified by experts to determine how to best handle them. - After consulting experts and checking the [World Spider Catalogue (WSC)](https://wsc.nmbe.ch/) it was determined that *Selenocosmia crassipes* is the correct name, and all *Phlogius crassipes* records were changed in the ALA dataset.
 
 ```{r}
  myg_spiders_no_unmatched <- myg_spiders |> 
-  filter(! scientificName %in% AFD_unmatched)
+  mutate(case_when(scientificName == "Phlogius crassipes" ~ "Selenocosmia crassipes",
+                   .default = scientificName),
+         case_when(species == "Phlogius crassipes" ~ "Selenocosmia crassipes",
+                   .default = species))
 ```
 
 <!-- Excluding introduced/invasives taxa -->
@@ -188,9 +188,8 @@ The [World Spider Catalogue (WSC)](https://wsc.nmbe.ch/) is a comprehensive onli
 
 ```{r, echo=F, include=F}
 # Read in spider data downloaded from WSC
-wsc <- read_csv(here("data/wsc/species_export_20230929.csv"))
+wsc <- read_csv(here("data/wsc/species_export_20250814.csv"))
 ```
-
 
 <!-- Have a look at distribution variable: How many contain "Australia"? Which ones are "Introduced to Australia"?  -->
 
@@ -225,7 +224,6 @@ no_Introduced_WSC <- length(which(myg_spiders$scientificName %in% introduced_tax
 
 There are **`r no_Introduced_WSC`** introduced species of spiders in the ALA data according to the WSC data.
 
-
 <!-- ### Global Register of Invasive and Introduced Species (GRIIS) -->
 
 The [Global Register of Invasive and Introduced Species (GRIIS)](http://griis.org/) is a project by the IUCN SSC Invasive Species Specialist Group to compile annotated and verified country-wise inventories of introduced and invasive species.
@@ -255,7 +253,7 @@ griis_all$class |> unique() # there are no arachnids in this list
 
 ```
 
-The GRIIS contains **`r count(griis_all)`** records of introduced species in Australia. 
+The GRIIS contains **`r count(griis_all)`** records of introduced species in Australia.
 
 **`r length(str_subset(griis_all$class, "Arachnida"))`** of these are Arachnids.
 
@@ -267,11 +265,11 @@ This function cross matches our species list to the WoRMS database
 
 ```{r, eval=FALSE, echo=F}
 # wm_records_taxamatch("Teranodes")
-myg_spiders <- myg_spiders_no_unmatched$species |> unique()
+myg_species <- myg_spiders_no_unmatched$species |> unique()
 
 
 job::job({
-  output_df <- purrr::map(myg_spiders,
+  output_df <- purrr::map(myg_species,
                    possibly(~wm_records_taxamatch(.x, marine = FALSE)  |>
                               pluck(1)  |>
                               mutate(search_term = .x) |>
@@ -283,8 +281,6 @@ job::job({
   saveRDS(output_df, paste0("output/", Sys.Date(), "_worrms_myg_wm_records_taxamatch.rds"))
 })
 ```
-
-
 
 ```{r, echo=FALSE}
 #read RDS
@@ -318,7 +314,7 @@ Here we clean the data for geographic errors.
 subset(myg_spiders, myg_spiders$country != "Australia")$country
 
 # keep only those in Australia
-myg_spiders <- subset(myg_spiders, myg_spiders$country == "Australia")
+myg_spiders_no_unmatched <- myg_spiders_no_unmatched |> filter(country == "Australia")
 
 myg_spiders_no_unmatched |> 
   filter(!country == "Australia")
@@ -328,12 +324,12 @@ myg_spiders_no_unmatched |>
 
 ```{r}
 map_area <- borders(col = "grey80", 
-          xlim = range(myg_spiders$decimalLongitude), 
-          ylim = range(myg_spiders$decimalLatitude))
+          xlim = range(myg_spiders_no_unmatched$decimalLongitude), 
+          ylim = range(myg_spiders_no_unmatched$decimalLatitude))
 ggplot() +
   coord_fixed() + 
   map_area + 
-  geom_point(data = myg_spiders,
+  geom_point(data = myg_spiders_no_unmatched,
              aes(x = decimalLongitude, y = decimalLatitude),
              colour = "black",
              size = 0.5) +
@@ -341,13 +337,11 @@ ggplot() +
 
 ```
 
-
 Coordinate Cleaner
 
-https://docs.ropensci.org/CoordinateCleaner/
+<https://docs.ropensci.org/CoordinateCleaner/>
 
-`.equ` = Equal longitude and latitude
-`.sea` = XXX 
+`.equ` = Equal longitude and latitude `.sea` = XXX
 
 ### Report how many records were removed under all Coordinate Cleaner tests
 
@@ -373,6 +367,7 @@ names(flagged_alltests)
 These are the tests performed and how many records were flagged in each
 
 <!-- Also check AOHI -->
+
 ```{r}
 #additional test
 myg_spiders_aohi <- cc_aohi(myg_spiders_no_unmatched)
@@ -403,7 +398,6 @@ ggplot() +
   theme_bw()
 ```
 
-
 `nrow(subset(flagged, .summary==FALSE))` of `nrow(flagged)` records were flagged
 
 <!-- define basemap for visualisation -->
@@ -432,7 +426,6 @@ base_map +
 ### Visualise .sea values
 
 FALSE are values that are flagged to occur in sea and therefore will be eventually excluded
-
 
 ```{r, echo=F}
 base_map +
@@ -476,33 +469,28 @@ base_map +
 
 ### Exclude records flagged by CoordinateCleaner
 
-Excluding: 
+Excluding:
 
-- .cap
-- .inst
-- .sea
+-   .inst
+-   .sea
 
 ```{r, echo=F}
 myg_spiders_geo_clean <- flagged_alltests |> 
-  filter(!.cap == FALSE,
-         !.inst == FALSE,
+  filter(!.inst == FALSE,
          !.sea == FALSE)
 
 summary(flagged_alltests)
 ```
 
-- The `r summary(flagged_alltests)[".cap"] |> as.vector()` records excluded due to being near a capitol vicinity. (`r (( summary(flagged_alltests)[".cap"] |> as.vector() / nrow(myg_spiders)) *100 ) |> round(2)`%)
-
-
 The `r summary(flagged_alltests)[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions. (`r (( summary(flagged_alltests)[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%)
 
-
-The `r summary(flagged_alltests)[".sea"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions. (`r (( summary(flagged_alltests)[".sea"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%)
+The `r summary(flagged_alltests)[".sea"] |> as.vector()` records excluded due to being in the ocean. (`r (( summary(flagged_alltests)[".sea"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%)
 
 ## Deduplication
+
 <!-- Check for duplicates (as the last step) -->
 
-In this step we can inspect and clean the data of duplicates 
+In this step we can inspect and clean the data of duplicates
 
 ```{r, echo=F}
 nrow(myg_spiders)
@@ -512,11 +500,11 @@ head(myg_spiders)
 myg_spiders_clean_coords <- myg_spiders_geo_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude))
 
-#checking for records with lat, long, and species duplicated
-lat_long_species_dups <- duplicated(myg_spiders_clean_coords[,c(4:5,14)]) |
-  duplicated(myg_spiders_clean_coords[,c(4:5,14)], fromLast = TRUE)
+#checking for records with lat, long, date, and species duplicated
+lat_long_species_dups <- duplicated(myg_spiders_clean_coords[,c(4:6,14)]) |
+  duplicated(myg_spiders_clean_coords[,c(4:6,14)], fromLast = TRUE)
 
-tabyl(lat_long_species_dups) # No records with lat, long, and species duplicated
+tabyl(lat_long_species_dups) # Number of records with lat, long, date, and species duplicated
 
 # Deduplicating
 deduplicated_myg_spiders <- myg_spiders_geo_clean |> 
@@ -529,45 +517,44 @@ deduplicated_myg_spiders <- myg_spiders_geo_clean |>
 ## Narrow down to species with enough observations
 
 ```{r}
-# Summarise number of observations by taxon
-deduplicated_myg_spiders |> 
-  group_by(scientificName) |> 
-  summarise(n = n()) |> 
-  arrange(-n)
-
-# Which ones have less than or equal 3 
-less_than_3_obs <- deduplicated_myg_spiders |> 
-  group_by(scientificName) |> 
-  summarise(n = n()) |> 
-  filter(n <= 3) |> 
-  pull(scientificName)
-
-myg_sp_enoughobs <- deduplicated_myg_spiders |> 
-  filter(!scientificName %in% less_than_3_obs)
-
-# How many species
-myg_sp_enoughobs |>
-  dplyr::select(scientificName) |> 
-  distinct() |> 
-  nrow()
+# # Summarise number of observations by taxon
+# deduplicated_myg_spiders |>
+#   group_by(scientificName) |>
+#   summarise(n = n()) |>
+#   arrange(-n)
+# 
+# # Which ones have less than or equal 3
+# less_than_3_obs <- deduplicated_myg_spiders |>
+#   group_by(scientificName) |>
+#   summarise(n = n()) |>
+#   filter(n < 3) |>
+#   pull(scientificName)
+# 
+# myg_sp_enoughobs <- deduplicated_myg_spiders |>
+#   filter(!scientificName %in% less_than_3_obs)
+# 
+# # How many species
+# myg_sp_enoughobs |>
+#   dplyr::select(scientificName) |>
+#   distinct() |>
+#   nrow()
 ```
 
 ## Exclude citizen science data
 
 ```{r}
-expert_records <- myg_sp_enoughobs |> 
+expert_records <- deduplicated_myg_spiders |> 
   filter(!basisOfRecord == "HUMAN_OBSERVATION")
 ```
-
 
 ## Export cleaned data as a .parquet
 
 <!-- Filename should contain the date of the parquet we read in at the start, export to output folder -->
+
 ```{r, echo=F}
 file_name <- str_split_1(get_latest_download(), "/")[3] 
 
-write_parquet(myg_sp_enoughobs, here(paste0("output/data/cleaned_", file_name)))
+write_parquet(deduplicated_myg_spiders, here(paste0("output/data/cleaned_", file_name)))
 
 write_parquet(expert_records, here(paste0("output/data/cleaned_expert_records", file_name)))
 ```
-
