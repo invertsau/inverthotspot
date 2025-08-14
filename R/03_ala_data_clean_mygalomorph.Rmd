@@ -128,26 +128,17 @@ afd_myg <- read_csv(here("data/afd_myg_14-08-2025.csv"))
 
 ```{r, echo=FALSE}
 # how many species in ALA data matched species in the AFD?
+afd_myg_valid <- afd_myg |> filter(!is.na(SPECIES),
+                                   NAME_TYPE == "Valid Name")
+
 AFD_matched <- myg_spiders |>
-  filter(
-    vapply(
-      scientificName,
-      \(x) any(grepl(paste0("\\b", x, "\\b"), afd_myg$SCIENTIFIC_NAME, ignore.case = TRUE)),
-      logical(1)
-    )
-  ) |>
+  filter(scientificName %in% word(afd_myg_valid$SCIENTIFIC_NAME, 1,2, sep = " ")) |>
   pull(scientificName) |>
   unique() |>
   length()
 
 AFD_unmatched <- myg_spiders |>
-  filter(!
-    vapply(
-      scientificName,
-      \(x) any(grepl(paste0("\\b", x, "\\b"), afd_myg$SCIENTIFIC_NAME, ignore.case = TRUE)),
-      logical(1)
-    )
-  ) |>
+  filter(!scientificName %in% word(afd_myg_valid$SCIENTIFIC_NAME, 1,2, sep = " ")) |>
   pull(scientificName) |>
   unique()
 

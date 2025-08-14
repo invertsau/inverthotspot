@@ -88,7 +88,7 @@ galah_call() |>
                decimalLongitude > 112, decimalLongitude < 154, # Limit to mainland of Australia and Tasmania
                taxonRank == "species") |> 
   galah_select(group = c("basic"), all_of(fields_we_want)) |> 
-  atlas_occurrences() 
+  atlas_occurrences(mint_doi = TRUE) 
   #atlas_counts()
 
 mygalomorphae_assertions <- 
