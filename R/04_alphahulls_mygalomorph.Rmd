@@ -107,12 +107,54 @@ base_map <- ggplot() +
   geom_sf(data = aus, fill = NA, colour = "black") + 
   theme_minimal()
 
+# add the points as sf for species without alpha hulls (< 3 records)
+myg_conr_nest_points <- myg_conr_nest |>
+    mutate(
+    conr_ahull_sf = map2(conr_ahull_sf, occ, ~{
+      if (is.null(.x)) {
+        # Convert occ tibble into sf POINTS
+        pts <- st_as_sf(.y, coords = c("decimalLongitude", "decimalLatitude"), crs = 4326)
+        # Collapse all points into a MULTIPOINT
+        st_union(pts) |> st_cast("MULTIPOINT")
+      } else {
+        sf::st_geometry(.x) |>
+        sf::st_cast("MULTILINESTRING") |> # to get filled polygons instead of just the boundaries
+        sf::st_polygonize()
+      }
+    })
+  )
+
 #Unnest the sf
 all_myg_alpha_sf <- myg_conr_nest |> 
   dplyr::select(species, conr_ahull_sf) |> 
   tidyr::unnest(cols = c(conr_ahull_sf)) |> 
-  dplyr::select(-tax) |> 
   sf::st_as_sf()
+
+all_myg_alpha_sf_points <- myg_conr_nest_points |> 
+  dplyr::select(species, conr_ahull_sf) |> 
+  tidyr::unnest(cols = c(conr_ahull_sf)) |> 
+  sf::st_as_sf()
+
+
+polys <- all_myg_alpha_sf_points |>
+  filter(st_geometry_type(conr_ahull_sf) == "GEOMETRYCOLLECTION")
+points <- all_myg_alpha_sf_points |>
+  filter(st_geometry_type(conr_ahull_sf) == "MULTIPOINT")
+
+
+all_myg_alpha_sf_points <- all_myg_alpha_sf_points %>%
+  mutate(
+    geometry = st_sfc(
+      map(conr_ahull_sf, ~{
+        if (st_geometry_type(.x) == "MULTIPOINT") {
+          st_geometrycollection(.x)   # wrap multipoint
+        } else {
+          .x                          # keep as-is
+        }
+      }),
+      crs = st_crs(.)
+    )
+  )
 
 # to get filled polygons instead of just the boundaries
 all_myg_alpha_sf <- all_myg_alpha_sf |> 
@@ -120,7 +162,7 @@ all_myg_alpha_sf <- all_myg_alpha_sf |>
   sf::st_polygonize()
 
 # crop to land area only
-all_myg_alpha_sf_land <- st_intersection(all_myg_alpha_sf, aus)
+all_myg_alpha_sf_land <- st_intersection(all_myg_alpha_sf_points, aus)
 
 # Save output
 # Clean up the name
@@ -130,11 +172,15 @@ saveRDS(all_myg_alpha_sf_land, here("output/spatial", paste0("Spatial_alpha_hull
 
 # Base map 
 base_map  + 
-  geom_sf(data = all_myg_alpha_sf_land, 
-          aes(geometry = x),
+  geom_sf(data = polys, 
+          aes(geometry = conr_ahull_sf),
            # colour = "black",
           colour = "#609966",
           fill = "lightgreen") +
+  geom_sf(data = points,
+             aes(geometry = conr_ahull_sf),
+             colour = "red",
+             fill = "red") +
   coord_sf(c(110, 155)) +
   theme_minimal() |> 
   theme(legend.position = "none")

@@ -13,6 +13,14 @@ knitr::opts_chunk$set(echo = TRUE)
 pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr, gstat)
 ```
 
+### Load in data
+```{r}
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
+
+myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1]) 
+```
+
+
 ### Load alpha hull spatial polygons
 
 This is a massive list, each element is a spatial polygon dataframe
@@ -41,7 +49,12 @@ species_polys_clean <- species_polys |>
 
 combinedShp <- terra::vect(species_polys_clean)
 
-combinedShp
+
+myg_spiders_cleaned_points <- myg_spiders_cleaned |>
+  filter(scientificName %in% species_points_clean$species)
+
+combinedShp_points <- terra::vect(species_points_clean)
+
 
 ```
 
@@ -51,22 +64,57 @@ Convert raw input distribution data to community at 0.05 decimal degrees
 `trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
 
 ```{r}
+# community matrix for species with alpha hulls (at least 3 records)
 comm.poly <- phyloregion::polys2comm(dat = combinedShp , trace=1, res = 0.05)
 str(comm.poly)
 plot(comm.poly$map)
+
+# community matrix for species without alpha hulls (<3 records)
+comm.point <- phyloregion::points2comm(dat = myg_spiders_cleaned_points, res = 0.05, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
+plot(comm.point$map)
+
+# combining
+all_species <- union(colnames(comm.poly$comm_dat), colnames(comm.point$comm_dat))
+
+missing_in_poly <- setdiff(all_species, colnames(comm.poly$comm_dat))
+missing_in_poly_matrix <- sparseMatrix(i = numeric(0), j = numeric(0), x = numeric(0),
+                                   dims = c(nrow(comm.poly$comm_dat), 
+                                            length(missing_in_poly)))
+colnames(missing_in_poly_matrix) <- missing_in_poly
+
+
+missing_in_point <- setdiff(all_species, colnames(comm.point$comm_dat))
+missing_in_point_matrix <- sparseMatrix(i = numeric(0), j = numeric(0), x = numeric(0),
+                                   dims = c(nrow(comm.point$comm_dat), 
+                                            length(missing_in_point)))
+colnames(missing_in_point_matrix) <- missing_in_point
+
+
+comm.poly_all_spp  <- cbind(comm.poly$comm_dat, missing_in_poly_matrix)
+comm.point_all_spp  <- cbind(comm.point$comm_dat, missing_in_point_matrix)
+
+comm_merged <- rbind(comm.poly_all_spp, comm.point_all_spp)
+
 ```
 
-### Calulate weighted endemism 
+### Calculate weighted endemism 
 
 ```{r}
-Endm.mygalomorph.poly <- phyloregion::weighted_endemism(comm.poly$comm_dat)
-str(Endm.mygalomorph.poly)
+Endm.mygalomorph <- phyloregion::weighted_endemism(comm_merged)
+
+# merging alpha hull- and point-based maps, ensuring that richness is summed in overlapping cells
+comm_overlapping <- merge(comm.poly$map, comm.point$map, by = "grids", all.x = TRUE)
+comm_overlapping$richness <- ifelse(is.na(comm_overlapping$richness.x), 0, comm_overlapping$richness.x) + ifelse(is.na(comm_overlapping$richness.y), 0, comm_overlapping$richness.y)
+
+non_overlapping <- comm.point$map |> (values(comm.point$map)[1] %in% values(comm.poly$map)[1]))
+
+comm_merged_map <- rbind(comm_overlapping, comm.point$map)
 
 ## Join results back to spatial community data matrix
-m1.poly <- merge(comm.poly$map, data.frame(grids=names(Endm.mygalomorph.poly), WE=Endm.mygalomorph.poly), by="grids")
+m1.poly_merged <- merge(comm_merged_map, data.frame(grids=names(Endm.mygalomorph), WE=Endm.mygalomorph), by="grids")
 
 # Drop NA in WE
-m1.poly <- m1.poly[!is.na(m1.poly$WE),]
+m1.poly <- m1.poly_merged[!is.na(m1.poly_merged$WE),]
 
 m1.poly
 ```
