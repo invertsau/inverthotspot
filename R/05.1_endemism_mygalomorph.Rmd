@@ -93,7 +93,27 @@ colnames(missing_in_point_matrix) <- missing_in_point
 comm.poly_all_spp  <- cbind(comm.poly$comm_dat, missing_in_poly_matrix)
 comm.point_all_spp  <- cbind(comm.point$comm_dat, missing_in_point_matrix)
 
-comm_merged <- rbind(comm.poly_all_spp, comm.point_all_spp)
+# Expand both matrices to have all grid cells
+all_grids <- union(rownames(comm.poly_all_spp), rownames(comm.point_all_spp))
+
+expand_rows <- function(mat, all_grids) {
+  missing <- setdiff(all_grids, rownames(mat))
+  if (length(missing) > 0) {
+    mat <- rbind(mat, Matrix(0, nrow=length(missing), ncol=ncol(mat),
+                             dimnames=list(missing, colnames(mat))))
+  }
+  mat[all_grids, , drop=FALSE]  # reorder rows
+}
+
+comm.poly_all_spp_all_grids <- expand_rows(comm.poly_all_spp, all_grids)
+comm.point_all_spp_all_grids <- expand_rows(comm.point_all_spp, all_grids)
+
+# matching order of columns prior to combining matrices
+species_order <- colnames(comm.poly_all_spp_all_grids)
+comm.point_all_spp_all_grids <- comm.point_all_spp_all_grids[,species_order, drop = FALSE]
+
+# Combine (sum values if grids overlap)
+comm_merged <- comm.poly_all_spp_all_grids + comm.point_all_spp_all_grids
 
 ```
 
@@ -314,14 +334,14 @@ plot(comm.point_ex$map)
 # combining
 all_species_ex <- union(colnames(comm.poly_ex$comm_dat), colnames(comm.point_ex$comm_dat))
 
-missing_in_poly_ex <- setdiff(all_species, colnames(comm.poly_ex$comm_dat))
+missing_in_poly_ex <- setdiff(all_species_ex, colnames(comm.poly_ex$comm_dat))
 missing_in_poly_ex_matrix <- sparseMatrix(i = numeric(0), j = numeric(0), x = numeric(0),
                                    dims = c(nrow(comm.poly_ex$comm_dat), 
                                             length(missing_in_poly_ex)))
 colnames(missing_in_poly_ex_matrix) <- missing_in_poly_ex
 
 
-missing_in_point_ex <- setdiff(all_species, colnames(comm.point_ex$comm_dat))
+missing_in_point_ex <- setdiff(all_species_ex, colnames(comm.point_ex$comm_dat))
 missing_in_point_ex_matrix <- sparseMatrix(i = numeric(0), j = numeric(0), x = numeric(0),
                                    dims = c(nrow(comm.point_ex$comm_dat), 
                                             length(missing_in_point_ex)))
@@ -331,7 +351,27 @@ colnames(missing_in_point_ex_matrix) <- missing_in_point_ex
 comm.poly_all_spp_ex  <- cbind(comm.poly_ex$comm_dat, missing_in_poly_ex_matrix)
 comm.point_all_spp_ex  <- cbind(comm.point_ex$comm_dat, missing_in_point_ex_matrix)
 
-comm_merged_ex <- rbind(comm.poly_all_spp_ex, comm.point_all_spp_ex)
+# Expand both matrices to have all grid cells
+all_grids_ex <- union(rownames(comm.poly_all_spp_ex), rownames(comm.point_all_spp_ex))
+
+expand_rows <- function(mat, all_grids) {
+  missing <- setdiff(all_grids, rownames(mat))
+  if (length(missing) > 0) {
+    mat <- rbind(mat, Matrix(0, nrow=length(missing), ncol=ncol(mat),
+                             dimnames=list(missing, colnames(mat))))
+  }
+  mat[all_grids, , drop=FALSE]  # reorder rows
+}
+
+comm.poly_all_spp_all_grids_ex <- expand_rows(comm.poly_all_spp_ex, all_grids_ex)
+comm.point_all_spp_all_grids_ex <- expand_rows(comm.point_all_spp_ex, all_grids_ex)
+
+# matching order of columns prior to combining matrices
+species_order_ex <- colnames(comm.poly_all_spp_all_grids_ex)
+comm.point_all_spp_all_grids_ex <- comm.point_all_spp_all_grids_ex[,species_order_ex, drop = FALSE]
+
+# Combine (sum values if grids overlap)
+comm_merged_ex <- comm.poly_all_spp_all_grids_ex + comm.point_all_spp_all_grids_ex
 ```
 
 ### Calulate weighted endemism 
@@ -489,3 +529,40 @@ tm_layout(frame = FALSE) +
 tm_layout(legend.outside = TRUE)
 ```
 
+
+
+```{r, echo=FALSE}
+# Exploring discrepancies between old and new data pulls
+
+exp_old <- read_parquet(here("output/data/cleaned_expert_recordscleaned_Mygalomorphae_withassertions_2024-03-13_ALA"))
+exp_new <- read_parquet(here("output/data/cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.parquet"))
+
+old_not_new <- exp_old[which(!exp_old$recordID %in% exp_new$recordID),]
+
+new_coarse <- read_parquet(here("data/galah/Mygalomorphae_withassertions_2025-08-14_ALA.parquet"))
+
+## alpha hulls
+filtered <- species_polys |> filter(species == "Selenocosmia stirlingi")
+filtered2 <- myg_spiders_cleaned |> filter(species == "Selenocosmia stirlingi")
+
+base_map  + 
+  # geom_sf(data = filtered, 
+  #         aes(geometry = x, fill = species),
+  #         #fill = species,
+  #         alpha = 0.5,
+  #         colour = "darkgrey") + 
+  # geom_sf_text(data = filtered, aes(label = species), size = 1) +
+  geom_point(data = exp_old, aes(x = decimalLongitude, y = decimalLatitude)) +
+  geom_point(data = exp_new, aes(x = decimalLongitude, y = decimalLatitude), fill = "red", col = "red") +
+  geom_point(data = old_not_new, aes(x = decimalLongitude, y = decimalLatitude), fill = "blue", col = "blue") +
+  geom_sf(data = aus, fill = NA, colour = "black") + 
+  coord_sf(c(110, 155)) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# ## Community Matrix
+# #|   #| fig-cap: 
+# #|   - "Community matrix of Mygalomorphae spiders from our cleaned dataset"
+# comm.poly <- phyloregion::polys2comm(dat = combinedShp , trace=1, res = 0.05)
+# plot(comm.poly$map)
+```
