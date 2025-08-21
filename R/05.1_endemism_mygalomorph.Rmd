@@ -147,6 +147,11 @@ m1.poly_merged <- merge(comm_merged_map, data.frame(grids=names(Endm.mygalomorph
 m1.poly <- m1.poly_merged[!is.na(m1.poly_merged$WE),]
 
 m1.poly
+
+# testing as raster
+m1.poly_rast <- rast(m1.poly, res = 5000)
+m1.poly_raster <- rasterize(m1.poly, m1.poly_rast, field = "richness")
+plot(m1.poly_raster)
 ```
 
 

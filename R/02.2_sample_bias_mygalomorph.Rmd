@@ -47,12 +47,13 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesa
 source(here("R/utils.R"))
 
 ## Read in parquet
-myg_spiders_all <- open_dataset(here(get_latest_cleaned_data()))
+myg_spiders_all <- read_parquet(here(get_latest_cleaned_data()[2]))
 
 ## Subset columns we want for ALA data overview
 myg_spiders_spatial_bias <- myg_spiders_all |> 
-  select(species, decimalLatitude, decimalLongitude, recordID) |> 
-  collect()
+  dplyr::select(species, decimalLongitude, decimalLatitude) |>
+  sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") |>
+  sf::st_transform(crs = "EPSG:9473") #projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
 ```
 
 # Spatial sampling bias for Mygalomorphae
@@ -61,7 +62,7 @@ Making a map of Australia
 
 ```{r}
 # map of Australia with states
-aus <- st_transform(ozmaps::ozmap_states, 4326)
+aus <- st_transform(ozmaps::ozmap_states, "EPSG:9473")
 
 ## check map
 ggplot(aus) + geom_sf(fill = "transparent")
@@ -74,8 +75,8 @@ job::job(
   {
     model_bias_myg <- sampbias::calculate_bias(
   x = myg_spiders_spatial_bias,
-  res = 0.05,   # scale of spatial resolution
-  buffer = 0.5, # account for neighbouring features
+  res = 5000,   # scale of spatial resolution
+  buffer = 50000, # account for neighbouring features
   restrict_sample = sf:::as_Spatial(aus)
   )
     
