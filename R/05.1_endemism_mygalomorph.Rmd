@@ -10,7 +10,9 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr, gstat)
+pacman::p_load(arrow, here, phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr, gstat)
+
+source("R/utils.R")
 ```
 
 ### Load in data
@@ -45,16 +47,24 @@ species_polys_clean <- species_polys_points |>
 # Combine into one large spatial dataframe
 combinedShp <- terra::vect(species_polys_clean)
 
+#projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+combinedShp_equalarea <- project(combinedShp, "EPSG:9473") 
+
 
 # now for point-only species
 species_points_clean <- species_polys_points |>
-  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
+  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT")) |>
+  rename(geometry = conr_ahull_sf) |>
+  dplyr::select(-NAME)
 
-combinedShp_points <- terra::vect(species_points_clean)
-
-## seems like phyloregion::points2comm() only needs original data format
+## seems like phyloregion::polys2comm() also works for point data if in spatvector format
 myg_spiders_cleaned_points <- myg_spiders_cleaned |>
-  filter(scientificName %in% species_points_clean$species)
+  filter(scientificName %in% species_points_clean$species) |>
+  dplyr::select(species, decimalLongitude, decimalLatitude) |>
+  sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") |>
+  sf::st_transform(crs = "EPSG:9473") #projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+
+combinedShp_points_equalarea <- terra::vect(myg_spiders_cleaned_points)
 
 ```
 
@@ -65,13 +75,13 @@ Convert raw input distribution data to community at 0.05 decimal degrees
 
 ```{r}
 # community matrix for species with alpha hulls (at least 3 records)
-comm.poly <- phyloregion::polys2comm(dat = combinedShp, trace=1, res = 0.05)
-str(comm.poly)
-plot(comm.poly$map)
+comm.poly <- phyloregion::polys2comm(dat = combinedShp_equalarea, trace=1, res = 5000)
+# str(comm.poly)
+# plot(comm.poly$map)
 
 # community matrix for species without alpha hulls (<3 records)
-comm.point <- phyloregion::points2comm(dat = myg_spiders_cleaned_points, res = 0.05, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
-plot(comm.point$map)
+comm.point <- phyloregion::polys2comm(dat = combinedShp_points_equalarea, trace = 1, res = 5000)
+
 
 # combining
 all_species <- union(colnames(comm.poly$comm_dat), colnames(comm.point$comm_dat))
@@ -115,6 +125,9 @@ comm.point_all_spp_all_grids <- comm.point_all_spp_all_grids[,species_order, dro
 # Combine (sum values if grids overlap)
 comm_merged <- comm.poly_all_spp_all_grids + comm.point_all_spp_all_grids
 
+# getting species with range size of 10000 m2 or less (<401 grid cells)
+comm_merged_short_range_spp <- comm_merged[,which(colSums(comm_merged)<401)]
+
 ```
 
 ### Calculate weighted endemism 
@@ -130,7 +143,7 @@ non_overlapping <- comm.point$map[which(!values(comm.point$map)[1]$grids %in% va
 
 comm_merged_map <- rbind(comm_overlapping, non_overlapping)
 
-## Join results back to spatial community data matrix
+## Join endemism results back to spatial community data matrix
 m1.poly_merged <- merge(comm_merged_map, data.frame(grids=names(Endm.mygalomorph), WE=Endm.mygalomorph), by="grids")
 
 # Drop NA in WE
@@ -161,6 +174,9 @@ m1.poly$CWE_perc <- m1.poly$corrected_endemism > quantile(m1.poly$corrected_ende
 Convert to `sf` 
 
 ```{r}
+crs(m1.poly) <- "EPSG:9473"
+
+# projecting back to WGS84 for visualisation
 m1_sf <- 
   sf::st_as_sf(m1.poly) |> 
   sf::st_transform(4326)
@@ -170,8 +186,8 @@ ggplot() +
   geom_sf(data = m1_sf, aes(fill = WE), col = NA) + 
   geom_sf(data = subset(m1_sf, WE_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
   viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
                               ) + 
   theme_minimal() +
@@ -303,16 +319,22 @@ species_polys_expert_clean <- species_polys_points_expert  |>
 # Combine into one large spatial dataframe
 combinedShp_ex <- terra::vect(species_polys_expert_clean)
 
+#projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+combinedShp_ex_equalarea <- project(combinedShp_ex, "EPSG:9473") 
+
 
 # now for point-only species
 species_points_ex_clean <- species_polys_points_expert |>
   filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
 
-combinedShp_ex_points <- terra::vect(species_points_ex_clean)
+## seems like phyloregion::polys2comm() also works for point data if in spatvector format
+myg_spiders_cleaned_points_ex <- myg_spiders_expert |>
+  filter(scientificName %in% species_points_ex_clean$species) |>
+  dplyr::select(species, decimalLongitude, decimalLatitude) |>
+  sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") |>
+  sf::st_transform(crs = "EPSG:9473") #projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
 
-## seems like phyloregion::points2comm() only needs original data format
-myg_spiders_expert_points <- myg_spiders_expert |>
-  filter(scientificName %in% species_points_ex_clean$species)
+combinedShp_ex_points_equalarea <- terra::vect(myg_spiders_cleaned_points_ex)
 
 ```
 
@@ -323,13 +345,14 @@ Convert raw input distribution data to community at 0.05 decimal degrees
 
 ```{r}
 # community matrix for species with alpha hulls (at least 3 records)
-comm.poly_ex <- phyloregion::polys2comm(dat = combinedShp_ex, trace=1, res = 0.05)
+comm.poly_ex <- phyloregion::polys2comm(dat = combinedShp_ex_equalarea, trace=1, res = 5000)
 str(comm.poly_ex)
 plot(comm.poly_ex$map)
 
 # community matrix for species without alpha hulls (<3 records)
-comm.point_ex <- phyloregion::points2comm(dat = myg_spiders_expert_points, res = 0.05, lon = "decimalLongitude", lat = "decimalLatitude", species = "species")
+comm.point_ex <- phyloregion::polys2comm(dat = combinedShp_ex_points_equalarea, res = 5000)
 plot(comm.point_ex$map)
+
 
 # combining
 all_species_ex <- union(colnames(comm.poly_ex$comm_dat), colnames(comm.point_ex$comm_dat))
@@ -418,6 +441,9 @@ m1.poly_ex$CWE_perc <- m1.poly_ex$corrected_endemism > quantile(m1.poly_ex$corre
 Convert to `sf` 
 
 ```{r}
+crs(m1.poly_ex) <- "EPSG:9473"
+
+# projecting back to WGS84 for visualisation
 m1_sf_ex <- 
   sf::st_as_sf(m1.poly_ex) |> 
   sf::st_transform(4326)
