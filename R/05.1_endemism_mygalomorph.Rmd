@@ -125,9 +125,6 @@ comm.point_all_spp_all_grids <- comm.point_all_spp_all_grids[,species_order, dro
 # Combine (sum values if grids overlap)
 comm_merged <- comm.poly_all_spp_all_grids + comm.point_all_spp_all_grids
 
-# getting species with range size of 10000 m2 or less (<401 grid cells)
-comm_merged_short_range_spp <- comm_merged[,which(colSums(comm_merged)<401)]
-
 ```
 
 ### Calculate weighted endemism 
@@ -208,6 +205,126 @@ ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
   geom_sf(data = m1_sf, aes(fill = richness), col = NA) + 
   geom_sf(data = subset(m1_sf, rich_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+## Short-range species
+
+### Pre-processing
+
+```{r}
+# getting species with range size of 10000 m2 or less (<401 grid cells)
+short_range_spp <- colnames(comm_merged[,which(colSums(comm_merged)<401)])
+
+# Extract POLYGONs from GEOMETRYCOLLECTIONs
+species_polys_clean_sr <- species_polys_clean |> 
+  filter(species %in% short_range_spp)
+  
+# Combine into one large spatial dataframe
+combinedShp_sr <- terra::vect(species_polys_clean_sr)
+
+#projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+combinedShp_equalarea_sr <- project(combinedShp_sr, "EPSG:9473") 
+
+
+```
+
+### Calculate Community Matrix
+
+Convert raw input distribution data to community at 0.05 decimal degrees
+`trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
+
+```{r}
+# community matrix for species with alpha hulls (at least 3 records)
+comm.poly_sr <- phyloregion::polys2comm(dat = combinedShp_equalarea_sr, trace=1, res = 5000)
+
+```
+
+### Calculate weighted endemism 
+
+```{r}
+comm_merged_short_range_spp <- comm_merged[,which(colSums(comm_merged)<401)]
+
+Endm.mygalomorph_sr <- phyloregion::weighted_endemism(comm_merged_short_range_spp)
+
+# merging alpha hull- and point-based maps, ensuring that richness is summed in overlapping cells
+comm_overlapping_sr <- merge(comm.poly_sr$map, comm.point$map, by = "grids", all.x = TRUE)
+comm_overlapping_sr$richness <- ifelse(is.na(comm_overlapping_sr$richness.x), 0, comm_overlapping_sr$richness.x) + ifelse(is.na(comm_overlapping_sr$richness.y), 0, comm_overlapping_sr$richness.y)
+
+non_overlapping_sr <- comm.point$map[which(!values(comm.point$map)[1]$grids %in% values(comm.poly_sr$map)[1]$grids),]
+
+comm_merged_map_sr <- rbind(comm_overlapping_sr, non_overlapping_sr)
+
+## Join endemism results back to spatial community data matrix
+m1.poly_merged_sr <- merge(comm_merged_map_sr, data.frame(grids=names(Endm.mygalomorph_sr), WE=Endm.mygalomorph_sr), by="grids")
+
+# Drop NA in WE
+m1.poly_sr <- m1.poly_merged_sr[!is.na(m1.poly_merged_sr$WE),]
+
+m1.poly_sr
+```
+
+
+### Calulate corrected weighted endemism
+
+Weighted endemism tally per cell divided by the species richness of that cell
+
+```{r}
+m1.poly_sr$corrected_endemism <- m1.poly_sr$WE/m1.poly_sr$richness
+```
+
+### Assigning hotspots based on percentile
+
+```{r}
+m1.poly_sr$rich_perc <- m1.poly_sr$richness > quantile(m1.poly_sr$richness, probs = 0.95)
+m1.poly_sr$WE_perc <- m1.poly_sr$WE > quantile(m1.poly_sr$WE, probs = 0.95)
+m1.poly_sr$CWE_perc <- m1.poly_sr$corrected_endemism > quantile(m1.poly_sr$corrected_endemism, probs = 0.95)
+```
+
+### Create a endemism map
+
+Convert to `sf` 
+
+```{r}
+crs(m1.poly_sr) <- "EPSG:9473"
+
+# projecting back to WGS84 for visualisation
+m1_sf_sr <- 
+  sf::st_as_sf(m1.poly_sr) |> 
+  sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_sr, aes(fill = WE), col = NA) + 
+  geom_sf(data = subset(m1_sf_sr, WE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_sr, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = subset(m1_sf_sr, CWE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_sr, aes(fill = richness), col = NA) + 
+  geom_sf(data = subset(m1_sf_sr, rich_perc), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
@@ -553,6 +670,126 @@ tm_shape(m1_sf_ex) + tm_fill(fill = "cluster_label",
                           col.legend = tm_legend(show = FALSE)) +
 tm_layout(frame = FALSE) +
 tm_layout(legend.outside = TRUE)
+```
+
+## Short-range species
+
+### Pre-processing
+
+```{r}
+# getting species with range size of 10000 m2 or less (<401 grid cells)
+short_range_spp_ex <- colnames(comm_merged_ex[,which(colSums(comm_merged_ex)<401)])
+
+# Extract POLYGONs from GEOMETRYCOLLECTIONs
+species_polys_clean_sr_ex <- species_polys_expert_clean |> 
+  filter(species %in% short_range_spp_ex)
+  
+# Combine into one large spatial dataframe
+combinedShp_sr_ex <- terra::vect(species_polys_clean_sr_ex)
+
+#projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+combinedShp_equalarea_sr_ex <- project(combinedShp_sr_ex, "EPSG:9473") 
+
+
+```
+
+### Calculate Community Matrix
+
+Convert raw input distribution data to community at 0.05 decimal degrees
+`trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
+
+```{r}
+# community matrix for species with alpha hulls (at least 3 records)
+comm.poly_sr_ex <- phyloregion::polys2comm(dat = combinedShp_equalarea_sr_ex, trace=1, res = 5000)
+
+```
+
+### Calculate weighted endemism 
+
+```{r}
+comm_merged_short_range_spp_ex <- comm_merged[,which(colSums(comm_merged_ex)<401)]
+
+Endm.mygalomorph_sr_ex <- phyloregion::weighted_endemism(comm_merged_short_range_spp_ex)
+
+# merging alpha hull- and point-based maps, ensuring that richness is summed in overlapping cells
+comm_overlapping_sr_ex <- merge(comm.poly_sr_ex$map, comm.point$map, by = "grids", all.x = TRUE)
+comm_overlapping_sr_ex$richness <- ifelse(is.na(comm_overlapping_sr_ex$richness.x), 0, comm_overlapping_sr_ex$richness.x) + ifelse(is.na(comm_overlapping_sr_ex$richness.y), 0, comm_overlapping_sr_ex$richness.y)
+
+non_overlapping_sr_ex <- comm.point$map[which(!values(comm.point$map)[1]$grids %in% values(comm.poly_sr_ex$map)[1]$grids),]
+
+comm_merged_map_sr_ex <- rbind(comm_overlapping_sr_ex, non_overlapping_sr_ex)
+
+## Join endemism results back to spatial community data matrix
+m1.poly_merged_sr_ex <- merge(comm_merged_map_sr_ex, data.frame(grids=names(Endm.mygalomorph_sr_ex), WE=Endm.mygalomorph_sr_ex), by="grids")
+
+# Drop NA in WE
+m1.poly_sr_ex <- m1.poly_merged_sr_ex[!is.na(m1.poly_merged_sr_ex$WE),]
+
+m1.poly_sr_ex
+```
+
+
+### Calulate corrected weighted endemism
+
+Weighted endemism tally per cell divided by the species richness of that cell
+
+```{r}
+m1.poly_sr_ex$corrected_endemism <- m1.poly_sr_ex$WE/m1.poly_sr_ex$richness
+```
+
+### Assigning hotspots based on percentile
+
+```{r}
+m1.poly_sr_ex$rich_perc <- m1.poly_sr_ex$richness > quantile(m1.poly_sr_ex$richness, probs = 0.95)
+m1.poly_sr_ex$WE_perc <- m1.poly_sr_ex$WE > quantile(m1.poly_sr_ex$WE, probs = 0.95)
+m1.poly_sr_ex$CWE_perc <- m1.poly_sr_ex$corrected_endemism > quantile(m1.poly_sr_ex$corrected_endemism, probs = 0.95)
+```
+
+### Create a endemism map
+
+Convert to `sf` 
+
+```{r}
+crs(m1.poly_sr_ex) <- "EPSG:9473"
+
+# projecting back to WGS84 for visualisation
+m1_sf_sr_ex <- 
+  sf::st_as_sf(m1.poly_sr_ex) |> 
+  sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_sr_ex, aes(fill = WE), col = NA) + 
+  geom_sf(data = subset(m1_sf_sr_ex, WE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_sr_ex, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = subset(m1_sf_sr_ex, CWE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_sr_ex, aes(fill = richness), col = NA) + 
+  geom_sf(data = subset(m1_sf_sr_ex, rich_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 
