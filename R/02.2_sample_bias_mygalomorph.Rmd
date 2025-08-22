@@ -52,8 +52,12 @@ myg_spiders_all <- read_parquet(here(get_latest_cleaned_data()[2]))
 ## Subset columns we want for ALA data overview
 myg_spiders_spatial_bias <- myg_spiders_all |> 
   dplyr::select(species, decimalLongitude, decimalLatitude) |>
-  sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") |>
-  sf::st_transform(crs = "EPSG:9473") #projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+  as.data.frame()#|>
+  # sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") |>
+  # sf::st_transform(crs = "EPSG:9473") #projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+
+# myg_spiders_spatial_bias_df <- data.frame(species = myg_spiders_spatial_bias[,1],
+#                                           terra::crds(myg_spiders_spatial_bias))
 ```
 
 # Spatial sampling bias for Mygalomorphae
@@ -62,7 +66,7 @@ Making a map of Australia
 
 ```{r}
 # map of Australia with states
-aus <- st_transform(ozmaps::ozmap_states, "EPSG:9473")
+aus <- st_transform(ozmaps::ozmap_states, "EPSG:4326")
 
 ## check map
 ggplot(aus) + geom_sf(fill = "transparent")
@@ -75,8 +79,8 @@ job::job(
   {
     model_bias_myg <- sampbias::calculate_bias(
   x = myg_spiders_spatial_bias,
-  res = 5000,   # scale of spatial resolution
-  buffer = 50000, # account for neighbouring features
+  res = 2,   # scale of spatial resolution
+  #buffer = 0.5, # account for neighbouring features
   restrict_sample = sf:::as_Spatial(aus)
   )
     
@@ -84,18 +88,36 @@ job::job(
 model_bias_myg_proj <- sampbias::project_bias(model_bias_myg)
 
 # Map
-bias_map <- sampbias::map_bias(model_bias_myg_proj, type="log_sampling_rate")
+png("output/sampling_bias/bias_map.png", width = 2000, height = 1500, res = 300)
+bias_map <- sampbias::map_bias(model_bias_myg_proj, type="sampling_rate")
+dev.off()
   
-  saveRDS(model_bias_myg, "output/sampbias_mygals.rds")
-  saveRDS(bias_map, "output/samp_bias_map.rds")
+  saveRDS(model_bias_myg, "output/sampling_bias/sampbias_mygals.rds")
+  saveRDS(bias_map, "output/sampling_bias/samp_bias_map.rds")
   }
 )
 ```
 
 ```{r}
-model_bias_myg <- readRDS("output/sampbias_mygals.rds")
+model_bias_myg <- readRDS("output/sampling_bias/sampbias_mygals.rds")
 
 plot(model_bias_myg)
+```
+
+getting sampling rate values as a raster
+
+```{r}
+bias_map <- readRDS("output/sampling_bias/samp_bias_map.rds")
+
+sampling_rate <- bias_map$data |> 
+  filter(split == "roads+airports+waterbodies+cities") |> 
+  mutate(log_sr = log(val+1)) |>
+  dplyr::select(-c(split, val))
+
+sampling_rate_raster <- rast(sampling_rate)
+crs(sampling_rate_raster) <- "EPSG:4326"
+sampling_rate_raster_ea <- project(sampling_rate_raster, "EPSG:9473")
+
 ```
 
 Mapping spatial sampling bias
