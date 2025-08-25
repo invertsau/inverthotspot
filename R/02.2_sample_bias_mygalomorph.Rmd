@@ -41,7 +41,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Setting up
 
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT, sampbias, viridis, rnaturalearthdata)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT, sampbias, viridis, rnaturalearthdata, remotes, terra)
+
+require(devtools)
+#gitcreds::gitcreds_delete()
+install_github(repo = "azizka/sampbias")
 
 # Load helper functions
 source(here("R/utils.R"))
@@ -52,12 +56,13 @@ myg_spiders_all <- read_parquet(here(get_latest_cleaned_data()[2]))
 ## Subset columns we want for ALA data overview
 myg_spiders_spatial_bias <- myg_spiders_all |> 
   dplyr::select(species, decimalLongitude, decimalLatitude) |>
-  as.data.frame()#|>
-  # sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") |>
-  # sf::st_transform(crs = "EPSG:9473") #projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+  as.data.frame() |>
+  sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") 
+  #sf::st_transform(crs = "EPSG:9473") #projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
 
-# myg_spiders_spatial_bias_df <- data.frame(species = myg_spiders_spatial_bias[,1],
-#                                           terra::crds(myg_spiders_spatial_bias))
+myg_spiders_spatial_bias_df <- data.frame(myg_spiders_spatial_bias[,1],
+                                          sf::st_coordinates(myg_spiders_spatial_bias)) |>
+  dplyr::select(-geometry)
 ```
 
 # Spatial sampling bias for Mygalomorphae
@@ -78,8 +83,8 @@ modelling spatial sampling bias
 job::job(
   {
     model_bias_myg <- sampbias::calculate_bias(
-  x = myg_spiders_spatial_bias,
-  res = 2,   # scale of spatial resolution
+  x = myg_spiders_spatial_bias_df,
+  res = 200000,   # scale of spatial resolution
   #buffer = 0.5, # account for neighbouring features
   restrict_sample = sf:::as_Spatial(aus)
   )
@@ -97,6 +102,68 @@ dev.off()
   }
 )
 ```
+
+trying eqal-area workflow from sampbias vignette
+```{r}
+#loading a text file to R
+occ <- read.csv(system.file("extdata",
+"mammals_borneo.csv",
+package = "sampbias"),
+sep = "\t")
+
+cit <- terra::vect(system.file("extdata/Borneo_major_cities.shp",
+package = "sampbias"))
+roa <- terra::vect(system.file("extdata/Borneo_major_roads.shp",
+package = "sampbias"))
+gazetteers <- list(cities = cit,
+roads = roa)
+
+
+# an example for an equal area raster
+#projection
+wgs84 <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+data(ea_raster)
+ea_raster <- terra::unwrap(ea_raster)
+# reproject the occurrence coordinates
+## select coordinates from the occ data.frame and create spatial object
+ea_occ <- terra::vect(occ, geom = c("decimalLongitude", "decimalLatitude"),
+crs="+proj=longlat +datum=WGS84")
+## transform to the same CRS as the equal area grid
+ea_occ <- terra::project(ea_occ, terra::crs(ea_raster))
+## retransform into a data.frame
+ea_occ <- data.frame(species = occ[, 1],
+terra::crds(ea_occ))
+colnames(ea_occ)[2:3] <- c("decimalLongitude","decimalLatitude")
+# reproject gazetteers
+## set the CRS in case it is not defined. Make sure to know the correct CRS.
+terra::crs(gazetteers[[1]]) <-
+terra::crs(gazetteers[[2]]) <-
+wgs84
+#transform to the new CRS
+# ea_gaz <- lapply(gazetteers, terra::project,
+# y = terra::crds(ea_raster))
+ea_gaz <- lapply(gazetteers, function(g) terra::project(g, y = ea_raster))
+
+# cit_ea <- project(gazetteers[[1]], terra::crs(ea_raster))
+# roa_ea <- project(gazetteers[[2]], terra::crs(ea_raster))
+# ea_gaz <- list(cities = cit_ea, roads = roa_ea)
+# run sampbias
+
+st_crs(ea_raster) == st_crs(ea_gaz[[1]])
+
+ea_bias <- calculate_bias(x = ea_occ,
+gaz = ea_gaz,
+inp_raster = ea_raster)
+
+plot(ea_bias)
+ea_bias_proj <- project_bias(ea_bias)
+
+sf::sf_use_s2(FALSE)
+map_bias(ea_bias_proj, type="sampling_rate")
+```
+
+
 
 ```{r}
 model_bias_myg <- readRDS("output/sampling_bias/sampbias_mygals.rds")
