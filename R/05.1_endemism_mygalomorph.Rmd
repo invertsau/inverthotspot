@@ -225,7 +225,7 @@ bias_map <- readRDS("output/sampling_bias/samp_bias_map.rds")
 
 #extracting estimated sampling rate data
 sampling_rate <- bias_map$data |> 
-  filter(split == "roads+airports+waterbodies+cities") |> 
+  filter(split == "roads+cities+airports+waterbodies") |> 
   mutate(log_sr = log(val+1)) |>
   dplyr::select(-c(split, val))
 
