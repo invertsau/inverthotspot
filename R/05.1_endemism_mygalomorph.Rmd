@@ -226,7 +226,8 @@ bias_map <- readRDS("output/sampling_bias/samp_bias_map.rds")
 #extracting estimated sampling rate data
 sampling_rate <- bias_map$data |> 
   filter(split == "roads+cities+airports+waterbodies") |> 
-  mutate(log_sr = log(val+1)) |>
+  mutate(fourthroot_sr = val^0.25) |>
+  #mutate(log_sr = log(val+1)) |>
   dplyr::select(-c(split, val))
 
 # creating raster and projecting to equal area crs
@@ -243,7 +244,7 @@ sampling_rate_raster_ea <- project(sampling_rate_raster, "EPSG:9473")
 m1.poly_rast <- rast(m1.poly, res = 5000)
 
 # transferring from m1.poly attributes into a SpatRaster with multiple layers
-m1.poly_raster <- rast(lapply(names(m1.poly)[-c(1:5,7,9:11)], function(att) {
+m1.poly_raster <- rast(lapply(names(m1.poly)[c(6,8,9)], function(att) {
   rasterize(m1.poly, m1.poly_rast, field = att)
 }))
 
@@ -433,6 +434,88 @@ ggplot() +
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
   viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+### Correcting for sampling bias
+
+#### converting biodiversity metrics to raster to perform corrections
+
+```{r}
+# testing as raster
+m1.poly_sr_rast <- rast(m1.poly_sr, res = 5000)
+
+# transferring from m1.poly attributes into a SpatRaster with multiple layers
+m1.poly_sr_raster <- rast(lapply(names(m1.poly_sr)[c(6,8,9)], function(att) {
+  rasterize(m1.poly_sr, m1.poly_sr_rast, field = att)
+}))
+
+# setting crs
+crs(m1.poly_sr_raster) <- crs(sampling_rate_raster_ea)
+
+# resampling sampling rate raster to get it to match the extent of the biodiversity raster
+sampling_rate_raster_ea_resample <- resample(sampling_rate_raster_ea, m1.poly_raster, method = "bilinear")
+
+# correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
+WE_sr_samp_bias <- terra::app(x = c(m1.poly_sr_raster$WE, sampling_rate_raster_ea_resample), 
+                           fun = function(x){return(x[1]/x[2])})
+CWE_sr_samp_bias <- terra::app(x = c(m1.poly_sr_raster$corrected_endemism, sampling_rate_raster_ea_resample), 
+                                 fun = function(x){return(x[1]/x[2])})
+richness_sr_samp_bias <- terra::app(x = c(m1.poly_sr_raster$richness, sampling_rate_raster_ea_resample), 
+                                 fun = function(x){return(x[1]/x[2])})
+
+merged_sr <- c(WE_sr_samp_bias, CWE_sr_samp_bias, richness_sr_samp_bias)
+names(merged_sr) <- c("WE_sr_sampbias_corrected", "CWE_sr_sampbias_corrected", "richness_sr_sampbias_corrected")
+
+# projecting back to WGS84 for visualisation
+merged_sr_geo <- project(merged_sr, "EPSG:4326")
+
+# converting to data frame for plotting
+merged_geo_sr_df <- as.data.frame(merged_sr_geo, xy = TRUE, na.rm = TRUE)
+
+# Assigning hotspots based on percentile
+merged_geo_sr_df$WE_perc <- merged_geo_sr_df$WE_sr_sampbias_corrected > quantile(merged_geo_sr_df$WE_sr_sampbias_corrected, probs = 0.95)
+merged_geo_sr_df$CWE_perc <- merged_geo_sr_df$CWE_sr_sampbias_corrected > quantile(merged_geo_sr_df$CWE_sr_sampbias_corrected, probs = 0.95)
+merged_geo_sr_df$rich_perc <- merged_geo_sr_df$richness_sr_sampbias_corrected > quantile(merged_geo_sr_df$richness_sr_sampbias_corrected, probs = 0.95)
+```
+
+#### plotting
+
+```{r}
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_sr_df, aes(x=x, y=y, fill = WE_sr_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_sr_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_sr_df, aes(x=x, y=y, fill = CWE_sr_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_sr_df, CWE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_sr_df, aes(x=x, y=y, fill = richness_sr_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_sr_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
@@ -704,6 +787,88 @@ ggplot() +
   theme(legend.position = "bottom")
 ```
 
+### Correcting for sampling bias
+
+#### converting biodiversity metrics to raster to perform corrections
+
+```{r}
+# testing as raster
+m1.poly_ex_rast <- rast(m1.poly_ex, res = 5000)
+
+# transferring from m1.poly attributes into a SpatRaster with multiple layers
+m1.poly_ex_raster <- rast(lapply(names(m1.poly_ex)[c(6,8,9)], function(att) {
+  rasterize(m1.poly_ex, m1.poly_ex_rast, field = att)
+}))
+
+# setting crs
+crs(m1.poly_ex_raster) <- crs(sampling_rate_raster_ea)
+
+# resampling sampling rate raster to get it to match the extent of the biodiversity raster
+sampling_rate_raster_ea_resample <- resample(sampling_rate_raster_ea, m1.poly_raster, method = "bilinear")
+
+# correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
+WE_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$WE, sampling_rate_raster_ea_resample), 
+                           fun = function(x){return(x[1]/x[2])})
+CWE_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$corrected_endemism, sampling_rate_raster_ea_resample), 
+                                 fun = function(x){return(x[1]/x[2])})
+richness_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$richness, sampling_rate_raster_ea_resample), 
+                                 fun = function(x){return(x[1]/x[2])})
+
+merged_ex <- c(WE_ex_samp_bias, CWE_ex_samp_bias, richness_ex_samp_bias)
+names(merged_ex) <- c("WE_ex_sampbias_corrected", "CWE_ex_sampbias_corrected", "richness_ex_sampbias_corrected")
+
+# projecting back to WGS84 for visualisation
+merged_ex_geo <- project(merged_ex, "EPSG:4326")
+
+# converting to data frame for plotting
+merged_geo_ex_df <- as.data.frame(merged_ex_geo, xy = TRUE, na.rm = TRUE)
+
+# Assigning hotspots based on percentile
+merged_geo_ex_df$WE_perc <- merged_geo_ex_df$WE_ex_sampbias_corrected > quantile(merged_geo_ex_df$WE_ex_sampbias_corrected, probs = 0.95)
+merged_geo_ex_df$CWE_perc <- merged_geo_ex_df$CWE_ex_sampbias_corrected > quantile(merged_geo_ex_df$CWE_ex_sampbias_corrected, probs = 0.95)
+merged_geo_ex_df$rich_perc <- merged_geo_ex_df$richness_ex_sampbias_corrected > quantile(merged_geo_ex_df$richness_ex_sampbias_corrected, probs = 0.95)
+```
+
+#### plotting
+
+```{r}
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_ex_df, aes(x=x, y=y, fill = WE_ex_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_ex_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_ex_df, aes(x=x, y=y, fill = CWE_ex_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_ex_df, CWE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_ex_df, aes(x=x, y=y, fill = richness_ex_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_ex_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
 https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Moran's%20I%20values%20significantly%20above,negative%20spatial%20autocorrelation%20or%20dispersion.
 
 ### Testing spatial autocorrelation
@@ -892,6 +1057,88 @@ ggplot() +
   coord_sf(xlim = c(110, 155), 
            ylim = c(-10, -45)) + 
   viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+### Correcting for sampling bias
+
+#### converting biodiversity metrics to raster to perform corrections
+
+```{r}
+# testing as raster
+m1.poly_sr_ex_rast <- rast(m1.poly_sr_ex, res = 5000)
+
+# transferring from m1.poly attributes into a SpatRaster with multiple layers
+m1.poly_sr_ex_raster <- rast(lapply(names(m1.poly_sr_ex)[c(6,8,9)], function(att) {
+  rasterize(m1.poly_sr_ex, m1.poly_sr_ex_rast, field = att)
+}))
+
+# setting crs
+crs(m1.poly_sr_ex_raster) <- crs(sampling_rate_raster_ea)
+
+# resampling sampling rate raster to get it to match the extent of the biodiversity raster
+sampling_rate_raster_ea_resample <- resample(sampling_rate_raster_ea, m1.poly_sr_ex_raster, method = "bilinear")
+
+# correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
+WE_sr_ex_samp_bias <- terra::app(x = c(m1.poly_sr_ex_raster$WE, sampling_rate_raster_ea_resample), 
+                           fun = function(x){return(x[1]/x[2])})
+CWE_sr_ex_samp_bias <- terra::app(x = c(m1.poly_sr_ex_raster$corrected_endemism, sampling_rate_raster_ea_resample), 
+                                 fun = function(x){return(x[1]/x[2])})
+richness_sr_ex_samp_bias <- terra::app(x = c(m1.poly_sr_ex_raster$richness, sampling_rate_raster_ea_resample), 
+                                 fun = function(x){return(x[1]/x[2])})
+
+merged_sr_ex <- c(WE_sr_ex_samp_bias, CWE_sr_ex_samp_bias, richness_sr_ex_samp_bias)
+names(merged_sr_ex) <- c("WE_sr_ex_sampbias_corrected", "CWE_sr_ex_sampbias_corrected", "richness_sr_ex_sampbias_corrected")
+
+# projecting back to WGS84 for visualisation
+merged_sr_ex_geo <- project(merged_sr_ex, "EPSG:4326")
+
+# converting to data frame for plotting
+merged_geo_sr_ex_df <- as.data.frame(merged_sr_ex_geo, xy = TRUE, na.rm = TRUE)
+
+# Assigning hotspots based on percentile
+merged_geo_sr_ex_df$WE_perc <- merged_geo_sr_ex_df$WE_sr_ex_sampbias_corrected > quantile(merged_geo_sr_ex_df$WE_sr_ex_sampbias_corrected, probs = 0.95)
+merged_geo_sr_ex_df$CWE_perc <- merged_geo_sr_ex_df$CWE_sr_ex_sampbias_corrected > quantile(merged_geo_sr_ex_df$CWE_sr_ex_sampbias_corrected, probs = 0.95)
+merged_geo_sr_ex_df$rich_perc <- merged_geo_sr_ex_df$richness_sr_ex_sampbias_corrected > quantile(merged_geo_sr_ex_df$richness_sr_ex_sampbias_corrected, probs = 0.95)
+```
+
+#### plotting
+
+```{r}
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_sr_ex_df, aes(x=x, y=y, fill = WE_sr_ex_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_sr_ex_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_sr_ex_df, aes(x=x, y=y, fill = CWE_sr_ex_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_sr_ex_df, CWE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_sr_ex_df, aes(x=x, y=y, fill = richness_sr_ex_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_sr_ex_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
   theme(legend.position = "bottom")
 ```
