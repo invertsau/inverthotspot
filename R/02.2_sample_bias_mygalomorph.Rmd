@@ -41,11 +41,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Setting up
 
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT, sampbias, viridis, rnaturalearthdata, remotes, terra)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT, sampbias, viridis, rnaturalearthdata, remotes, terra, occAssess)
 
 require(devtools)
 #gitcreds::gitcreds_delete()
 install_github(repo = "azizka/sampbias")
+install_github(repo = "robboyd/occAssess")
 
 # Load helper functions
 source(here("R/utils.R"))
@@ -72,6 +73,8 @@ Making a map of Australia
 ```{r}
 # map of Australia with states
 aus <- st_transform(ozmaps::ozmap_states, "EPSG:4326")
+
+aus_raster <- raster(st_transform(aus,"EPSG:9473"))
 
 ## check map
 ggplot(aus) + geom_sf(fill = "transparent")
@@ -164,7 +167,6 @@ map_bias(ea_bias_proj, type="sampling_rate")
 ```
 
 
-
 ```{r}
 model_bias_myg <- readRDS("output/sampling_bias/sampbias_mygals.rds")
 
@@ -185,7 +187,37 @@ sampling_rate_raster <- rast(sampling_rate)
 crs(sampling_rate_raster) <- "EPSG:4326"
 sampling_rate_raster_ea <- project(sampling_rate_raster, "EPSG:9473")
 
+rasterlayer <- raster(sampling_rate_raster_ea)
 ```
+
+## Broadly quantifying spatial bias
+
+```{r}
+myg_spiders_spat_bias <- myg_spiders_all |> 
+  mutate(year = as.numeric(str_sub(eventDate,1,4))) |>
+  dplyr::select(species, decimalLongitude, decimalLatitude, coordinateUncertaintyInMeters, year, taxonRank) |>
+  as.data.frame() |>
+  sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") |>
+  sf::st_transform(crs = "EPSG:9473") #projmyg_spiders_spat_biasecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+
+myg_spiders_spat_bias_df <- as.data.frame(st_coordinates(myg_spiders_spat_bias)) |>
+  mutate(species = myg_spiders_spat_bias$species,
+         spatialUncertainty = myg_spiders_spat_bias$coordinateUncertaintyInMeters,
+         year = myg_spiders_spat_bias$year,
+         taxonRank = myg_spiders_spat_bias$taxonRank)
+
+spat_bias <- assessSpatialBias(myg_spiders_spat_bias_df, species = "species", x = "X", y = "Y", spatialUncertainty = "spatialUncertainty", year = "year", identifier = "taxonRank", periods = list(min(myg_spiders_spat_bias_df$year, na.rm = TRUE):max(myg_spiders_spat_bias_df$year, na.rm = TRUE)), mask = rasterlayer)
+```
+
+## Population density
+data downloaded from earthdata.nasa.gov (gridded population fo the world, v4)
+
+```{r}
+pop_density <- rast("data/sampling_bias/pop_density/gpw_v4_population_density_adjusted_to_2015_unwpp_country_totals_rev11_2020_2pt5_min.tif")
+
+plot(pop_density)
+```
+
 
 Mapping spatial sampling bias
 
