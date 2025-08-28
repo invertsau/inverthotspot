@@ -1,0 +1,553 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<mdb:MD_Metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cat="http://standards.iso.org/iso/19115/-3/cat/1.0" xmlns:cit="http://standards.iso.org/iso/19115/-3/cit/1.0" xmlns:gcx="http://standards.iso.org/iso/19115/-3/gcx/1.0" xmlns:gex="http://standards.iso.org/iso/19115/-3/gex/1.0" xmlns:lan="http://standards.iso.org/iso/19115/-3/lan/1.0" xmlns:srv="http://standards.iso.org/iso/19115/-3/srv/2.0" xmlns:mac="http://standards.iso.org/iso/19115/-3/mac/1.0" xmlns:mas="http://standards.iso.org/iso/19115/-3/mas/1.0" xmlns:mcc="http://standards.iso.org/iso/19115/-3/mcc/1.0" xmlns:mco="http://standards.iso.org/iso/19115/-3/mco/1.0" xmlns:mda="http://standards.iso.org/iso/19115/-3/mda/1.0" xmlns:mdb="http://standards.iso.org/iso/19115/-3/mdb/1.0" xmlns:mdt="http://standards.iso.org/iso/19115/-3/mdt/1.0" xmlns:mex="http://standards.iso.org/iso/19115/-3/mex/1.0" xmlns:mrl="http://standards.iso.org/iso/19115/-3/mrl/1.0" xmlns:mds="http://standards.iso.org/iso/19115/-3/mds/1.0" xmlns:mmi="http://standards.iso.org/iso/19115/-3/mmi/1.0" xmlns:mpc="http://standards.iso.org/iso/19115/-3/mpc/1.0" xmlns:mrc="http://standards.iso.org/iso/19115/-3/mrc/1.0" xmlns:mrd="http://standards.iso.org/iso/19115/-3/mrd/1.0" xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0" xmlns:mrs="http://standards.iso.org/iso/19115/-3/mrs/1.0" xmlns:msr="http://standards.iso.org/iso/19115/-3/msr/1.0" xmlns:mdq="http://standards.iso.org/iso/19157/-2/mdq/1.0" xmlns:dqc="http://standards.iso.org/iso/19157/-2/dqc/1.0" xmlns:gco="http://standards.iso.org/iso/19115/-3/gco/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:gfc="http://www.isotc211.org/2005/gfc" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<mdb:metadataIdentifier>
+		<mcc:MD_Identifier>
+			<mcc:code>
+				<gco:CharacterString>81dd25c1-d2cd-4fb4-9603-6ce6aea22a39</gco:CharacterString>
+			</mcc:code>
+		</mcc:MD_Identifier>
+	</mdb:metadataIdentifier>
+	<mdb:defaultLocale>
+		<lan:PT_Locale>
+			<lan:language>
+				<lan:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="eng">eng</lan:LanguageCode>
+			</lan:language>
+			<lan:country>
+				<lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="AU">AU</lan:CountryCode>
+			</lan:country>
+			<lan:characterEncoding>
+				<lan:MD_CharacterSetCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_CharacterSetCode" codeListValue="utf8">utf8</lan:MD_CharacterSetCode>
+			</lan:characterEncoding>
+		</lan:PT_Locale>
+	</mdb:defaultLocale>
+	<mdb:metadataScope>
+		<mdb:MD_MetadataScope>
+			<mdb:resourceScope>
+				<mcc:MD_ScopeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_ScopeCode" codeListValue="005">005</mcc:MD_ScopeCode>
+			</mdb:resourceScope>
+			<mdb:name>
+				<gco:CharacterString>Feature layer</gco:CharacterString>
+			</mdb:name>
+		</mdb:MD_MetadataScope>
+	</mdb:metadataScope>
+	<mdb:contact>
+		<cit:CI_Responsibility>
+			<cit:role>
+				<cit:CI_RoleCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_RoleCode" codeListValue="publisher">publisher</cit:CI_RoleCode>
+			</cit:role>
+			<cit:party>
+				<cit:CI_Organisation>
+					<cit:name>
+						<gco:CharacterString>Australian Bureau of Statistics</gco:CharacterString>
+					</cit:name>
+					<cit:contactInfo>
+						<cit:CI_Contact>
+							<cit:address>
+								<cit:CI_Address>
+									<cit:electronicMailAddress>
+										<gco:CharacterString>geography@abs.gov.au</gco:CharacterString>
+									</cit:electronicMailAddress>
+								</cit:CI_Address>
+							</cit:address>
+						</cit:CI_Contact>
+					</cit:contactInfo>
+				</cit:CI_Organisation>
+			</cit:party>
+		</cit:CI_Responsibility>
+	</mdb:contact>
+	<mdb:dateInfo>
+		<cit:CI_Date>
+			<cit:date>
+				<gco:DateTime>2025-03-12T11:06:40.086725</gco:DateTime>
+			</cit:date>
+			<cit:dateType>
+				<cit:CI_DateTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_DateTypeCode" codeListValue="Publication">Publication</cit:CI_DateTypeCode>
+			</cit:dateType>
+		</cit:CI_Date>
+	</mdb:dateInfo>
+	<mdb:metadataStandard>
+		<cit:CI_Citation>
+			<cit:title>
+				<gco:CharacterString>ISO 19115-3 Geographic Information - Metadata - Part 1: Fundamentals</gco:CharacterString>
+			</cit:title>
+			<cit:edition>
+				<gco:CharacterString>2014</gco:CharacterString>
+			</cit:edition>
+		</cit:CI_Citation>
+	</mdb:metadataStandard>
+	<mdb:otherLocale>
+		<lan:PT_Locale>
+			<lan:language>
+				<lan:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="eng">eng</lan:LanguageCode>
+			</lan:language>
+			<lan:country>
+				<lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="AU">AU</lan:CountryCode>
+			</lan:country>
+			<lan:characterEncoding>
+				<lan:MD_CharacterSetCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_CharacterSetCode" codeListValue="utf8">utf8</lan:MD_CharacterSetCode>
+			</lan:characterEncoding>
+		</lan:PT_Locale>
+	</mdb:otherLocale>
+	<mdb:referenceSystemInfo>
+		<mrs:MD_ReferenceSystem>
+			<mrs:referenceSystemIdentifier>
+				<mcc:MD_Identifier>
+					<mcc:code>
+						<gco:CharacterString>3577</gco:CharacterString>
+					</mcc:code>
+					<mcc:codeSpace>
+						<gco:CharacterString>EPSG</gco:CharacterString>
+					</mcc:codeSpace>
+				</mcc:MD_Identifier>
+			</mrs:referenceSystemIdentifier>
+		</mrs:MD_ReferenceSystem>
+	</mdb:referenceSystemInfo>
+	<mdb:identificationInfo>
+		<mri:MD_DataIdentification>
+			<mri:citation>
+				<cit:CI_Citation>
+					<cit:title>
+						<gco:CharacterString>ABS Regional population 2023–24: Population grid 2024</gco:CharacterString>
+					</cit:title>
+					<cit:alternateTitle>
+						<gco:CharacterString>Population grid 2024</gco:CharacterString>
+					</cit:alternateTitle>
+					<cit:date>
+						<cit:CI_Date>
+							<cit:date>
+								<gco:DateTime>2025-03-12T11:06:40.086725</gco:DateTime>
+							</cit:date>
+							<cit:dateType>
+								<cit:CI_DateTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_DateTypeCode" codeListValue="Publication">Publication</cit:CI_DateTypeCode>
+							</cit:dateType>
+						</cit:CI_Date>
+					</cit:date>
+					<cit:citedResponsibleParty>
+						<cit:CI_Responsibility>
+							<cit:role>
+								<cit:CI_RoleCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_RoleCode" codeListValue="publisher">publisher</cit:CI_RoleCode>
+							</cit:role>
+							<cit:party>
+								<cit:CI_Organisation>
+									<cit:name>
+										<gco:CharacterString>Australian Bureau of Statistics</gco:CharacterString>
+									</cit:name>
+									<cit:contactInfo>
+										<cit:CI_Contact>
+											<cit:address>
+												<cit:CI_Address>
+													<cit:electronicMailAddress>
+														<gco:CharacterString>geography@abs.gov.au</gco:CharacterString>
+													</cit:electronicMailAddress>
+												</cit:CI_Address>
+											</cit:address>
+										</cit:CI_Contact>
+									</cit:contactInfo>
+								</cit:CI_Organisation>
+							</cit:party>
+						</cit:CI_Responsibility>
+					</cit:citedResponsibleParty>
+				</cit:CI_Citation>
+			</mri:citation>
+			<mri:abstract>
+				<gco:CharacterString>The Australian Population grid 2024 was created using 2024 Estimated Residential Population (ERP) by Statistical Area Level 1 2021 (SA1) data. This data was modelled to 1 kilometre square grid cells to represent the population density of Australia (people per square kilometre). This is modelled data and should be used and interpreted with caution.
+
+SA1s are defined by the Australian Statistical Geography Standard (ASGS) Edition 3 2021. The grid was constructed using the National Nested Grid Standard.
+ 
+Processing steps:
+
+A subset of the ABS Address Register was created to represent residential addresses as closely as possible. Indigenous Community Points were included where no AR point existed. SA1 centroid points were included where no AR or ICP point existed within an SA1. All these layers were combined into a single point layer (Allpoints).
+
+The Allpoints layer was overlaid with the SA1 boundaries to give every point an SA1 code. Points without an SA1 code (outside all SA1 regions) were dropped.
+
+ERP by SA1 was averaged across all points within each SA1.Points were converted to raster using the National Nested Grid as template. Point population values which fell within each raster cell were summed.
+&lt;p&gt;
+	&lt;strong&gt;
+		 Data and geography references
+	&lt;/strong&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;
+		Main source data publication:
+		&lt;a href="https://www.abs.gov.au/statistics/people/population/regional-population/2023-24" target="_blank"&gt;
+			 Regional population, 2023–24 financial year
+		&lt;/a&gt;
+	&lt;/li&gt;
+	&lt;li&gt;
+		Geographic boundary information:
+		&lt;a href="https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026" target="_blank"&gt;
+			 Australian Statistical Geography Standard (ASGS) Edition 3
+		&lt;/a&gt;
+	&lt;/li&gt;
+	&lt;li&gt;
+		Further information:
+		&lt;a href="https://www.abs.gov.au/methodologies/regional-population-methodology/2023-24" target="_blank"&gt;
+			 Regional Population 2023–24 Methodology
+		&lt;/a&gt;
+	&lt;/li&gt;
+	&lt;li&gt;
+		Source:
+		&lt;a href="https://www.abs.gov.au/" target="_blank"&gt;
+			 Australian Bureau of Statistics (ABS)
+		&lt;/a&gt;
+	&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+	&lt;strong&gt;
+		 Contact the Australian Bureau of Statistics
+	&lt;/strong&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;
+		Email
+		&lt;a href="mailto:geography@abs.gov.au"&gt;
+			 geography@abs.gov.au
+		&lt;/a&gt;
+		 if you have any questions or feedback about this web service.
+	&lt;/li&gt;
+	&lt;li&gt;
+		&lt;a href="https://www.subscribe.abs.gov.au/geospatialnews" target="_blank"&gt;
+			 Subscribe
+		&lt;/a&gt;
+		 to get updates on ABS web services and geospatial products.
+	&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+	&lt;strong&gt;
+		 Privacy at the Australian Bureau of Statistics
+	&lt;/strong&gt;
+	&lt;br /&gt;
+	 Read how the ABS manages personal information -
+	&lt;a href="https://www.abs.gov.au/about/legislation-and-policy/privacy/privacy-abs" target="_blank"&gt;
+		 ABS privacy policy.
+	&lt;/a&gt;
+&lt;/p&gt;</gco:CharacterString>
+			</mri:abstract>
+			<mri:purpose>
+				<gco:CharacterString>A geographic representation (1 kilometre square grid) of Australia's estimated residential population in 2024.</gco:CharacterString>
+			</mri:purpose>
+			<mri:credit>
+				<gco:CharacterString>Australian Bureau of Statistics (ABS)</gco:CharacterString>
+			</mri:credit>
+			<mri:pointOfContact>
+				<cit:CI_Responsibility>
+					<cit:role>
+						<cit:CI_RoleCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_RoleCode" codeListValue="publisher">publisher</cit:CI_RoleCode>
+					</cit:role>
+					<cit:party>
+						<cit:CI_Organisation>
+							<cit:name>
+								<gco:CharacterString>Australian Bureau of Statistics</gco:CharacterString>
+							</cit:name>
+							<cit:contactInfo>
+								<cit:CI_Contact>
+									<cit:address>
+										<cit:CI_Address>
+											<cit:electronicMailAddress>
+												<gco:CharacterString>geography@abs.gov.au</gco:CharacterString>
+											</cit:electronicMailAddress>
+										</cit:CI_Address>
+									</cit:address>
+								</cit:CI_Contact>
+							</cit:contactInfo>
+						</cit:CI_Organisation>
+					</cit:party>
+				</cit:CI_Responsibility>
+			</mri:pointOfContact>
+			<mri:spatialRepresentationType>
+				<mcc:MD_SpatialRepresentationTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_SpatialRepresentationTypeCode" codeListValue="vector">vector</mcc:MD_SpatialRepresentationTypeCode>
+			</mri:spatialRepresentationType>
+			<mri:topicCategory>
+				<mri:MD_TopicCategoryCode>016</mri:MD_TopicCategoryCode>
+			</mri:topicCategory>
+			<mri:extent>
+				<gex:EX_Extent>
+					<gex:geographicElement>
+						<gex:EX_GeographicBoundingBox>
+							<gex:extentTypeCode>
+								<gco:Boolean>true</gco:Boolean>
+							</gex:extentTypeCode>
+							<gex:westBoundLongitude>
+								<gco:Decimal>-3901000</gco:Decimal>
+							</gex:westBoundLongitude>
+							<gex:eastBoundLongitude>
+								<gco:Decimal>3500000</gco:Decimal>
+							</gex:eastBoundLongitude>
+							<gex:southBoundLatitude>
+								<gco:Decimal>-5100000</gco:Decimal>
+							</gex:southBoundLatitude>
+							<gex:northBoundLatitude>
+								<gco:Decimal>-1000000</gco:Decimal>
+							</gex:northBoundLatitude>
+						</gex:EX_GeographicBoundingBox>
+					</gex:geographicElement>
+					<gex:temporalElement>
+						<gex:EX_TemporalExtent>
+							<gex:extent>
+								<gml:TimeInstant>
+									<gml:timePosition>20250225</gml:timePosition>
+								</gml:TimeInstant>
+							</gex:extent>
+						</gex:EX_TemporalExtent>
+					</gex:temporalElement>
+				</gex:EX_Extent>
+			</mri:extent>
+			<mri:resourceMaintenance>
+				<mmi:MD_MaintenanceInformation>
+					<mmi:maintenanceAndUpdateFrequency>
+						<mmi:MD_MaintenanceFrequencyCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_MaintenanceFrequencyCode" codeListValue="008">008</mmi:MD_MaintenanceFrequencyCode>
+					</mmi:maintenanceAndUpdateFrequency>
+					<mmi:contact>
+						<cit:CI_Responsibility>
+							<cit:role>
+								<cit:CI_RoleCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_RoleCode" codeListValue="publisher">publisher</cit:CI_RoleCode>
+							</cit:role>
+							<cit:party>
+								<cit:CI_Organisation>
+									<cit:name>
+										<gco:CharacterString>Australian Bureau of Statistics</gco:CharacterString>
+									</cit:name>
+									<cit:contactInfo>
+										<cit:CI_Contact>
+											<cit:address>
+												<cit:CI_Address>
+													<cit:electronicMailAddress>
+														<gco:CharacterString>geography@abs.gov.au</gco:CharacterString>
+													</cit:electronicMailAddress>
+												</cit:CI_Address>
+											</cit:address>
+										</cit:CI_Contact>
+									</cit:contactInfo>
+								</cit:CI_Organisation>
+							</cit:party>
+						</cit:CI_Responsibility>
+					</mmi:contact>
+				</mmi:MD_MaintenanceInformation>
+			</mri:resourceMaintenance>
+			<mri:descriptiveKeywords>
+				<mri:MD_Keywords>
+					<mri:keyword>
+						<gco:CharacterString>Geographic Services</gco:CharacterString>
+					</mri:keyword>
+					<mri:thesaurusName uuidref="723f6998-058e-11dc-8314-0800200c9a66"/>
+				</mri:MD_Keywords>
+			</mri:descriptiveKeywords>
+			<mri:descriptiveKeywords>
+				<mri:MD_Keywords>
+					<mri:keyword>
+						<gco:CharacterString>ABS</gco:CharacterString>
+					</mri:keyword><mri:keyword>
+						<gco:CharacterString>Australia</gco:CharacterString>
+					</mri:keyword><mri:keyword>
+						<gco:CharacterString>Demography</gco:CharacterString>
+					</mri:keyword><mri:keyword>
+						<gco:CharacterString>Population</gco:CharacterString>
+					</mri:keyword><mri:keyword>
+						<gco:CharacterString>2024</gco:CharacterString>
+					</mri:keyword>
+				</mri:MD_Keywords>
+			</mri:descriptiveKeywords>
+			<mri:resourceConstraints>
+				<mco:MD_Constraints>
+					<mco:useLimitation>
+						<gco:CharacterString>Copyright and creative commons of CC BY 4.0: Website privacy, copyright and disclaimer ABS copyright
+Legal Authority: Census and Statistics Act 1905
+Security Classification: Official
+No sensitive data</gco:CharacterString>
+					</mco:useLimitation>
+				</mco:MD_Constraints>
+			</mri:resourceConstraints>
+			<mri:defaultLocale>
+				<lan:PT_Locale>
+					<lan:language>
+						<lan:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="eng">eng</lan:LanguageCode>
+					</lan:language>
+					<lan:country>
+						<lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="AU">AU</lan:CountryCode>
+					</lan:country>
+					<lan:characterEncoding>
+						<lan:MD_CharacterSetCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_CharacterSetCode" codeListValue="utf8">utf8</lan:MD_CharacterSetCode>
+					</lan:characterEncoding>
+				</lan:PT_Locale>
+			</mri:defaultLocale>
+		</mri:MD_DataIdentification>
+	</mdb:identificationInfo>
+	<mdb:metadataConstraints>
+		<mco:MD_Constraints>
+			<mco:useLimitation>
+				<gco:CharacterString>Copyright and creative commons of CC BY 4.0: Website privacy, copyright and disclaimer ABS copyright
+Legal Authority: Census and Statistics Act 1905
+Security Classification: Official
+No sensitive data</gco:CharacterString>
+			</mco:useLimitation>
+		</mco:MD_Constraints>
+	</mdb:metadataConstraints>
+	<mdb:metadataMaintenance>
+		<mmi:MD_MaintenanceInformation>
+			<mmi:maintenanceAndUpdateFrequency>
+				<mmi:MD_MaintenanceFrequencyCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_MaintenanceFrequencyCode" codeListValue="008">008</mmi:MD_MaintenanceFrequencyCode>
+			</mmi:maintenanceAndUpdateFrequency>
+		</mmi:MD_MaintenanceInformation>
+	</mdb:metadataMaintenance>
+	<mdb:resourceLineage>
+		<mrl:LI_Lineage>
+			<mrl:statement>
+				<gco:CharacterString>https://www.abs.gov.au/methodologies/regional-population-methodology/2023-24</gco:CharacterString>
+			</mrl:statement>
+		</mrl:LI_Lineage>
+	</mdb:resourceLineage>
+	<mdb:contentInfo>
+		<mrc:MD_FeatureCatalogue>
+  		<mrc:featureCatalogue>
+    		<gfc:FC_FeatureCatalogue>
+      		<name xmlns="https://schemas.isotc211.org/19139/-/cat/1.2">
+      			<gco:CharacterString> Data Dictionary</gco:CharacterString>
+      		</name>
+        	<scope xmlns="https://schemas.isotc211.org/19139/-/cat/1.2"/>
+        	<versionNumber xmlns="https://schemas.isotc211.org/19139/-/cat/1.2"/>
+        	<versionDate xmlns="https://schemas.isotc211.org/19139/-/cat/1.2"/>
+        	<gfc:producer/>
+        	<gfc:identifier>
+        		<mcc:MD_Identifier>
+        			<mcc:code>
+        				<gco:CharacterString>81dd25c1-d2cd-4fb4-9603-6ce6aea22a39</gco:CharacterString>
+        			</mcc:code>
+        		</mcc:MD_Identifier>
+        	</gfc:identifier>
+        	<gfc:featureType>
+        		<gfc:FC_FeatureType>
+        			<gfc:typeName>81dd25c1-d2cd-4fb4-9603-6ce6aea22a39</gfc:typeName>
+            	<gfc:definition>
+            		<gco:CharacterString>The Australian Population grid 2024 was created using 2024 Estimated Residential Population (ERP) by Statistical Area Level 1 2021 (SA1) data. This data was modelled to 1 kilometre square grid cells to represent the population density of Australia (people per square kilometre). This is modelled data and should be used and interpreted with caution.
+
+SA1s are defined by the Australian Statistical Geography Standard (ASGS) Edition 3 2021. The grid was constructed using the National Nested Grid Standard.
+ 
+Processing steps:
+
+A subset of the ABS Address Register was created to represent residential addresses as closely as possible. Indigenous Community Points were included where no AR point existed. SA1 centroid points were included where no AR or ICP point existed within an SA1. All these layers were combined into a single point layer (Allpoints).
+
+The Allpoints layer was overlaid with the SA1 boundaries to give every point an SA1 code. Points without an SA1 code (outside all SA1 regions) were dropped.
+
+ERP by SA1 was averaged across all points within each SA1.Points were converted to raster using the National Nested Grid as template. Point population values which fell within each raster cell were summed.
+&lt;p&gt;
+	&lt;strong&gt;
+		 Data and geography references
+	&lt;/strong&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;
+		Main source data publication:
+		&lt;a href="https://www.abs.gov.au/statistics/people/population/regional-population/2023-24" target="_blank"&gt;
+			 Regional population, 2023–24 financial year
+		&lt;/a&gt;
+	&lt;/li&gt;
+	&lt;li&gt;
+		Geographic boundary information:
+		&lt;a href="https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026" target="_blank"&gt;
+			 Australian Statistical Geography Standard (ASGS) Edition 3
+		&lt;/a&gt;
+	&lt;/li&gt;
+	&lt;li&gt;
+		Further information:
+		&lt;a href="https://www.abs.gov.au/methodologies/regional-population-methodology/2023-24" target="_blank"&gt;
+			 Regional Population 2023–24 Methodology
+		&lt;/a&gt;
+	&lt;/li&gt;
+	&lt;li&gt;
+		Source:
+		&lt;a href="https://www.abs.gov.au/" target="_blank"&gt;
+			 Australian Bureau of Statistics (ABS)
+		&lt;/a&gt;
+	&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+	&lt;strong&gt;
+		 Contact the Australian Bureau of Statistics
+	&lt;/strong&gt;
+&lt;/p&gt;
+&lt;ul&gt;
+	&lt;li&gt;
+		Email
+		&lt;a href="mailto:geography@abs.gov.au"&gt;
+			 geography@abs.gov.au
+		&lt;/a&gt;
+		 if you have any questions or feedback about this web service.
+	&lt;/li&gt;
+	&lt;li&gt;
+		&lt;a href="https://www.subscribe.abs.gov.au/geospatialnews" target="_blank"&gt;
+			 Subscribe
+		&lt;/a&gt;
+		 to get updates on ABS web services and geospatial products.
+	&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+	&lt;strong&gt;
+		 Privacy at the Australian Bureau of Statistics
+	&lt;/strong&gt;
+	&lt;br /&gt;
+	 Read how the ABS manages personal information -
+	&lt;a href="https://www.abs.gov.au/about/legislation-and-policy/privacy/privacy-abs" target="_blank"&gt;
+		 ABS privacy policy.
+	&lt;/a&gt;
+&lt;/p&gt;</gco:CharacterString>
+							</gfc:definition>
+            	<gfc:isAbstract/>
+            	<gfc:Provider>
+        				<cit:CI_Responsibility>
+        					<cit:role>
+          					<cit:CI_RoleCode codeList="https://schemas.isotc211.org/Resources/codelists.xml#ISO19115.cit.CI_RoleCode" codeListValue="custodian">custodian</cit:CI_RoleCode>
+          				</cit:role>
+          				<cit:party>
+          					<cit:CI_Organisation>
+            					<cit:name>  
+           							<gco:CharacterString>Australian Bureau of Statistics</gco:CharacterString>
+            					</cit:name>
+            				</cit:CI_Organisation>
+          				</cit:party>
+        				</cit:CI_Responsibility>
+        			</gfc:Provider>
+								<gfc:carrierOfCharacteristics>
+            	<gfc:FC_FeatureAttribute>
+              	<gfc:memberName>People_per_point</gfc:memberName>
+              	<gfc:alias>
+              		<gco:CharacterString>People per point</gco:CharacterString>
+              	</gfc:alias>
+                <gfc:definition>
+                	<gco:CharacterString>Population density (people per square kilometre) modelled from 2024 Estimated Resident Population (ERP) by Statistical Area Level 1 2021 (SA1) data.</gco:CharacterString>
+                </gfc:definition>
+                <gfc:cardinality>
+                	<gco:CharacterString>[1..1]</gco:CharacterString>
+                </gfc:cardinality>
+                <gfc:designation>
+                	<gco:CharacterString>Attribute</gco:CharacterString>
+                </gfc:designation>
+                <gfc:valueType>
+                	<gco:TypeName>
+                  	<gco:aName>
+                  		<gco:CharacterString/>
+                  	</gco:aName>
+                  </gco:TypeName>
+                </gfc:valueType>
+                <gfc:Provider>
+        					<cit:CI_Responsibility>
+        						<cit:role>
+          						<cit:CI_RoleCode codeList="https://schemas.isotc211.org/Resources/codelists.xml#ISO19115.cit.CI_RoleCode" codeListValue="custodian">custodian</cit:CI_RoleCode>
+          					</cit:role>
+          					<cit:party>
+          						<cit:CI_Organisation>
+            						<cit:name>  
+           								<gco:CharacterString>Australian Bureau of Statistics</gco:CharacterString>
+            						</cit:name>
+            					</cit:CI_Organisation>
+          					</cit:party>
+        					</cit:CI_Responsibility>
+        				</gfc:Provider>
+            	</gfc:FC_FeatureAttribute>
+            </gfc:carrierOfCharacteristics>
+ 						</gfc:FC_FeatureType>
+        	</gfc:featureType>
+				</gfc:FC_FeatureCatalogue>
+			</mrc:featureCatalogue>
+		</mrc:MD_FeatureCatalogue>
+	</mdb:contentInfo>
+</mdb:MD_Metadata>

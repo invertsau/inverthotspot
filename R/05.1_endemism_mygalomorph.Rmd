@@ -10,7 +10,7 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-pacman::p_load(arrow, here, phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr, gstat)
+pacman::p_load(arrow, here, phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis, spdep, purrr, gstat, raster)
 
 source("R/utils.R")
 ```
@@ -217,7 +217,7 @@ ggplot() +
 
 ### Correcting for sampling bias
 
-#### getting sampling rate values as a raster
+#### getting sampling rate and pop density values as a raster
 
 ```{r}
 #reading output from sampbias package
@@ -235,6 +235,10 @@ sampling_rate_raster <- rast(sampling_rate)
 crs(sampling_rate_raster) <- "EPSG:4326"
 sampling_rate_raster_ea <- project(sampling_rate_raster, "EPSG:9473")
 
+# loading in population density for the 2023-24 financial year (Australian Bureau of Statistics. (2023-24). Regional population. ABS. https://www.abs.gov.au/statistics/people/population/regional-population/2023-24.)
+pop_density <- rast("data/sampling_bias/pop_density/apg24e_1_0_0.tif")
+crs(pop_density) <- "EPSG:3577"
+pop_density_ea <- project(pop_density, "EPSG:9473")
 ```
 
 #### converting biodiversity metrics to raster to perform corrections
@@ -251,8 +255,46 @@ m1.poly_raster <- rast(lapply(names(m1.poly)[c(6,8,9)], function(att) {
 # setting crs
 crs(m1.poly_raster) <- crs(sampling_rate_raster_ea)
 
-# resampling sampling rate raster to get it to match the extent of the biodiversity raster
+# resampling sampling rate and pop density rasters to get them to match the extent and resolution of the biodiversity raster
 sampling_rate_raster_ea_resample <- resample(sampling_rate_raster_ea, m1.poly_raster, method = "bilinear")
+
+pop_density_aggregate <- terra::aggregate(pop_density_ea, fact = 5, fun = sum) # aggregating 1x1 km grid to a 5x5 km grid
+pop_density_resample <- resample(pop_density_aggregate, m1.poly_raster, method = "bilinear")
+log_pop_density_resample <- log(pop_density_resample+1)
+
+#estimating influence of pop density via a gaussian smoothing kernel
+# Parameters
+sigma_km <- 50 # influence becomes near zero beyond 3*sigma
+cellsize_km <- res(log_pop_density_resample)[1] / 1000  # convert cell size to km
+sigma_cells <- sigma_km / cellsize_km
+radius_cells <- 3*sigma_cells  # cutoff at 3σ
+# Build Gaussian kernel matrix
+xy <- expand.grid(-radius_cells:radius_cells, -radius_cells:radius_cells)
+d <- sqrt(xy[,1]^2 + xy[,2]^2) # distance from the source (pythagorus)
+w <- matrix(exp(-(d^2) / (2*sigma_cells^2)), # gaussian kernel formula
+            nrow=2*radius_cells+1, byrow=FALSE)
+
+# human access/sampling effort as decay from cells based on population
+decay <- focal(log_pop_density_resample, w=w, fun="mean", na.policy="omit", na.rm = TRUE)
+plot(decay)
+names(decay) <- "pop_density_influence"
+
+# standardising pop density effect
+decay_mean <- global(decay, "mean", na.rm = TRUE)[1,1]
+decay_sd <- global(decay, "sd", na.rm = TRUE)[1,1]
+decay_std <- (decay - decay_mean)/decay_sd
+
+#standardising sampling rate
+sampling_rate_raster_ea_resample_mean <- global(sampling_rate_raster_ea_resample, "mean", na.rm = TRUE)[1,1]
+sampling_rate_raster_ea_resample_sd <- global(sampling_rate_raster_ea_resample, "sd", na.rm = TRUE)[1,1]
+sampling_rate_raster_ea_resample_std <- (sampling_rate_raster_ea_resample -
+                                         sampling_rate_raster_ea_resample_mean)/sampling_rate_raster_ea_resample_sd
+
+#combining the two bias sources
+tot_samp_bias <- mean(decay_std, sampling_rate_raster_ea_resample_std)
+names(tot_samp_bias) <- "total_sampling_bias"
+plot(c(decay_std, sampling_rate_raster_ea_resample_std, tot_samp_bias))
+
 
 # correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
 WE_samp_bias <- terra::app(x = c(m1.poly_raster$WE, sampling_rate_raster_ea_resample), 

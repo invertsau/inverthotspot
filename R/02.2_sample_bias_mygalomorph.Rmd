@@ -41,12 +41,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Setting up
 
 # install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT, sampbias, viridis, rnaturalearthdata, remotes, terra, occAssess)
+pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesanderson, dplyr, DT, sampbias, viridis, rnaturalearthdata, remotes, terra, occAssess, raster)
 
-require(devtools)
-#gitcreds::gitcreds_delete()
-install_github(repo = "azizka/sampbias")
-install_github(repo = "robboyd/occAssess")
+# require(devtools)
+# #gitcreds::gitcreds_delete()
+# install_github(repo = "azizka/sampbias")
+# install_github(repo = "robboyd/occAssess")
 
 # Load helper functions
 source(here("R/utils.R"))
@@ -210,10 +210,10 @@ spat_bias <- assessSpatialBias(myg_spiders_spat_bias_df, species = "species", x 
 ```
 
 ## Population density
-data downloaded from earthdata.nasa.gov (gridded population fo the world, v4)
+data downloaded from the Australian Bereau of Statistics (Australian Bureau of Statistics. (2023-24). Regional population. ABS. https://www.abs.gov.au/statistics/people/population/regional-population/2023-24.)
 
 ```{r}
-pop_density <- rast("data/sampling_bias/pop_density/gpw_v4_population_density_adjusted_to_2015_unwpp_country_totals_rev11_2020_2pt5_min.tif")
+pop_density <- rast("data/sampling_bias/pop_density/apg24e_1_0_0.tif")
 
 plot(pop_density)
 ```
