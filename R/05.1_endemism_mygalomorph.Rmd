@@ -217,7 +217,7 @@ ggplot() +
 
 ### Correcting for sampling bias
 
-#### getting sampling rate and pop density values as a raster
+#### getting sampling rate and pop density values as rasters
 
 ```{r}
 #reading output from sampbias package
@@ -226,8 +226,7 @@ bias_map <- readRDS("output/sampling_bias/samp_bias_map.rds")
 #extracting estimated sampling rate data
 sampling_rate <- bias_map$data |> 
   filter(split == "roads+cities+airports+waterbodies") |> 
-  mutate(fourthroot_sr = val^0.25) |>
-  #mutate(log_sr = log(val+1)) |>
+  mutate(log_sr = log(val+1)) |>
   dplyr::select(-c(split, val))
 
 # creating raster and projecting to equal area crs
@@ -244,17 +243,19 @@ pop_density_ea <- project(pop_density, "EPSG:9473")
 #### converting biodiversity metrics to raster to perform corrections
 
 ```{r}
-# testing as raster
+# converting biodiversity metrics to raster to perform corrections
 m1.poly_rast <- rast(m1.poly, res = 5000)
-
 # transferring from m1.poly attributes into a SpatRaster with multiple layers
 m1.poly_raster <- rast(lapply(names(m1.poly)[c(6,8,9)], function(att) {
   rasterize(m1.poly, m1.poly_rast, field = att)
 }))
-
 # setting crs
 crs(m1.poly_raster) <- crs(sampling_rate_raster_ea)
+```
 
+#### estimating sampling bias
+
+```{r}
 # resampling sampling rate and pop density rasters to get them to match the extent and resolution of the biodiversity raster
 sampling_rate_raster_ea_resample <- resample(sampling_rate_raster_ea, m1.poly_raster, method = "bilinear")
 
@@ -295,13 +296,22 @@ tot_samp_bias <- mean(decay_std, sampling_rate_raster_ea_resample_std)
 names(tot_samp_bias) <- "total_sampling_bias"
 plot(c(decay_std, sampling_rate_raster_ea_resample_std, tot_samp_bias))
 
+# normalising to a range of 1-10
+tot_samp_bias_min <- global(tot_samp_bias, "min", na.rm = TRUE)[1,1]
+tot_samp_bias_max <- global(tot_samp_bias, "max", na.rm = TRUE)[1,1]
+tot_samp_bias_norm <- ((tot_samp_bias - tot_samp_bias_min)/(tot_samp_bias_max - tot_samp_bias_min))*(10-1)+1 
 
-# correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
-WE_samp_bias <- terra::app(x = c(m1.poly_raster$WE, sampling_rate_raster_ea_resample), 
+```
+
+#### adjusting biodiversity metrics based on sampling bias
+
+```{r}
+# adjusting biodiversity metrics based on sampling bias
+WE_samp_bias <- terra::app(x = c(m1.poly_raster$WE, tot_samp_bias_norm), 
                            fun = function(x){return(x[1]/x[2])})
-CWE_samp_bias <- terra::app(x = c(m1.poly_raster$corrected_endemism, sampling_rate_raster_ea_resample), 
+CWE_samp_bias <- terra::app(x = c(m1.poly_raster$corrected_endemism, tot_samp_bias_norm), 
                                  fun = function(x){return(x[1]/x[2])})
-richness_samp_bias <- terra::app(x = c(m1.poly_raster$richness, sampling_rate_raster_ea_resample), 
+richness_samp_bias <- terra::app(x = c(m1.poly_raster$richness, tot_samp_bias_norm), 
                                  fun = function(x){return(x[1]/x[2])})
 
 merged <- c(WE_samp_bias, CWE_samp_bias, richness_samp_bias)
@@ -312,7 +322,11 @@ merged_geo <- project(merged, "EPSG:4326")
 
 # converting to data frame for plotting
 merged_geo_df <- as.data.frame(merged_geo, xy = TRUE, na.rm = TRUE)
+```
 
+#### Calculating hotspots
+
+```{r}
 # Assigning hotspots based on percentile
 merged_geo_df$WE_perc <- merged_geo_df$WE_sampbias_corrected > quantile(merged_geo_df$WE_sampbias_corrected, probs = 0.95)
 merged_geo_df$CWE_perc <- merged_geo_df$CWE_sampbias_corrected > quantile(merged_geo_df$CWE_sampbias_corrected, probs = 0.95)
@@ -496,15 +510,13 @@ m1.poly_sr_raster <- rast(lapply(names(m1.poly_sr)[c(6,8,9)], function(att) {
 # setting crs
 crs(m1.poly_sr_raster) <- crs(sampling_rate_raster_ea)
 
-# resampling sampling rate raster to get it to match the extent of the biodiversity raster
-sampling_rate_raster_ea_resample <- resample(sampling_rate_raster_ea, m1.poly_raster, method = "bilinear")
 
 # correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
-WE_sr_samp_bias <- terra::app(x = c(m1.poly_sr_raster$WE, sampling_rate_raster_ea_resample), 
+WE_sr_samp_bias <- terra::app(x = c(m1.poly_sr_raster$WE, tot_samp_bias_norm), 
                            fun = function(x){return(x[1]/x[2])})
-CWE_sr_samp_bias <- terra::app(x = c(m1.poly_sr_raster$corrected_endemism, sampling_rate_raster_ea_resample), 
+CWE_sr_samp_bias <- terra::app(x = c(m1.poly_sr_raster$corrected_endemism, tot_samp_bias_norm), 
                                  fun = function(x){return(x[1]/x[2])})
-richness_sr_samp_bias <- terra::app(x = c(m1.poly_sr_raster$richness, sampling_rate_raster_ea_resample), 
+richness_sr_samp_bias <- terra::app(x = c(m1.poly_sr_raster$richness, tot_samp_bias_norm), 
                                  fun = function(x){return(x[1]/x[2])})
 
 merged_sr <- c(WE_sr_samp_bias, CWE_sr_samp_bias, richness_sr_samp_bias)
@@ -743,7 +755,7 @@ comm.point_all_spp_all_grids_ex <- comm.point_all_spp_all_grids_ex[,species_orde
 comm_merged_ex <- comm.poly_all_spp_all_grids_ex + comm.point_all_spp_all_grids_ex
 ```
 
-### Calulate weighted endemism 
+### Calculate weighted endemism 
 
 ```{r}
 Endm.mygalomorph_ex <- phyloregion::weighted_endemism(comm_merged_ex)
@@ -845,15 +857,13 @@ m1.poly_ex_raster <- rast(lapply(names(m1.poly_ex)[c(6,8,9)], function(att) {
 # setting crs
 crs(m1.poly_ex_raster) <- crs(sampling_rate_raster_ea)
 
-# resampling sampling rate raster to get it to match the extent of the biodiversity raster
-sampling_rate_raster_ea_resample <- resample(sampling_rate_raster_ea, m1.poly_raster, method = "bilinear")
 
 # correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
-WE_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$WE, sampling_rate_raster_ea_resample), 
+WE_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$WE, tot_samp_bias_norm), 
                            fun = function(x){return(x[1]/x[2])})
-CWE_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$corrected_endemism, sampling_rate_raster_ea_resample), 
+CWE_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$corrected_endemism, tot_samp_bias_norm), 
                                  fun = function(x){return(x[1]/x[2])})
-richness_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$richness, sampling_rate_raster_ea_resample), 
+richness_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$richness, tot_samp_bias_norm), 
                                  fun = function(x){return(x[1]/x[2])})
 
 merged_ex <- c(WE_ex_samp_bias, CWE_ex_samp_bias, richness_ex_samp_bias)
@@ -1119,15 +1129,13 @@ m1.poly_sr_ex_raster <- rast(lapply(names(m1.poly_sr_ex)[c(6,8,9)], function(att
 # setting crs
 crs(m1.poly_sr_ex_raster) <- crs(sampling_rate_raster_ea)
 
-# resampling sampling rate raster to get it to match the extent of the biodiversity raster
-sampling_rate_raster_ea_resample <- resample(sampling_rate_raster_ea, m1.poly_sr_ex_raster, method = "bilinear")
 
 # correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
-WE_sr_ex_samp_bias <- terra::app(x = c(m1.poly_sr_ex_raster$WE, sampling_rate_raster_ea_resample), 
+WE_sr_ex_samp_bias <- terra::app(x = c(m1.poly_sr_ex_raster$WE, tot_samp_bias_norm), 
                            fun = function(x){return(x[1]/x[2])})
-CWE_sr_ex_samp_bias <- terra::app(x = c(m1.poly_sr_ex_raster$corrected_endemism, sampling_rate_raster_ea_resample), 
+CWE_sr_ex_samp_bias <- terra::app(x = c(m1.poly_sr_ex_raster$corrected_endemism, tot_samp_bias_norm), 
                                  fun = function(x){return(x[1]/x[2])})
-richness_sr_ex_samp_bias <- terra::app(x = c(m1.poly_sr_ex_raster$richness, sampling_rate_raster_ea_resample), 
+richness_sr_ex_samp_bias <- terra::app(x = c(m1.poly_sr_ex_raster$richness, tot_samp_bias_norm), 
                                  fun = function(x){return(x[1]/x[2])})
 
 merged_sr_ex <- c(WE_sr_ex_samp_bias, CWE_sr_ex_samp_bias, richness_sr_ex_samp_bias)
