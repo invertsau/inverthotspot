@@ -3,6 +3,8 @@ title: "Alpha hulls"
 author: "Fonti Kar and Payal Bal"
 date: "2023-08-25"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -14,10 +16,12 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages("remotes")
 # remotes::install_github("beatrizpateiro/alphahull", ref="WIP-ahull.IUCN-feature")
 # remotes::install_github("babichmorrowc/hull2spatial")
+# remotes::install_github("gdauby/ConR")
 
 # Load packages
 #install.packages("pacman")
 pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf, ggplot2, skimr, alphahull, hull2spatial, sp, purrr, ConR, dplyr)
+
 
 source("R/utils.R")
 ```
@@ -30,6 +34,9 @@ get_latest_cleaned_data()
 myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
 
 myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1])
+
+myg_spiders_hum_obs <- myg_spiders_cleaned |>
+  filter(basisOfRecord == "HUMAN_OBSERVATION")
 ```
 
 # All data 
@@ -247,3 +254,81 @@ file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(her
 saveRDS(all_myg_alpha_sf_land_ex, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_expert_", file_name, ".rds")))
 ```
 
+
+# Human obs Only data
+
+```{r}
+# Nest data
+myg_conr_nest_hum_obs <- myg_spiders_hum_obs |> 
+  dplyr::select(decimalLatitude, decimalLongitude, scientificName, eventDate) |> 
+  mutate(species = scientificName) |> 
+  nest(occ = c(starts_with("decimal"), scientificName, eventDate))
+
+# A function to map over
+#Can't get this map working for some reason!
+myg_conr_nest_hum_obs <- myg_conr_nest_hum_obs |>
+  mutate(conr_ahull = purrr::map(.x = occ,
+                          possibly(~ConR_ahull(.x))
+  ),
+  conr_ahull_sf =  purrr::map(.x = occ,
+                          possibly(~ConR_ahull(.x, FALSE))
+  )) 
+```
+
+```{r}
+# add the points as sf for species without alpha hulls (< 3 records)
+myg_conr_nest_hum_obs_points <- myg_conr_nest_hum_obs |>
+    mutate(
+    conr_ahull_sf = map2(conr_ahull_sf, occ, ~{
+      if (is.null(.x)) {
+        # Convert occ tibble into sf POINTS
+        pts <- st_as_sf(.y, coords = c("decimalLongitude", "decimalLatitude"), crs = 4326)
+        # Collapse all points into a MULTIPOINT
+        st_union(pts) |> st_cast("MULTIPOINT")
+      } else {
+        sf::st_geometry(.x) |>
+        sf::st_cast("MULTILINESTRING") |> # to get filled polygons instead of just the boundaries
+        sf::st_polygonize()
+      }
+    })
+  )
+
+#Unnest the sf
+all_myg_alpha_sf_points_hum_obs <- myg_conr_nest_hum_obs_points |> 
+  dplyr::select(species, conr_ahull_sf) |> 
+  tidyr::unnest(cols = c(conr_ahull_sf)) |> 
+  sf::st_as_sf()
+
+# crop to land area only
+all_myg_alpha_sf_land_hum_obs <- st_intersection(all_myg_alpha_sf_points_hum_obs, aus)
+
+# separating polygons and points for plotting
+polys_hum_obs <- all_myg_alpha_sf_land_hum_obs |>
+  filter(st_geometry_type(conr_ahull_sf) %in% c("POLYGON", "MULTIPOLYGON"))
+points_hum_obs <- all_myg_alpha_sf_land_hum_obs |>
+  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
+
+# plotting alpha hulls and points
+base_map  + 
+  geom_sf(data = polys_hum_obs, 
+          aes(geometry = conr_ahull_sf),
+           # colour = "black",
+          colour = "#609966",
+          fill = "lightgreen") +
+  geom_sf(data = points_hum_obs,
+             aes(geometry = conr_ahull_sf),
+             colour = "red",
+             fill = "red") +
+  coord_sf(c(110, 155)) +
+  theme_minimal() |> 
+  theme(legend.position = "none")
+
+```
+
+```{r}
+# Save output
+# Clean up the name
+file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1], "/")[10] |> str_remove(".parquet")
+
+saveRDS(all_myg_alpha_sf_land_hum_obs, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_human_obs_", file_name, ".rds")))
+```

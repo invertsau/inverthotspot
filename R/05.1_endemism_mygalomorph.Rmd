@@ -20,6 +20,9 @@ source("R/utils.R")
 myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
 
 myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1]) 
+
+myg_spiders_hum_obs <- myg_spiders_cleaned |>
+  filter(basisOfRecord == "HUMAN_OBSERVATION")
 ```
 
 
@@ -31,6 +34,8 @@ This is a massive list, each element is a spatial polygon dataframe
 species_polys_points <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2025-08-14_ALA.rds")
 
 species_polys_points_expert <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_expert_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds")
+
+species_polys_points_hum_obs <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_human_obs_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds")
 ```
 
 ## ALL DATA
@@ -1229,4 +1234,263 @@ base_map  +
 # #|   - "Community matrix of Mygalomorphae spiders from our cleaned dataset"
 # comm.poly <- phyloregion::polys2comm(dat = combinedShp , trace=1, res = 0.05)
 # plot(comm.poly$map)
+```
+
+
+## HUMAN OBSERVATION DATA ONLY
+
+```{r}
+# Extract POLYGONs from GEOMETRYCOLLECTIONs
+species_polys_hum_obs_clean <- species_polys_points_hum_obs  |>
+  st_collection_extract() |>
+  group_by(species) |>
+  summarise(geometry = st_union(conr_ahull_sf))
+  
+# Combine into one large spatial dataframe
+combinedShp_hum_obs <- terra::vect(species_polys_hum_obs_clean)
+
+#projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+combinedShp_hum_obs_equalarea <- project(combinedShp_hum_obs, "EPSG:9473") 
+
+
+# now for point-only species
+species_points_hum_obs_clean <- species_polys_points_hum_obs |>
+  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
+
+## seems like phyloregion::polys2comm() also works for point data if in spatvector format
+myg_spiders_cleaned_points_hum_obs <- myg_spiders_hum_obs |>
+  filter(scientificName %in% species_points_hum_obs_clean$species) |>
+  dplyr::select(species, decimalLongitude, decimalLatitude) |>
+  sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") |>
+  sf::st_transform(crs = "EPSG:9473") #projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+
+combinedShp_hum_obs_points_equalarea <- terra::vect(myg_spiders_cleaned_points_hum_obs)
+
+```
+
+### Calculate Community Matrix
+
+Convert raw input distribution data to community at 0.05 decimal degrees
+`trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
+
+```{r}
+# community matrix for species with alpha hulls (at least 3 records)
+comm.poly_hum_obs <- phyloregion::polys2comm(dat = combinedShp_hum_obs_equalarea, trace=1, res = 5000)
+str(comm.poly_hum_obs)
+plot(comm.poly_hum_obs$map)
+
+# community matrix for species without alpha hulls (<3 records)
+comm.point_hum_obs <- phyloregion::polys2comm(dat = combinedShp_hum_obs_points_equalarea, res = 5000)
+plot(comm.point_hum_obs$map)
+
+
+# combining
+all_species_hum_obs <- union(colnames(comm.poly_hum_obs$comm_dat), colnames(comm.point_hum_obs$comm_dat))
+
+missing_in_poly_hum_obs <- setdiff(all_species_hum_obs, colnames(comm.poly_hum_obs$comm_dat))
+missing_in_poly_hum_obs_matrix <- sparseMatrix(i = numeric(0), j = numeric(0), x = numeric(0),
+                                   dims = c(nrow(comm.poly_hum_obs$comm_dat), 
+                                            length(missing_in_poly_hum_obs)))
+colnames(missing_in_poly_hum_obs_matrix) <- missing_in_poly_hum_obs
+
+
+missing_in_point_hum_obs <- setdiff(all_species_hum_obs, colnames(comm.point_hum_obs$comm_dat))
+missing_in_point_hum_obs_matrix <- sparseMatrix(i = numeric(0), j = numeric(0), x = numeric(0),
+                                   dims = c(nrow(comm.point_hum_obs$comm_dat), 
+                                            length(missing_in_point_hum_obs)))
+colnames(missing_in_point_hum_obs_matrix) <- missing_in_point_hum_obs
+
+
+comm.poly_all_spp_hum_obs  <- cbind(comm.poly_hum_obs$comm_dat, missing_in_poly_hum_obs_matrix)
+comm.point_all_spp_hum_obs  <- cbind(comm.point_hum_obs$comm_dat, missing_in_point_hum_obs_matrix)
+
+# Expand both matrices to have all grid cells
+all_grids_hum_obs <- union(rownames(comm.poly_all_spp_hum_obs), rownames(comm.point_all_spp_hum_obs))
+
+expand_rows <- function(mat, all_grids) {
+  missing <- setdiff(all_grids, rownames(mat))
+  if (length(missing) > 0) {
+    mat <- rbind(mat, Matrix(0, nrow=length(missing), ncol=ncol(mat),
+                             dimnames=list(missing, colnames(mat))))
+  }
+  mat[all_grids, , drop=FALSE]  # reorder rows
+}
+
+comm.poly_all_spp_all_grids_hum_obs <- expand_rows(comm.poly_all_spp_hum_obs, all_grids_hum_obs)
+comm.point_all_spp_all_grids_hum_obs <- expand_rows(comm.point_all_spp_hum_obs, all_grids_hum_obs)
+
+# matching order of columns prior to combining matrices
+species_order_hum_obs <- colnames(comm.poly_all_spp_all_grids_hum_obs)
+comm.point_all_spp_all_grids_hum_obs <- comm.point_all_spp_all_grids_hum_obs[,species_order_hum_obs, drop = FALSE]
+
+# Combine (sum values if grids overlap)
+comm_merged_hum_obs <- comm.poly_all_spp_all_grids_hum_obs + comm.point_all_spp_all_grids_hum_obs
+```
+
+### Calculate weighted endemism 
+
+```{r}
+Endm.mygalomorph_hum_obs <- phyloregion::weighted_endemism(comm_merged_hum_obs)
+
+# merging alpha hull- and point-based maps, ensuring that richness is summed in overlapping cells
+comm_overlapping_hum_obs <- merge(comm.poly_hum_obs$map, comm.point_hum_obs$map, by = "grids", all.x = TRUE)
+comm_overlapping_hum_obs$richness <- ifelse(is.na(comm_overlapping_hum_obs$richness.x), 0, comm_overlapping_hum_obs$richness.x) + ifelse(is.na(comm_overlapping_hum_obs$richness.y), 0, comm_overlapping_hum_obs$richness.y)
+
+non_overlapping_hum_obs <- comm.point_hum_obs$map[which(!values(comm.point_hum_obs$map)[1]$grids %in% values(comm.poly_hum_obs$map)[1]$grids),]
+
+comm_merged_map_hum_obs <- rbind(comm_overlapping_hum_obs, non_overlapping_hum_obs)
+
+## Join results back to spatial community data matrix
+m1.poly_merged_hum_obs <- merge(comm_merged_map_hum_obs, data.frame(grids=names(Endm.mygalomorph_hum_obs), WE=Endm.mygalomorph_hum_obs), by="grids")
+
+# Drop NA in WE
+m1.poly_hum_obs <- m1.poly_merged_hum_obs[!is.na(m1.poly_merged_hum_obs$WE),]
+
+m1.poly_hum_obs
+```
+
+
+### Calulate corrected weighted endemism
+
+Weighted endemism tally per cell divided by the species richness of that cell
+
+```{r}
+m1.poly_hum_obs$corrected_endemism <- m1.poly_hum_obs$WE/m1.poly_hum_obs$richness
+```
+
+### Assigning hotspots based on percentile
+
+```{r}
+m1.poly_hum_obs$rich_perc <- m1.poly_hum_obs$richness > quantile(m1.poly_hum_obs$richness, probs = 0.95)
+m1.poly_hum_obs$WE_perc <- m1.poly_hum_obs$WE > quantile(m1.poly_hum_obs$WE, probs = 0.95)
+m1.poly_hum_obs$CWE_perc <- m1.poly_hum_obs$corrected_endemism > quantile(m1.poly_hum_obs$corrected_endemism, probs = 0.95)
+```
+
+### Create a endemism map
+
+Convert to `sf` 
+
+```{r}
+crs(m1.poly_hum_obs) <- "EPSG:9473"
+
+# projecting back to WGS84 for visualisation
+m1_sf_hum_obs <- 
+  sf::st_as_sf(m1.poly_hum_obs) |> 
+  sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_hum_obs, aes(fill = WE), col = NA) + 
+  geom_sf(data = subset(m1_sf_hum_obs, WE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_hum_obs, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = subset(m1_sf_hum_obs, CWE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_hum_obs, aes(fill = richness), col = NA) + 
+  geom_sf(data = subset(m1_sf_hum_obs, rich_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+### Correcting for sampling bias
+
+#### converting biodiversity metrics to raster to perform corrections
+
+```{r}
+# testing as raster
+m1.poly_hum_obs_rast <- rast(m1.poly_hum_obs, res = 5000)
+
+# transferring from m1.poly attributes into a SpatRaster with multiple layers
+m1.poly_hum_obs_raster <- rast(lapply(names(m1.poly_hum_obs)[c(6,8,9)], function(att) {
+  rasterize(m1.poly_hum_obs, m1.poly_hum_obs_rast, field = att)
+}))
+
+# setting crs
+crs(m1.poly_hum_obs_raster) <- crs(sampling_rate_raster_ea)
+
+m1.poly_hum_obs_raster <- resample(m1.poly_hum_obs_raster, tot_samp_bias_norm)
+
+
+# correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
+WE_hum_obs_samp_bias <- terra::app(x = c(m1.poly_hum_obs_raster$WE, tot_samp_bias_norm), 
+                           fun = function(x){return(x[1]/x[2])})
+CWE_hum_obs_samp_bias <- terra::app(x = c(m1.poly_hum_obs_raster$corrected_endemism, tot_samp_bias_norm), 
+                                 fun = function(x){return(x[1]/x[2])})
+richness_hum_obs_samp_bias <- terra::app(x = c(m1.poly_hum_obs_raster$richness, tot_samp_bias_norm), 
+                                 fun = function(x){return(x[1]/x[2])})
+
+merged_hum_obs <- c(WE_hum_obs_samp_bias, CWE_hum_obs_samp_bias, richness_hum_obs_samp_bias)
+names(merged_hum_obs) <- c("WE_hum_obs_sampbias_corrected", "CWE_hum_obs_sampbias_corrected", "richness_hum_obs_sampbias_corrected")
+
+# projecting back to WGS84 for visualisation
+merged_hum_obs_geo <- project(merged_hum_obs, "EPSG:4326")
+
+# converting to data frame for plotting
+merged_geo_hum_obs_df <- as.data.frame(merged_hum_obs_geo, xy = TRUE, na.rm = TRUE)
+
+# Assigning hotspots based on percentile
+merged_geo_hum_obs_df$WE_perc <- merged_geo_hum_obs_df$WE_hum_obs_sampbias_corrected > quantile(merged_geo_hum_obs_df$WE_hum_obs_sampbias_corrected, probs = 0.95)
+merged_geo_hum_obs_df$CWE_perc <- merged_geo_hum_obs_df$CWE_hum_obs_sampbias_corrected > quantile(merged_geo_hum_obs_df$CWE_hum_obs_sampbias_corrected, probs = 0.95)
+merged_geo_hum_obs_df$rich_perc <- merged_geo_hum_obs_df$richness_hum_obs_sampbias_corrected > quantile(merged_geo_hum_obs_df$richness_hum_obs_sampbias_corrected, probs = 0.95)
+```
+
+#### plotting
+
+```{r}
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_hum_obs_df, aes(x=x, y=y, fill = WE_hum_obs_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_hum_obs_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_hum_obs_df, aes(x=x, y=y, fill = CWE_hum_obs_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_hum_obs_df, CWE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_hum_obs_df, aes(x=x, y=y, fill = richness_hum_obs_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_hum_obs_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
