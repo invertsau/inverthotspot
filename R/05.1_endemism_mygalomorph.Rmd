@@ -598,10 +598,10 @@ coo <- coo |> sf::st_as_sf(crs = 4326)
 ```
 
 ```{r}
-# Search radius to include all neighboring polygon (0 - 20km)
-S.dist  <-  dnearneigh(coo, 0, 20)
-
-# S.dist <- readRDS("D:/USB/JNitschke/Invertebrates Australia/Cleaned_Mygalomorphae_dnearneigh500.rds")
+# # Search radius to include all neighboring polygon (0 - 20km)
+# S.dist  <-  dnearneigh(coo, 0, 20)
+# 
+# # S.dist <- readRDS("D:/USB/JNitschke/Invertebrates Australia/Cleaned_Mygalomorphae_dnearneigh500.rds")
 
 ```
 
