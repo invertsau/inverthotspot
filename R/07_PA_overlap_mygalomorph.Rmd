@@ -32,6 +32,10 @@ aus_raw_pa_data <- wdpa_fetch(
   "Australia", wait = TRUE, download_dir = rappdirs::user_data_dir("wdpar")
 )
 
+# clean PA data
+aus_pa_data <- wdpa_clean(aus_raw_pa_data)
+
+saveRDS(aus_pa_data, here("data/protected_areas/aus_pa_data.rds"))
 ```
 
 
