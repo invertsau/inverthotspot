@@ -28,14 +28,95 @@ source("R/utils.R")
 
 ## Downloading protected area data for Australia
 ```{r}
-aus_raw_pa_data <- wdpa_fetch(
-  "Australia", wait = TRUE, download_dir = rappdirs::user_data_dir("wdpar")
-)
+# aus_raw_pa_data <- wdpa_fetch(
+#   "Australia", wait = TRUE, download_dir = rappdirs::user_data_dir("wdpar")
+# )
+# 
+# # clean PA data
+# aus_pa_data <- wdpa_clean(aus_raw_pa_data)
+# 
+# saveRDS(aus_pa_data, here("data/protected_areas/aus_pa_data.rds"))
 
-# clean PA data
-aus_pa_data <- wdpa_clean(aus_raw_pa_data)
+aus_pa_data <- readRDS(here("data/protected_areas/aus_pa_data.rds"))
+```
 
-saveRDS(aus_pa_data, here("data/protected_areas/aus_pa_data.rds"))
+## clipping PA data to Aus coastline
+```{r}
+wdpa_crs <- "+proj=cea +lon_0=0 +lat_ts=30 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs"
+
+aus <- st_transform(ozmaps::ozmap_country, crs = st_crs(wdpa_crs))
+
+aus_pa_data <-
+  aus_pa_data %>%
+  filter(MARINE == "terrestrial") %>%
+  st_intersection(aus) 
+
+head(aus_pa_data)
+
+# recalculate area of each protected area
+aus_pa_data <- 
+  aus_pa_data %>%
+  mutate(AREA_KM2 = as.numeric(st_area(.)) * 1e-6)
+
+```
+
+## plotting
+```{r}
+# reproject data for visualisation
+aus_pa_data <- st_transform(aus_pa_data, 4326)
+# Transform aus projection back
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+
+# Base map 
+base_map <- ggplot() + 
+  geom_sf(data = aus, fill = NA, colour = "black") + 
+  theme_minimal()
+
+# terrestrial PA's
+base_map +
+  geom_sf(data = aus_pa_data,
+          aes(geometry = geometry),
+          colour = "#609966",
+          fill = "lightgreen") +
+  coord_sf(c(110, 155)) +
+  theme_minimal() |> 
+  theme(legend.position = "none")
+
+
+```
+
+## overlap with hotspots
+```{r}
+merged_geo <- readRDS(merged_geo, here("data/protected_areas/bias_corrected_hotspots_spatraster.rds"))
+
+v <- vect(aus_pa_data)
+
+v <- project(v, merged_geo)
+
+aus_pa_raster <- rasterize(v, merged_geo, touches = TRUE)
+
+# converting to data frame for plotting
+aus_pa_raster_df <- as.data.frame(aus_pa_raster, xy = TRUE, na.rm = TRUE)
+
+# getting cells where richness hotspots overlap with PA's
+overlap_richness <- !is.na(aus_pa_raster) & merged_geo[["rich_perc"]]
+overlap_richness_df <- as.data.frame(overlap_richness, xy = TRUE, na.rm = TRUE)
+
+base_map +
+  # geom_tile(data = aus_pa_raster_df,
+  #           aes(x=x, y=y)) +
+  geom_tile(data = subset(overlap_richness_df, layer),
+            aes(x=x, y=y), fill = "red", col = NA) +
+          # aes(geometry = geometry),
+          # colour = "#609966",
+          # fill = "lightgreen") +
+  # geom_sf(data = points,
+  #            aes(geometry = conr_ahull_sf),
+  #            colour = "red",
+  #            fill = "red") +
+  coord_sf(c(110, 155)) +
+  theme_minimal() |> 
+  theme(legend.position = "none")
 ```
 
 
