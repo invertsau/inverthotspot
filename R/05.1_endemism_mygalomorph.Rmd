@@ -326,7 +326,7 @@ names(merged) <- c("WE_sampbias_corrected", "CWE_sampbias_corrected", "richness_
 merged_geo <- project(merged, "EPSG:4326")
 
 # #exporting for protected area analysis
-# saveRDS(merged_geo, here("data/protected_areas/bias_corrected_hotspots_spatraster.rds"))
+# writeRaster(merged_geo, here("data/protected_areas/bias_corrected_hotspots_spatraster.tif"), overwrite=TRUE) 
 
 # converting to data frame for plotting
 merged_geo_df <- as.data.frame(merged_geo, xy = TRUE, na.rm = TRUE)
@@ -340,10 +340,6 @@ merged_geo_df$WE_perc <- merged_geo_df$WE_sampbias_corrected > quantile(merged_g
 merged_geo_df$CWE_perc <- merged_geo_df$CWE_sampbias_corrected > quantile(merged_geo_df$CWE_sampbias_corrected, probs = 0.95)
 merged_geo_df$rich_perc <- merged_geo_df$richness_sampbias_corrected > quantile(merged_geo_df$richness_sampbias_corrected, probs = 0.95)
 
-# Assigning hotspots based on percentile
-merged_geo$WE_perc <- merged_geo_df$WE_sampbias_corrected > quantile(merged_geo_df$WE_sampbias_corrected, probs = 0.95)
-merged_geo$CWE_perc <- merged_geo_df$CWE_sampbias_corrected > quantile(merged_geo_df$CWE_sampbias_corrected, probs = 0.95)
-merged_geo$rich_perc <- merged_geo_df$richness_sampbias_corrected > quantile(merged_geo_df$richness_sampbias_corrected, probs = 0.95)
 ```
 
 #### plotting
