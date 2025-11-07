@@ -89,9 +89,13 @@ base_map +
 ```{r}
 merged_geo <- rast(here("data/protected_areas/bias_corrected_hotspots_spatraster.tif"))
 
-# richness 95th percentile
-q95 <- global(merged_geo[["richness_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
-merged_geo$rich_perc <- merged_geo[["richness_sampbias_corrected"]] > q95
+# hotspots (95th percentiles)
+rich_q95 <- global(merged_geo[["richness_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo$rich_perc <- merged_geo[["richness_sampbias_corrected"]] > rich_q95
+
+WE_q95 <- global(merged_geo[["WE_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo$WE_perc <- merged_geo[["WE_sampbias_corrected"]] > WE_q95
+
 
 v <- vect(aus_pa_data)
 v <- project(v, merged_geo)
@@ -100,22 +104,39 @@ aus_pa_raster <- rasterize(v, merged_geo, touches = TRUE)
 
 values(aus_pa_raster)[is.nan(values(aus_pa_raster))] <- NA
 
-# getting cells where richness hotspots overlap with PA's
-overlap_richness <- (!is.na(aus_pa_raster)) & (merged_geo[["rich_perc"]] > 0)
+
+# getting cells where hotspots overlap with PA's
+overlap <- (!is.na(aus_pa_raster)) & (merged_geo[["rich_perc"]] > 0)
+names(overlap) <- "richness"
+overlap$WE <- (!is.na(aus_pa_raster)) & (merged_geo[["WE_perc"]] > 0)
+
 
 # converting to data frame for plotting
 aus_pa_raster_df <- as.data.frame(aus_pa_raster, xy = TRUE, na.rm = TRUE)
 merged_geo_df <- as.data.frame(merged_geo, xy = TRUE, na.rm = TRUE)
-overlap_richness_df <- as.data.frame(overlap_richness, xy = TRUE, na.rm = TRUE)
+overlap_df <- as.data.frame(overlap, xy = TRUE, na.rm = TRUE)
 
-freq(overlap_richness)[2,3]/freq(merged_geo$rich_perc)[2,3]*100 # percentage of richness hotspots within PA's
+
+freq(overlap$richness)[2,3]/freq(merged_geo$rich_perc)[2,3]*100 # percentage of richness hotspots within PA's
+freq(overlap$WE)[2,3]/freq(merged_geo$WE_perc)[2,3]*100 # percentage of WE hotspots within PA's
 
 
 ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
   geom_tile(data = subset(merged_geo_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
   geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
-  geom_tile(data = subset(overlap_richness_df, layer), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_tile(data = subset(overlap_df, richness), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = subset(merged_geo_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
+  geom_tile(data = subset(overlap_df, WE), aes(x=x, y=y), fill = "darkgreen", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
   coord_sf(xlim = c(110, 155),
           ylim = c(-10, -45)) +
