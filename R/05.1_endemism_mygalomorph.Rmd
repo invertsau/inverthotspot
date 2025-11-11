@@ -534,6 +534,9 @@ names(merged_sr) <- c("WE_sr_sampbias_corrected", "CWE_sr_sampbias_corrected", "
 # projecting back to WGS84 for visualisation
 merged_sr_geo <- project(merged_sr, "EPSG:4326")
 
+# #exporting for protected area analysis
+# writeRaster(merged_sr_geo, here("data/protected_areas/sr_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
+
 # converting to data frame for plotting
 merged_geo_sr_df <- as.data.frame(merged_sr_geo, xy = TRUE, na.rm = TRUE)
 
@@ -870,23 +873,30 @@ crs(m1.poly_ex_raster) <- crs(sampling_rate_raster_ea)
 # correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
 WE_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$WE, tot_samp_bias_norm), 
                            fun = function(x){return(x[1]/x[2])})
-CWE_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$corrected_endemism, tot_samp_bias_norm), 
-                                 fun = function(x){return(x[1]/x[2])})
+# CWE_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$corrected_endemism, tot_samp_bias_norm), 
+#                                  fun = function(x){return(x[1]/x[2])})
 richness_ex_samp_bias <- terra::app(x = c(m1.poly_ex_raster$richness, tot_samp_bias_norm), 
                                  fun = function(x){return(x[1]/x[2])})
 
-merged_ex <- c(WE_ex_samp_bias, CWE_ex_samp_bias, richness_ex_samp_bias)
-names(merged_ex) <- c("WE_ex_sampbias_corrected", "CWE_ex_sampbias_corrected", "richness_ex_sampbias_corrected")
+merged_ex <- c(WE_ex_samp_bias, 
+               # CWE_ex_samp_bias, 
+               richness_ex_samp_bias)
+names(merged_ex) <- c("WE_ex_sampbias_corrected", 
+                      # "CWE_ex_sampbias_corrected", 
+                      "richness_ex_sampbias_corrected")
 
 # projecting back to WGS84 for visualisation
 merged_ex_geo <- project(merged_ex, "EPSG:4326")
+
+# #exporting for protected area analysis
+# writeRaster(merged_ex_geo, here("data/protected_areas/ex_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
 
 # converting to data frame for plotting
 merged_geo_ex_df <- as.data.frame(merged_ex_geo, xy = TRUE, na.rm = TRUE)
 
 # Assigning hotspots based on percentile
 merged_geo_ex_df$WE_perc <- merged_geo_ex_df$WE_ex_sampbias_corrected > quantile(merged_geo_ex_df$WE_ex_sampbias_corrected, probs = 0.95)
-merged_geo_ex_df$CWE_perc <- merged_geo_ex_df$CWE_ex_sampbias_corrected > quantile(merged_geo_ex_df$CWE_ex_sampbias_corrected, probs = 0.95)
+# merged_geo_ex_df$CWE_perc <- merged_geo_ex_df$CWE_ex_sampbias_corrected > quantile(merged_geo_ex_df$CWE_ex_sampbias_corrected, probs = 0.95)
 merged_geo_ex_df$rich_perc <- merged_geo_ex_df$richness_ex_sampbias_corrected > quantile(merged_geo_ex_df$richness_ex_sampbias_corrected, probs = 0.95)
 ```
 
@@ -1152,6 +1162,9 @@ names(merged_sr_ex) <- c("WE_sr_ex_sampbias_corrected", "CWE_sr_ex_sampbias_corr
 
 # projecting back to WGS84 for visualisation
 merged_sr_ex_geo <- project(merged_sr_ex, "EPSG:4326")
+
+# #exporting for protected area analysis
+# writeRaster(merged_sr_ex_geo, here("data/protected_areas/sr_ex_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
 
 # converting to data frame for plotting
 merged_geo_sr_ex_df <- as.data.frame(merged_sr_ex_geo, xy = TRUE, na.rm = TRUE)
@@ -1449,6 +1462,9 @@ names(merged_hum_obs) <- c("WE_hum_obs_sampbias_corrected", "CWE_hum_obs_sampbia
 
 # projecting back to WGS84 for visualisation
 merged_hum_obs_geo <- project(merged_hum_obs, "EPSG:4326")
+
+# #exporting for protected area analysis
+# writeRaster(merged_hum_obs_geo, here("data/protected_areas/hum_obs_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
 
 # converting to data frame for plotting
 merged_geo_hum_obs_df <- as.data.frame(merged_hum_obs_geo, xy = TRUE, na.rm = TRUE)

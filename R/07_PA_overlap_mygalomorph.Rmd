@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Load packages
 #install.packages("pacman")
-pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf, ggplot2, skimr, alphahull, hull2spatial, sp, purrr, ConR, dplyr, wdpar, ggmap)
+pacman::p_load(galah, arrow, here, tidyverse, ozmaps, sf, ggplot2, skimr, alphahull, hull2spatial, sp, purrr, ConR, dplyr, wdpar, ggmap, terra, raster)
 
 
 source("R/utils.R")
@@ -144,311 +144,247 @@ ggplot() +
   theme(legend.position = "bottom")
 ```
 
-
-
-## Read in data
-
+## overlap with hotspots - short range
 ```{r}
-get_latest_cleaned_data()
+merged_geo_sr <- rast(here("data/protected_areas/sr_bias_corrected_hotspots_spatraster.tif"))
 
-myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
+# hotspots (95th percentiles)
+rich_q95_sr <- global(merged_geo_sr[["richness_sr_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_sr$rich_perc <- merged_geo_sr[["richness_sr_sampbias_corrected"]] > rich_q95_sr
 
-myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1])
-
-myg_spiders_hum_obs <- myg_spiders_cleaned |>
-  filter(basisOfRecord == "HUMAN_OBSERVATION")
-```
-
-# All data 
-## Create an alpha hull
-
-Alpha hulls are a flexible way to represent species distributions without all the extra work of running a species distribution model. 
+WE_q95_sr <- global(merged_geo_sr[["WE_sr_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_sr$WE_perc <- merged_geo_sr[["WE_sr_sampbias_corrected"]] > WE_q95_sr
 
 
-#### Extrapolate to all Myg taxa
+v <- vect(aus_pa_data)
+v <- project(v, merged_geo_sr)
 
-```{r}
-# A function to generate alpha-hull and extract output and transform into sf object
-ConR_ahull <- function(data, sf_transform = TRUE){
+aus_pa_raster <- rasterize(v, merged_geo_sr, touches = TRUE)
 
-  conr_output <- ConR::EOO.computing(data, 
-                               method.range = "alpha",
-                               alpha = 2, 
-                               buff.alpha = 0.000001,
-                               export_shp = TRUE)
-  if(sf_transform == TRUE){
-  as(conr_output$spatial, "Spatial")
-  } 
-  else
-    conr_output$spatial
-}
-
-# Nest data
-myg_conr_nest <- myg_spiders_cleaned |> 
-  dplyr::select(decimalLatitude, decimalLongitude, scientificName, eventDate) |> 
-  mutate(species = scientificName) |> 
-  nest(occ = c(starts_with("decimal"), scientificName, eventDate))
-
-# Test function on one
-test <- ConR_ahull(myg_conr_nest$occ[[1]], sf_transform = TRUE)
+values(aus_pa_raster)[is.nan(values(aus_pa_raster))] <- NA
 
 
-# A function to map over
-#Can't get this map working for some reason!
-myg_conr_nest <- myg_conr_nest |>
-  mutate(conr_ahull = purrr::map(.x = occ,
-                          possibly(~ConR_ahull(.x))
-  ),
-  conr_ahull_sf =  purrr::map(.x = occ,
-                          possibly(~ConR_ahull(.x, FALSE))
-  )) 
-```
+# getting cells where hotspots overlap with PA's
+overlap_sr <- (!is.na(aus_pa_raster)) & (merged_geo_sr[["rich_perc"]] > 0)
+names(overlap_sr) <- "richness"
+overlap_sr$WE <- (!is.na(aus_pa_raster)) & (merged_geo_sr[["WE_perc"]] > 0)
 
-### Drop empty polygons
 
-```{r}
-myg_conr_nest |> 
-  print(n = Inf)
+# converting to data frame for plotting
+aus_pa_raster_df <- as.data.frame(aus_pa_raster, xy = TRUE, na.rm = TRUE)
+merged_geo_sr_df <- as.data.frame(merged_geo_sr, xy = TRUE, na.rm = TRUE)
+overlap_sr_df <- as.data.frame(overlap_sr, xy = TRUE, na.rm = TRUE)
 
-x <- myg_conr_nest |> 
-  purrr::map(discard, .p = is.null) |> 
-  tibble()
 
-null_spdf <- myg_conr_nest$conr_ahull |> 
-  purrr::map(is.null) |> 
-  list_c() |> which()
+freq(overlap_sr$richness)[2,3]/freq(merged_geo_sr$rich_perc)[2,3]*100 # percentage of richness hotspots within PA's
+freq(overlap_sr$WE)[2,3]/freq(merged_geo_sr$WE_perc)[2,3]*100 # percentage of WE hotspots within PA's
 
-myg_conr_nest |> 
-  # filter(row_number() %in% null_spdf) |> 
-  pluck("occ", 2)
-```
 
-### Alpha hulls as sf to plot all on a map
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = subset(merged_geo_sr_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
+  geom_tile(data = subset(overlap_sr_df, richness), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
-```{r}
-# Transform projection
-aus <- st_transform(ozmaps::ozmap_country, 4326)
-
-# Base map 
-base_map <- ggplot() + 
-  geom_sf(data = aus, fill = NA, colour = "black") + 
-  theme_minimal()
-
-# add the points as sf for species without alpha hulls (< 3 records)
-myg_conr_nest_points <- myg_conr_nest |>
-    mutate(
-    conr_ahull_sf = map2(conr_ahull_sf, occ, ~{
-      if (is.null(.x)) {
-        # Convert occ tibble into sf POINTS
-        pts <- st_as_sf(.y, coords = c("decimalLongitude", "decimalLatitude"), crs = 4326)
-        # Collapse all points into a MULTIPOINT
-        st_union(pts) |> st_cast("MULTIPOINT")
-      } else {
-        sf::st_geometry(.x) |>
-        sf::st_cast("MULTILINESTRING") |> # to get filled polygons instead of just the boundaries
-        sf::st_polygonize()
-      }
-    })
-  )
-
-#Unnest the sf
-all_myg_alpha_sf_points <- myg_conr_nest_points |> 
-  dplyr::select(species, conr_ahull_sf) |> 
-  tidyr::unnest(cols = c(conr_ahull_sf)) |> 
-  sf::st_as_sf()
-
-# crop to land area only
-all_myg_alpha_sf_land <- st_intersection(all_myg_alpha_sf_points, aus)
-
-# separating polygons and points for plotting
-polys <- all_myg_alpha_sf_land |>
-  filter(st_geometry_type(conr_ahull_sf) %in% c("POLYGON", "MULTIPOLYGON"))
-points <- all_myg_alpha_sf_land |>
-  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
-
-# plotting alpha hulls and points
-base_map  + 
-  geom_sf(data = polys, 
-          aes(geometry = conr_ahull_sf),
-           # colour = "black",
-          colour = "#609966",
-          fill = "lightgreen") +
-  geom_sf(data = points,
-             aes(geometry = conr_ahull_sf),
-             colour = "red",
-             fill = "red") +
-  coord_sf(c(110, 155)) +
-  theme_minimal() |> 
-  theme(legend.position = "none")
-
-```
-
-#### Save output as rds for next step of workflow
-
-```{r}
-# Save output
-
-get_latest_cleaned_data()
-
-# Clean up the name
-file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2], "/")[10] |> str_remove(".parquet")
-
-saveRDS(all_myg_alpha_sf_land, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_", file_name, ".rds")))
-```
-
-# Expert Only data
-
-```{r}
-# Nest data
-myg_conr_nest_ex <- myg_spiders_expert |> 
-  dplyr::select(decimalLatitude, decimalLongitude, scientificName, eventDate) |> 
-  mutate(species = scientificName) |> 
-  nest(occ = c(starts_with("decimal"), scientificName, eventDate))
-
-# A function to map over
-#Can't get this map working for some reason!
-myg_conr_nest_ex <- myg_conr_nest_ex |>
-  mutate(conr_ahull = purrr::map(.x = occ,
-                          possibly(~ConR_ahull(.x))
-  ),
-  conr_ahull_sf =  purrr::map(.x = occ,
-                          possibly(~ConR_ahull(.x, FALSE))
-  )) 
-```
-
-```{r}
-# add the points as sf for species without alpha hulls (< 3 records)
-myg_conr_nest_ex_points <- myg_conr_nest_ex |>
-    mutate(
-    conr_ahull_sf = map2(conr_ahull_sf, occ, ~{
-      if (is.null(.x)) {
-        # Convert occ tibble into sf POINTS
-        pts <- st_as_sf(.y, coords = c("decimalLongitude", "decimalLatitude"), crs = 4326)
-        # Collapse all points into a MULTIPOINT
-        st_union(pts) |> st_cast("MULTIPOINT")
-      } else {
-        sf::st_geometry(.x) |>
-        sf::st_cast("MULTILINESTRING") |> # to get filled polygons instead of just the boundaries
-        sf::st_polygonize()
-      }
-    })
-  )
-
-#Unnest the sf
-all_myg_alpha_sf_points_ex <- myg_conr_nest_ex_points |> 
-  dplyr::select(species, conr_ahull_sf) |> 
-  tidyr::unnest(cols = c(conr_ahull_sf)) |> 
-  sf::st_as_sf()
-
-# crop to land area only
-all_myg_alpha_sf_land_ex <- st_intersection(all_myg_alpha_sf_points_ex, aus)
-
-# separating polygons and points for plotting
-polys_ex <- all_myg_alpha_sf_land_ex |>
-  filter(st_geometry_type(conr_ahull_sf) %in% c("POLYGON", "MULTIPOLYGON"))
-points_ex <- all_myg_alpha_sf_land_ex |>
-  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
-
-# plotting alpha hulls and points
-base_map  + 
-  geom_sf(data = polys_ex, 
-          aes(geometry = conr_ahull_sf),
-           # colour = "black",
-          colour = "#609966",
-          fill = "lightgreen") +
-  geom_sf(data = points_ex,
-             aes(geometry = conr_ahull_sf),
-             colour = "red",
-             fill = "red") +
-  coord_sf(c(110, 155)) +
-  theme_minimal() |> 
-  theme(legend.position = "none")
-
-```
-
-```{r}
-# Save output
-# Clean up the name
-file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1], "/")[10] |> str_remove(".parquet")
-
-saveRDS(all_myg_alpha_sf_land_ex, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_expert_", file_name, ".rds")))
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = subset(merged_geo_sr_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
+  geom_tile(data = subset(overlap_sr_df, WE), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
 
-# Human obs Only data
 
+# Expert data only
+
+## overlap with hotspots
 ```{r}
-# Nest data
-myg_conr_nest_hum_obs <- myg_spiders_hum_obs |> 
-  dplyr::select(decimalLatitude, decimalLongitude, scientificName, eventDate) |> 
-  mutate(species = scientificName) |> 
-  nest(occ = c(starts_with("decimal"), scientificName, eventDate))
+merged_geo_ex <- rast(here("data/protected_areas/ex_bias_corrected_hotspots_spatraster.tif"))
 
-# A function to map over
-#Can't get this map working for some reason!
-myg_conr_nest_hum_obs <- myg_conr_nest_hum_obs |>
-  mutate(conr_ahull = purrr::map(.x = occ,
-                          possibly(~ConR_ahull(.x))
-  ),
-  conr_ahull_sf =  purrr::map(.x = occ,
-                          possibly(~ConR_ahull(.x, FALSE))
-  )) 
+# hotspots (95th percentiles)
+rich_q95_ex <- global(merged_geo_ex[["richness_ex_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_ex$rich_perc <- merged_geo_ex[["richness_ex_sampbias_corrected"]] > rich_q95_ex
+
+WE_q95_ex <- global(merged_geo_ex[["WE_ex_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_ex$WE_perc <- merged_geo_ex[["WE_ex_sampbias_corrected"]] > WE_q95_ex
+
+
+v <- vect(aus_pa_data)
+v <- project(v, merged_geo_ex)
+
+aus_pa_raster <- rasterize(v, merged_geo_ex, touches = TRUE)
+
+values(aus_pa_raster)[is.nan(values(aus_pa_raster))] <- NA
+
+
+# getting cells where hotspots overlap with PA's
+overlap_ex <- (!is.na(aus_pa_raster)) & (merged_geo_ex[["rich_perc"]] > 0)
+names(overlap_ex) <- "richness"
+overlap_ex$WE <- (!is.na(aus_pa_raster)) & (merged_geo_ex[["WE_perc"]] > 0)
+
+
+# converting to data frame for plotting
+aus_pa_raster_df <- as.data.frame(aus_pa_raster, xy = TRUE, na.rm = TRUE)
+merged_geo_ex_df <- as.data.frame(merged_geo_ex, xy = TRUE, na.rm = TRUE)
+overlap_ex_df <- as.data.frame(overlap_ex, xy = TRUE, na.rm = TRUE)
+
+
+freq(overlap_ex$richness)[2,3]/freq(merged_geo_ex$rich_perc)[2,3]*100 # percentage of richness hotspots within PA's
+freq(overlap_ex$WE)[2,3]/freq(merged_geo_ex$WE_perc)[2,3]*100 # percentage of WE hotspots within PA's
+
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = subset(merged_geo_ex_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
+  geom_tile(data = subset(overlap_ex_df, richness), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = subset(merged_geo_ex_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
+  geom_tile(data = subset(overlap_ex_df, WE), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
+## overlap with hotspots - short range
 ```{r}
-# add the points as sf for species without alpha hulls (< 3 records)
-myg_conr_nest_hum_obs_points <- myg_conr_nest_hum_obs |>
-    mutate(
-    conr_ahull_sf = map2(conr_ahull_sf, occ, ~{
-      if (is.null(.x)) {
-        # Convert occ tibble into sf POINTS
-        pts <- st_as_sf(.y, coords = c("decimalLongitude", "decimalLatitude"), crs = 4326)
-        # Collapse all points into a MULTIPOINT
-        st_union(pts) |> st_cast("MULTIPOINT")
-      } else {
-        sf::st_geometry(.x) |>
-        sf::st_cast("MULTILINESTRING") |> # to get filled polygons instead of just the boundaries
-        sf::st_polygonize()
-      }
-    })
-  )
+merged_geo_sr_ex <- rast(here("data/protected_areas/sr_ex_bias_corrected_hotspots_spatraster.tif"))
 
-#Unnest the sf
-all_myg_alpha_sf_points_hum_obs <- myg_conr_nest_hum_obs_points |> 
-  dplyr::select(species, conr_ahull_sf) |> 
-  tidyr::unnest(cols = c(conr_ahull_sf)) |> 
-  sf::st_as_sf()
+# hotspots (95th percentiles)
+rich_q95_sr_ex <- global(merged_geo_sr_ex[["richness_sr_ex_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_sr_ex$rich_perc <- merged_geo_sr_ex[["richness_sr_ex_sampbias_corrected"]] > rich_q95_sr_ex
 
-# crop to land area only
-all_myg_alpha_sf_land_hum_obs <- st_intersection(all_myg_alpha_sf_points_hum_obs, aus)
+WE_q95_sr_ex <- global(merged_geo_sr_ex[["WE_sr_ex_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_sr_ex$WE_perc <- merged_geo_sr_ex[["WE_sr_ex_sampbias_corrected"]] > WE_q95_sr_ex
 
-# separating polygons and points for plotting
-polys_hum_obs <- all_myg_alpha_sf_land_hum_obs |>
-  filter(st_geometry_type(conr_ahull_sf) %in% c("POLYGON", "MULTIPOLYGON"))
-points_hum_obs <- all_myg_alpha_sf_land_hum_obs |>
-  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
 
-# plotting alpha hulls and points
-base_map  + 
-  geom_sf(data = polys_hum_obs, 
-          aes(geometry = conr_ahull_sf),
-           # colour = "black",
-          colour = "#609966",
-          fill = "lightgreen") +
-  geom_sf(data = points_hum_obs,
-             aes(geometry = conr_ahull_sf),
-             colour = "red",
-             fill = "red") +
-  coord_sf(c(110, 155)) +
-  theme_minimal() |> 
-  theme(legend.position = "none")
+v <- vect(aus_pa_data)
+v <- project(v, merged_geo_sr)
 
+aus_pa_raster <- rasterize(v, merged_geo_sr_ex, touches = TRUE)
+
+values(aus_pa_raster)[is.nan(values(aus_pa_raster))] <- NA
+
+
+# getting cells where hotspots overlap with PA's
+overlap_sr_ex <- (!is.na(aus_pa_raster)) & (merged_geo_sr_ex[["rich_perc"]] > 0)
+names(overlap_sr_ex) <- "richness"
+overlap_sr_ex$WE <- (!is.na(aus_pa_raster)) & (merged_geo_sr_ex[["WE_perc"]] > 0)
+
+
+# converting to data frame for plotting
+aus_pa_raster_df <- as.data.frame(aus_pa_raster, xy = TRUE, na.rm = TRUE)
+merged_geo_sr_ex_df <- as.data.frame(merged_geo_sr_ex, xy = TRUE, na.rm = TRUE)
+overlap_sr_ex_df <- as.data.frame(overlap_sr_ex, xy = TRUE, na.rm = TRUE)
+
+
+freq(overlap_sr_ex$richness)[2,3]/freq(merged_geo_sr_ex$rich_perc)[2,3]*100 # percentage of richness hotspots within PA's
+freq(overlap_sr_ex$WE)[2,3]/freq(merged_geo_sr_ex$WE_perc)[2,3]*100 # percentage of WE hotspots within PA's
+
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = subset(merged_geo_sr_ex_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
+  geom_tile(data = subset(overlap_sr_ex_df, richness), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = subset(merged_geo_sr_ex_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
+  geom_tile(data = subset(overlap_sr_ex_df, WE), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
-```{r}
-# Save output
-# Clean up the name
-file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1], "/")[10] |> str_remove(".parquet")
 
-saveRDS(all_myg_alpha_sf_land_hum_obs, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_human_obs_", file_name, ".rds")))
+# Human observation data only
+
+## overlap with hotspots
+```{r}
+merged_geo_hum_obs <- rast(here("data/protected_areas/hum_obs_bias_corrected_hotspots_spatraster.tif"))
+
+# hotspots (95th percentiles)
+rich_q95_hum_obs <- global(merged_geo_hum_obs[["richness_hum_obs_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_hum_obs$rich_perc <- merged_geo_hum_obs[["richness_hum_obs_sampbias_corrected"]] > rich_q95_hum_obs
+
+WE_q95_hum_obs <- global(merged_geo_hum_obs[["WE_hum_obs_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_hum_obs$WE_perc <- merged_geo_hum_obs[["WE_hum_obs_sampbias_corrected"]] > WE_q95_hum_obs
+
+
+v <- vect(aus_pa_data)
+v <- project(v, merged_geo_hum_obs)
+
+aus_pa_raster <- rasterize(v, merged_geo_hum_obs, touches = TRUE)
+
+values(aus_pa_raster)[is.nan(values(aus_pa_raster))] <- NA
+
+
+# getting cells where hotspots overlap with PA's
+overlap_hum_obs <- (!is.na(aus_pa_raster)) & (merged_geo_hum_obs[["rich_perc"]] > 0)
+names(overlap_hum_obs) <- "richness"
+overlap_hum_obs$WE <- (!is.na(aus_pa_raster)) & (merged_geo_hum_obs[["WE_perc"]] > 0)
+
+
+# converting to data frame for plotting
+aus_pa_raster_df <- as.data.frame(aus_pa_raster, xy = TRUE, na.rm = TRUE)
+merged_geo_hum_obs_df <- as.data.frame(merged_geo_hum_obs, xy = TRUE, na.rm = TRUE)
+overlap_hum_obs_df <- as.data.frame(overlap_hum_obs, xy = TRUE, na.rm = TRUE)
+
+
+freq(overlap_hum_obs$richness)[2,3]/freq(merged_geo_hum_obs$rich_perc)[2,3]*100 # percentage of richness hotspots within PA's
+freq(overlap_hum_obs$WE)[2,3]/freq(merged_geo_hum_obs$WE_perc)[2,3]*100 # percentage of WE hotspots within PA's
+
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = subset(merged_geo_hum_obs_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
+  geom_tile(data = subset(overlap_hum_obs_df, richness), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = subset(merged_geo_hum_obs_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_tile(data = aus_pa_raster_df, aes(x=x, y=y), fill = "grey", col = NA) +
+  geom_tile(data = subset(overlap_hum_obs_df, WE), aes(x=x, y=y), fill = "darkgreen", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
+
+
