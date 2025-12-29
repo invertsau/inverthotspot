@@ -1,0 +1,424 @@
+---
+execute:
+  echo: false
+  freeze: auto
+editor_options: 
+  chunk_output_type: console
+---
+
+# Results
+
+```{r setup, include=FALSE, eval=TRUE}
+## Setting up
+ pacman::p_load(arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2,sp, purrr, ConR, dplyr, DT, zoomerjoin, gt, patchwork, tmap, spdep)
+
+tmap_mode("view")
+
+# Load helper functions
+source(here("R/utils.R"))
+
+### Load in data
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
+myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1]) 
+myg_spiders_hum_obs <- myg_spiders_cleaned |>
+  filter(basisOfRecord == "HUMAN_OBSERVATION")
+
+species_polys_points <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2025-08-14_ALA.rds")
+species_polys_points_expert <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_expert_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds")
+species_polys_points_hum_obs <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_human_obs_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds")
+```
+
+## Alpha hulls
+
+### Pre-processing
+
+#### full dataset
+
+```{r, include = FALSE}
+# Extract POLYGONs from GEOMETRYCOLLECTIONs
+species_polys_clean <- species_polys |>
+  st_collection_extract() |>
+  group_by(species) |>
+  summarise(geometry = st_union(x))
+
+combinedShp <- terra::vect(species_polys_clean)
+
+### Calculate Community Matrix
+comm.poly <- phyloregion::polys2comm(dat = combinedShp , trace=1, res = 0.05)
+str(comm.poly)
+plot(comm.poly$map)
+
+### Calulate weighted endemism 
+Endm.mygalomorph.poly <- phyloregion::weighted_endemism(comm.poly$comm_dat)
+str(Endm.mygalomorph.poly)
+
+## Join results back to spatial community data matrix
+m1.poly <- merge(comm.poly$map, data.frame(grids=names(Endm.mygalomorph.poly), WE=Endm.mygalomorph.poly), by="grids")
+
+# Drop NA in WE
+m1.poly <- m1.poly[!is.na(m1.poly$WE),]
+
+m1.poly
+
+### Calulate corrected weighted endemism
+m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
+
+### Assigning hotspots based on percentile
+m1.poly$rich_perc <- m1.poly$richness > quantile(m1.poly$richness, probs = 0.95)
+m1.poly$WE_perc <- m1.poly$WE > quantile(m1.poly$WE, probs = 0.95)
+m1.poly$CWE_perc <- m1.poly$corrected_endemism > quantile(m1.poly$corrected_endemism, probs = 0.95)
+
+# Creating sf object
+m1_sf <- 
+  sf::st_as_sf(m1.poly) |> 
+  sf::st_transform(4326)
+```
+
+#### expert-only data
+```{r, include = FALSE}
+# Extract POLYGONs from GEOMETRYCOLLECTIONs
+species_polys_expert_clean <- species_polys_expert |>
+  st_collection_extract() |>
+  group_by(species) |>
+  summarise(geometry = st_union(x))
+  
+combinedShp_ex <- terra::vect(species_polys_expert_clean)
+
+### Calculate Community Matrix
+comm.poly_ex <- phyloregion::polys2comm(dat = combinedShp_ex, species = "species", trace=1, res = 0.05)
+str(comm.poly_ex)
+plot(comm.poly_ex$map)
+
+### Calulate weighted endemism 
+Endm.mygalomorph.poly_ex <- phyloregion::weighted_endemism(comm.poly_ex$comm_dat)
+str(Endm.mygalomorph.poly_ex)
+
+## Join results back to spatial community data matrix
+m1.poly_ex <- merge(comm.poly_ex$map, data.frame(grids=names(Endm.mygalomorph.poly_ex), WE=Endm.mygalomorph.poly_ex), by="grids")
+
+# Drop NA in WE
+m1.poly_ex <- m1.poly_ex[!is.na(m1.poly_ex$WE),]
+
+### Calulate corrected weighted endemism
+m1.poly_ex$corrected_endemism <- m1.poly_ex$WE/m1.poly_ex$richness
+
+### Assigning hotspots based on percentile
+m1.poly_ex$rich_perc <- m1.poly_ex$richness > quantile(m1.poly_ex$richness, probs = 0.95)
+m1.poly_ex$WE_perc <- m1.poly_ex$WE > quantile(m1.poly_ex$WE, probs = 0.95)
+m1.poly_ex$CWE_perc <- m1.poly_ex$corrected_endemism > quantile(m1.poly_ex$corrected_endemism, probs = 0.95)
+
+# creating sf object
+m1_sf_ex <- 
+  sf::st_as_sf(m1.poly_ex) |> 
+  sf::st_transform(4326)
+```
+
+### Species richness
+
+```{r, include = FALSE}
+# All data
+fig1a <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf, aes(fill = richness), col = NA) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Citizen science + Preserved specimen data")
+
+# Expert Richness
+fig1b <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_ex, aes(fill = richness), col = NA) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  ggtitle("Preserved specimen data only")
+```
+
+```{r}
+#| fig-width: 8
+#| fig-cap: 
+#|   - "Figure 1: Map showing species richness of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+fig1a + fig1b + 
+  plot_layout(guides = 'collect') &
+  theme(legend.position='bottom')
+```
+
+::: {.callout-note}
+There was **no evidence** for spatial clustering in **species richness** in either the combined dataset or in the preserved specimen only dataset (Table 1).
+:::
+
+Table 1. Summary statistics for species richness in both datasets
+
+```{r}
+tibble(dataset = c("Citizen Science + Preserved Specimen",
+                   "Preserved Specimen only"),
+       `z-statistic` = c(R_I$statistic |> signif(2),
+                     R_I_ex$statistic |> signif(2)),
+       `p-value` = c(R_I$p.value  |> signif(2),
+             R_I_ex$p.value  |> signif(2)),
+       `n species` = c(myg_spiders_cleaned$scientificName |> unique() |> length(),
+                       myg_spiders_cleaned_expert$scientificName |> unique() |> length()),
+       `n observations` = c(nrow(myg_spiders_cleaned),
+                            nrow(myg_spiders_cleaned_expert))) |> 
+  clean_names(case = "sentence") |> 
+  gt()
+```
+
+#### Hotspots
+
+```{r}
+# All data
+fig1c <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf, aes(fill = richness), col = NA) + 
+  geom_sf(data = subset(m1_sf, rich_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Citizen science + Preserved specimen data")
+
+# Expert Richness
+fig1d <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_ex, aes(fill = richness), col = NA) + 
+  geom_sf(data = subset(m1_sf_ex, rich_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  ggtitle("Preserved specimen data only")
+```
+
+```{r}
+#| fig-width: 8
+#| fig-cap: 
+#|   - "Figure 2: Map showing hotspots of species richness of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+fig1c + fig1d + 
+  plot_layout(guides = 'collect') &
+  theme(legend.position='bottom')
+```
+
+### Weighted endemism
+
+```{r, include=FALSE}
+# All data
+fig2a <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf, aes(fill = WE^0.25), col = NA) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Citizen science + Preserved specimen data")
+
+
+# Expert data
+fig2b <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_ex, aes(fill = WE^0.25), col = NA) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Preserved specimen data only")
+```
+
+```{r}
+#| fig-width: 8
+#| fig-cap: 
+#|   - "Figure 3: Map showing weighted endemism of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+
+fig2a + fig2b + 
+  plot_layout(guides = 'collect') &
+  theme(legend.position='bottom')
+```
+
+::: {.callout-note}
+There was **some evidence** for spatial clustering in **weighted endemism** in the preserved specimen only dataset (Table 2).
+:::
+
+```{r,include=FALSE}
+WE_I
+
+WE_I_ex
+```
+
+Table 2. Test statistic and p value for weighted endemsim
+
+```{r}
+tibble(dataset = c("Citizen Science + Preserved Specimen",
+                   "Preserved Specimen only"),
+       `z-statistic` = c(WE_I$statistic |> signif(2),
+                     WE_I_ex$statistic |> signif(2)),
+       `p-value` = c(WE_I$p.value  |> signif(2),
+             WE_I_ex$p.value  |> signif(2)),
+       `n species` = c(myg_spiders_cleaned$scientificName |> unique() |> length(),
+                       myg_spiders_cleaned_expert$scientificName |> unique() |> length()),
+       `n observations` = c(nrow(myg_spiders_cleaned),
+                            nrow(myg_spiders_cleaned_expert))) |> 
+  clean_names(case = "sentence") |> 
+  gt()
+```
+
+#### Hotspots
+
+```{r}
+# All data
+fig2c <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf, aes(fill = WE^0.25), col = NA) + 
+  geom_sf(data = subset(m1_sf, WE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Citizen science + Preserved specimen data")
+
+# Expert data
+fig2d <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_ex, aes(fill = WE^0.25), col = NA) + 
+  geom_sf(data = subset(m1_sf_ex, WE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Preserved specimen data only")
+```
+
+```{r}
+#| fig-width: 8
+#| fig-cap: 
+#|   - "Figure 4: Map showing hotspots of weighted endemism of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+fig2c + fig2d + 
+  plot_layout(guides = 'collect') &
+  theme(legend.position='bottom')
+```
+
+### Corrected weighted endemism
+
+```{r}
+# All data
+fig3a <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf, aes(fill = corrected_endemism^0.25), col = NA) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Citizen science + Preserved specimen data")
+
+# "Expert Correct Endemism"
+fig3b <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism^0.25), col = NA) + 
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Preserved specimen data only")
+```
+
+```{r}
+#| fig-width: 8
+#| fig-cap: 
+#|   - "Figure 5: Map showing corrected weighted endemism estimated of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+
+fig3a + fig3b + 
+  plot_layout(guides = 'collect') &
+  theme(legend.position='bottom')
+```
+
+```{r,include=FALSE}
+CWE_I
+
+CWE_I_ex
+```
+
+::: {.callout-note}
+There was **some evidence** for spatial clustering in **corrected weighted endemism** in the preserved specimen only dataset (Table 3).
+:::
+
+Table 3. Test statistic and p value for corrected weighted endemsim
+
+```{r}
+tibble(dataset = c("Citizen Science + Preserved Specimen",
+                   "Preserved Specimen only"),
+       `z-statistic` = c(CWE_I$statistic |> signif(2),
+                     CWE_I_ex$statistic |> signif(2)),
+       `p-value` = c(CWE_I$p.value  |> signif(2),
+             CWE_I_ex$p.value  |> signif(2)),
+       `n species` = c(myg_spiders_cleaned$scientificName |> unique() |> length(),
+                       myg_spiders_cleaned_expert$scientificName |> unique() |> length()),
+       `n observations` = c(nrow(myg_spiders_cleaned),
+                            nrow(myg_spiders_cleaned_expert))) |> 
+  clean_names(case = "sentence") |> 
+  gt()
+```
+
+#### Hotspots
+
+```{r}
+# All data
+fig3c <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf, aes(fill = corrected_endemism^0.25), col = NA) + 
+  geom_sf(data = subset(m1_sf, CWE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Citizen science + Preserved specimen data")
+
+# "Expert Correct Endemism"
+fig3d <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism^0.25), col = NA) + 
+  geom_sf(data = subset(m1_sf_ex, CWE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
+  ggtitle("Preserved specimen data only")
+```
+
+```{r}
+#| fig-width: 8
+#| fig-cap: 
+#|   - "Figure 6: Map showing hotspots of corrected weighted endemism of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
+fig3c + fig3d + 
+  plot_layout(guides = 'collect') &
+  theme(legend.position='bottom')
+```

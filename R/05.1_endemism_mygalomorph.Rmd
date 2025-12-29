@@ -340,6 +340,8 @@ merged_geo_df$WE_perc <- merged_geo_df$WE_sampbias_corrected > quantile(merged_g
 merged_geo_df$CWE_perc <- merged_geo_df$CWE_sampbias_corrected > quantile(merged_geo_df$CWE_sampbias_corrected, probs = 0.95)
 merged_geo_df$rich_perc <- merged_geo_df$richness_sampbias_corrected > quantile(merged_geo_df$richness_sampbias_corrected, probs = 0.95)
 
+# exporting for results section plotting
+write_csv(merged_geo_df, here("data/dataframes_for_plots/full_dataset_hotspots.csv"))
 ```
 
 #### plotting
@@ -544,6 +546,9 @@ merged_geo_sr_df <- as.data.frame(merged_sr_geo, xy = TRUE, na.rm = TRUE)
 merged_geo_sr_df$WE_perc <- merged_geo_sr_df$WE_sr_sampbias_corrected > quantile(merged_geo_sr_df$WE_sr_sampbias_corrected, probs = 0.95)
 merged_geo_sr_df$CWE_perc <- merged_geo_sr_df$CWE_sr_sampbias_corrected > quantile(merged_geo_sr_df$CWE_sr_sampbias_corrected, probs = 0.95)
 merged_geo_sr_df$rich_perc <- merged_geo_sr_df$richness_sr_sampbias_corrected > quantile(merged_geo_sr_df$richness_sr_sampbias_corrected, probs = 0.95)
+
+# exporting for results section plotting
+write_csv(merged_geo_sr_df, here("data/dataframes_for_plots/full_dataset_hotspots_sr.csv"))
 ```
 
 #### plotting
@@ -632,49 +637,49 @@ look into variograms for determining the spatial scale of dependence for setting
 
 Getis-Ord's G* - to identify significant clusters
 ```{r}
-tmap_mode("plot")
-
-#identify all neighboring polygons for each polygon in the dataset (including self)
-lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
-
-# calculate Getis-Ord's G*
-RI_local_G <- localG(m1.poly$WE, lw_self, alternative = "greater")
-
-RI_local_G_att <- attributes(RI_local_G)
-
-m1_sf$gI <- RI_local_G_att$internals[, "G*i"] # Getis-Ord G
-m1_sf$gZ <- RI_local_G_att$internals[, "Z(G*i)"] # z-scores
-m1_sf$gp <- RI_local_G_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
-
-#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
-m1_sf$quadrant_g <- NA
-# high-high
-m1_sf[m1_sf$gI > 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"] <- 1
-# low-low
-#m1_sf[m1_sf$gI < 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"] <- 2
-# non-significant
-m1_sf[(!is.na(m1_sf$gp) & m1_sf$gp > 0.0001), "quadrant_g"] <- 3
-
-#mapping clusters
-m1_sf$cluster_label <- factor(m1_sf$quadrant_g,
-  levels = c(1, 3),
-  labels = c("High-High", "Non-significant")
-)
-
-tm_500 <- tm_shape(m1_sf) + tm_fill(fill = "cluster_label",
-                          fill.scale = tm_scale(values =  c("red", "white")),
-                          fill_alpha = 0.5,
-                          fill.legend = tm_legend(title = "Clusters",
-                                                  text.size = 1),
-                          col = "grey") +
-  tm_borders(col = "cluster_label",
-                          col.scale = tm_scale(values = c("red", "grey")),
-                          col_alpha = 0.5,
-                          col.legend = tm_legend(show = FALSE)) +
-tm_layout(frame = FALSE) +
-tm_layout(legend.outside = TRUE)
-
-tm_500
+# tmap_mode("plot")
+# 
+# #identify all neighboring polygons for each polygon in the dataset (including self)
+# lw_self <- nb2listw(include.self(S.dist), style="W",zero.policy=T) 
+# 
+# # calculate Getis-Ord's G*
+# RI_local_G <- localG(m1.poly$WE, lw_self, alternative = "greater")
+# 
+# RI_local_G_att <- attributes(RI_local_G)
+# 
+# m1_sf$gI <- RI_local_G_att$internals[, "G*i"] # Getis-Ord G
+# m1_sf$gZ <- RI_local_G_att$internals[, "Z(G*i)"] # z-scores
+# m1_sf$gp <- RI_local_G_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
+# 
+# #designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+# m1_sf$quadrant_g <- NA
+# # high-high
+# m1_sf[m1_sf$gI > 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"] <- 1
+# # low-low
+# #m1_sf[m1_sf$gI < 0 & (!is.na(m1_sf$gp) & m1_sf$gp <= 0.0001), "quadrant_g"] <- 2
+# # non-significant
+# m1_sf[(!is.na(m1_sf$gp) & m1_sf$gp > 0.0001), "quadrant_g"] <- 3
+# 
+# #mapping clusters
+# m1_sf$cluster_label <- factor(m1_sf$quadrant_g,
+#   levels = c(1, 3),
+#   labels = c("High-High", "Non-significant")
+# )
+# 
+# tm_500 <- tm_shape(m1_sf) + tm_fill(fill = "cluster_label",
+#                           fill.scale = tm_scale(values =  c("red", "white")),
+#                           fill_alpha = 0.5,
+#                           fill.legend = tm_legend(title = "Clusters",
+#                                                   text.size = 1),
+#                           col = "grey") +
+#   tm_borders(col = "cluster_label",
+#                           col.scale = tm_scale(values = c("red", "grey")),
+#                           col_alpha = 0.5,
+#                           col.legend = tm_legend(show = FALSE)) +
+# tm_layout(frame = FALSE) +
+# tm_layout(legend.outside = TRUE)
+# 
+# tm_500
 ```
 
 ## EXPERT DATA ONLY
@@ -898,6 +903,9 @@ merged_geo_ex_df <- as.data.frame(merged_ex_geo, xy = TRUE, na.rm = TRUE)
 merged_geo_ex_df$WE_perc <- merged_geo_ex_df$WE_ex_sampbias_corrected > quantile(merged_geo_ex_df$WE_ex_sampbias_corrected, probs = 0.95)
 # merged_geo_ex_df$CWE_perc <- merged_geo_ex_df$CWE_ex_sampbias_corrected > quantile(merged_geo_ex_df$CWE_ex_sampbias_corrected, probs = 0.95)
 merged_geo_ex_df$rich_perc <- merged_geo_ex_df$richness_ex_sampbias_corrected > quantile(merged_geo_ex_df$richness_ex_sampbias_corrected, probs = 0.95)
+
+# exporting for results section plotting
+write_csv(merged_geo_ex_df, here("data/dataframes_for_plots/expert_hotspots.csv"))
 ```
 
 #### plotting
@@ -915,17 +923,17 @@ ggplot() +
   theme_minimal() +
   theme(legend.position = "bottom")
 
-ggplot() +
-  geom_sf(data = ozmap_states, fill = "white") + 
-  geom_tile(data = merged_geo_ex_df, aes(x=x, y=y, fill = CWE_ex_sampbias_corrected), col = NA) + 
-  geom_tile(data = subset(merged_geo_ex_df, CWE_perc), aes(x=x, y=y), fill = "red", col = NA) +
-  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155),
-          ylim = c(-10, -45)) +
-  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
-                              ) + 
-  theme_minimal() +
-  theme(legend.position = "bottom")
+# ggplot() +
+#   geom_sf(data = ozmap_states, fill = "white") + 
+#   geom_tile(data = merged_geo_ex_df, aes(x=x, y=y, fill = CWE_ex_sampbias_corrected), col = NA) + 
+#   geom_tile(data = subset(merged_geo_ex_df, CWE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+#   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+#   coord_sf(xlim = c(110, 155),
+#           ylim = c(-10, -45)) +
+#   viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+#                               ) + 
+#   theme_minimal() +
+#   theme(legend.position = "bottom")
 
 ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
@@ -946,70 +954,70 @@ https://www.paulamoraga.com/book-spatial/spatial-autocorrelation.html#:~:text=Mo
 
 Moran's I - overall autocorrelation
 ```{r}
-# extract the center of each polygon
-coo_ex <- terra::centroids(m1.poly_ex)
-
-coo_ex <- coo_ex |> sf::st_as_sf(crs = 4326)
-
-# Search radius to include all neighboring polygon (0 - 200km)
-S.dist_ex  <-  dnearneigh(coo_ex, 0, 200)  
-
-#identify all neighboring polygons for each polygon in the dataset.
-lw_ex <- nb2listw(S.dist_ex, style="W",zero.policy=T) 
-
-# Run the MC simulation
-RI_MI_ex  <-  moran.mc(m1.poly_ex$richness, lw, nsim=9999,zero.policy=T)
-WE_MI_ex  <-  moran.mc(m1.poly_ex$WE, lw, nsim=9999,zero.policy=T)
-CWE_MI_ex  <-  moran.mc(m1.poly_ex$corrected_endemism, lw, nsim=9999,zero.policy=T)
-
-# saveRDS(RI_MI_ex, "output/analysis/Cleaned_Mygalomorphae_RI_MI_expert.rds")
-# saveRDS(WE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_WE_MI_expert.rds")
-# saveRDS(CWE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_CWE_MI_expert.rds")
+# # extract the center of each polygon
+# coo_ex <- terra::centroids(m1.poly_ex)
+# 
+# coo_ex <- coo_ex |> sf::st_as_sf(crs = 4326)
+# 
+# # Search radius to include all neighboring polygon (0 - 200km)
+# S.dist_ex  <-  dnearneigh(coo_ex, 0, 200)  
+# 
+# #identify all neighboring polygons for each polygon in the dataset.
+# lw_ex <- nb2listw(S.dist_ex, style="W",zero.policy=T) 
+# 
+# # Run the MC simulation
+# RI_MI_ex  <-  moran.mc(m1.poly_ex$richness, lw, nsim=9999,zero.policy=T)
+# WE_MI_ex  <-  moran.mc(m1.poly_ex$WE, lw, nsim=9999,zero.policy=T)
+# CWE_MI_ex  <-  moran.mc(m1.poly_ex$corrected_endemism, lw, nsim=9999,zero.policy=T)
+# 
+# # saveRDS(RI_MI_ex, "output/analysis/Cleaned_Mygalomorphae_RI_MI_expert.rds")
+# # saveRDS(WE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_WE_MI_expert.rds")
+# # saveRDS(CWE_MI_ex, "output/analysis/Cleaned_Mygalomorphae_CWE_MI_expert.rds")
 ```
 
 Getis-Ord's G* - to identify significant clusters
 ```{r}
-tmap_mode("plot")
-
-#identify all neighboring polygons for each polygon in the dataset (including self)
-lw_self_ex <- nb2listw(include.self(S.dist_ex), style="W",zero.policy=T) 
-
-# calculate Getis-Ord's G*
-RI_local_G_ex <- localG(m1.poly_ex$WE, lw_self_ex, alternative = "greater")
-
-RI_local_G_ex_att <- attributes(RI_local_G_ex)
-
-m1_sf_ex$gI <- RI_local_G_ex_att$internals[, "G*i"] # Getis-Ord G
-m1_sf_ex$gZ <- RI_local_G_ex_att$internals[, "Z(G*i)"] # z-scores
-m1_sf_ex$gp <- RI_local_G_ex_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
-
-#designating points to quadrants based on Getis-Ord's G* and corresponding p-values
-m1_sf_ex$quadrant_g <- NA
-# high-high
-m1_sf_ex[m1_sf_ex$gI > 0 & (!is.na(m1_sf_ex$gp) & m1_sf_ex$gp <= 0.0001), "quadrant_g"] <- 1
-# low-low
-#m1_sf_ex[m1_sf_ex$gI < 0 & (!is.na(m1_sf_ex$gp) & m1_sf_ex$gp <= 0.0001), "quadrant_g"] <- 2
-# non-significant
-m1_sf_ex[(!is.na(m1_sf_ex$gp) & m1_sf_ex$gp > 0.0001), "quadrant_g"] <- 3
-
-#mapping clusters
-m1_sf_ex$cluster_label <- factor(m1_sf_ex$quadrant_g,
-  levels = c(1, 3),
-  labels = c("High-High", "Non-significant")
-)
-
-tm_shape(m1_sf_ex) + tm_fill(fill = "cluster_label",
-                          fill.scale = tm_scale(values =  c("red", "white")),
-                          fill_alpha = 0.5,
-                          fill.legend = tm_legend(title = "Clusters",
-                                                  text.size = 1),
-                          col = "grey") +
-  tm_borders(col = "cluster_label",
-                          col.scale = tm_scale(values = c("red", "grey")),
-                          col_alpha = 0.5,
-                          col.legend = tm_legend(show = FALSE)) +
-tm_layout(frame = FALSE) +
-tm_layout(legend.outside = TRUE)
+# tmap_mode("plot")
+# 
+# #identify all neighboring polygons for each polygon in the dataset (including self)
+# lw_self_ex <- nb2listw(include.self(S.dist_ex), style="W",zero.policy=T) 
+# 
+# # calculate Getis-Ord's G*
+# RI_local_G_ex <- localG(m1.poly_ex$WE, lw_self_ex, alternative = "greater")
+# 
+# RI_local_G_ex_att <- attributes(RI_local_G_ex)
+# 
+# m1_sf_ex$gI <- RI_local_G_ex_att$internals[, "G*i"] # Getis-Ord G
+# m1_sf_ex$gZ <- RI_local_G_ex_att$internals[, "Z(G*i)"] # z-scores
+# m1_sf_ex$gp <- RI_local_G_ex_att$internals[, "Pr(z > E(G*i))"] # p-values corresponding to alternative
+# 
+# #designating points to quadrants based on Getis-Ord's G* and corresponding p-values
+# m1_sf_ex$quadrant_g <- NA
+# # high-high
+# m1_sf_ex[m1_sf_ex$gI > 0 & (!is.na(m1_sf_ex$gp) & m1_sf_ex$gp <= 0.0001), "quadrant_g"] <- 1
+# # low-low
+# #m1_sf_ex[m1_sf_ex$gI < 0 & (!is.na(m1_sf_ex$gp) & m1_sf_ex$gp <= 0.0001), "quadrant_g"] <- 2
+# # non-significant
+# m1_sf_ex[(!is.na(m1_sf_ex$gp) & m1_sf_ex$gp > 0.0001), "quadrant_g"] <- 3
+# 
+# #mapping clusters
+# m1_sf_ex$cluster_label <- factor(m1_sf_ex$quadrant_g,
+#   levels = c(1, 3),
+#   labels = c("High-High", "Non-significant")
+# )
+# 
+# tm_shape(m1_sf_ex) + tm_fill(fill = "cluster_label",
+#                           fill.scale = tm_scale(values =  c("red", "white")),
+#                           fill_alpha = 0.5,
+#                           fill.legend = tm_legend(title = "Clusters",
+#                                                   text.size = 1),
+#                           col = "grey") +
+#   tm_borders(col = "cluster_label",
+#                           col.scale = tm_scale(values = c("red", "grey")),
+#                           col_alpha = 0.5,
+#                           col.legend = tm_legend(show = FALSE)) +
+# tm_layout(frame = FALSE) +
+# tm_layout(legend.outside = TRUE)
 ```
 
 ## Short-range species
@@ -1052,10 +1060,10 @@ comm_merged_short_range_spp_ex <- comm_merged[,which(colSums(comm_merged_ex)<401
 Endm.mygalomorph_sr_ex <- phyloregion::weighted_endemism(comm_merged_short_range_spp_ex)
 
 # merging alpha hull- and point-based maps, ensuring that richness is summed in overlapping cells
-comm_overlapping_sr_ex <- merge(comm.poly_sr_ex$map, comm.point$map, by = "grids", all.x = TRUE)
+comm_overlapping_sr_ex <- merge(comm.poly_sr_ex$map, comm.point_ex$map, by = "grids", all.x = TRUE)
 comm_overlapping_sr_ex$richness <- ifelse(is.na(comm_overlapping_sr_ex$richness.x), 0, comm_overlapping_sr_ex$richness.x) + ifelse(is.na(comm_overlapping_sr_ex$richness.y), 0, comm_overlapping_sr_ex$richness.y)
 
-non_overlapping_sr_ex <- comm.point$map[which(!values(comm.point$map)[1]$grids %in% values(comm.poly_sr_ex$map)[1]$grids),]
+non_overlapping_sr_ex <- comm.point_ex$map[which(!values(comm.point_ex$map)[1]$grids %in% values(comm.poly_sr_ex$map)[1]$grids),]
 
 comm_merged_map_sr_ex <- rbind(comm_overlapping_sr_ex, non_overlapping_sr_ex)
 
@@ -1173,6 +1181,9 @@ merged_geo_sr_ex_df <- as.data.frame(merged_sr_ex_geo, xy = TRUE, na.rm = TRUE)
 merged_geo_sr_ex_df$WE_perc <- merged_geo_sr_ex_df$WE_sr_ex_sampbias_corrected > quantile(merged_geo_sr_ex_df$WE_sr_ex_sampbias_corrected, probs = 0.95)
 merged_geo_sr_ex_df$CWE_perc <- merged_geo_sr_ex_df$CWE_sr_ex_sampbias_corrected > quantile(merged_geo_sr_ex_df$CWE_sr_ex_sampbias_corrected, probs = 0.95)
 merged_geo_sr_ex_df$rich_perc <- merged_geo_sr_ex_df$richness_sr_ex_sampbias_corrected > quantile(merged_geo_sr_ex_df$richness_sr_ex_sampbias_corrected, probs = 0.95)
+
+# exporting for results section plotting
+write_csv(merged_geo_sr_ex_df, here("data/dataframes_for_plots/expert_hotspots_sr.csv"))
 ```
 
 #### plotting
@@ -1218,39 +1229,39 @@ ggplot() +
 
 
 ```{r, echo=FALSE}
-# Exploring discrepancies between old and new data pulls
-
-exp_old <- read_parquet(here("output/data/cleaned_expert_recordscleaned_Mygalomorphae_withassertions_2024-03-13_ALA"))
-exp_new <- read_parquet(here("output/data/cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.parquet"))
-
-old_not_new <- exp_old[which(!exp_old$recordID %in% exp_new$recordID),]
-
-new_coarse <- read_parquet(here("data/galah/Mygalomorphae_withassertions_2025-08-14_ALA.parquet"))
-
-## alpha hulls
-filtered <- species_polys |> filter(species == "Selenocosmia stirlingi")
-filtered2 <- myg_spiders_cleaned |> filter(species == "Selenocosmia stirlingi")
-
-base_map  + 
-  # geom_sf(data = filtered, 
-  #         aes(geometry = x, fill = species),
-  #         #fill = species,
-  #         alpha = 0.5,
-  #         colour = "darkgrey") + 
-  # geom_sf_text(data = filtered, aes(label = species), size = 1) +
-  geom_point(data = exp_old, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(data = exp_new, aes(x = decimalLongitude, y = decimalLatitude), fill = "red", col = "red") +
-  geom_point(data = old_not_new, aes(x = decimalLongitude, y = decimalLatitude), fill = "blue", col = "blue") +
-  geom_sf(data = aus, fill = NA, colour = "black") + 
-  coord_sf(c(110, 155)) +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-# ## Community Matrix
-# #|   #| fig-cap: 
-# #|   - "Community matrix of Mygalomorphae spiders from our cleaned dataset"
-# comm.poly <- phyloregion::polys2comm(dat = combinedShp , trace=1, res = 0.05)
-# plot(comm.poly$map)
+# # Exploring discrepancies between old and new data pulls
+# 
+# exp_old <- read_parquet(here("output/data/cleaned_expert_recordscleaned_Mygalomorphae_withassertions_2024-03-13_ALA"))
+# exp_new <- read_parquet(here("output/data/cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.parquet"))
+# 
+# old_not_new <- exp_old[which(!exp_old$recordID %in% exp_new$recordID),]
+# 
+# new_coarse <- read_parquet(here("data/galah/Mygalomorphae_withassertions_2025-08-14_ALA.parquet"))
+# 
+# ## alpha hulls
+# filtered <- species_polys |> filter(species == "Selenocosmia stirlingi")
+# filtered2 <- myg_spiders_cleaned |> filter(species == "Selenocosmia stirlingi")
+# 
+# base_map  + 
+#   # geom_sf(data = filtered, 
+#   #         aes(geometry = x, fill = species),
+#   #         #fill = species,
+#   #         alpha = 0.5,
+#   #         colour = "darkgrey") + 
+#   # geom_sf_text(data = filtered, aes(label = species), size = 1) +
+#   geom_point(data = exp_old, aes(x = decimalLongitude, y = decimalLatitude)) +
+#   geom_point(data = exp_new, aes(x = decimalLongitude, y = decimalLatitude), fill = "red", col = "red") +
+#   geom_point(data = old_not_new, aes(x = decimalLongitude, y = decimalLatitude), fill = "blue", col = "blue") +
+#   geom_sf(data = aus, fill = NA, colour = "black") + 
+#   coord_sf(c(110, 155)) +
+#   theme_minimal() +
+#   theme(legend.position = "none")
+# 
+# # ## Community Matrix
+# # #|   #| fig-cap: 
+# # #|   - "Community matrix of Mygalomorphae spiders from our cleaned dataset"
+# # comm.poly <- phyloregion::polys2comm(dat = combinedShp , trace=1, res = 0.05)
+# # plot(comm.poly$map)
 ```
 
 
@@ -1473,6 +1484,9 @@ merged_geo_hum_obs_df <- as.data.frame(merged_hum_obs_geo, xy = TRUE, na.rm = TR
 merged_geo_hum_obs_df$WE_perc <- merged_geo_hum_obs_df$WE_hum_obs_sampbias_corrected > quantile(merged_geo_hum_obs_df$WE_hum_obs_sampbias_corrected, probs = 0.95)
 merged_geo_hum_obs_df$CWE_perc <- merged_geo_hum_obs_df$CWE_hum_obs_sampbias_corrected > quantile(merged_geo_hum_obs_df$CWE_hum_obs_sampbias_corrected, probs = 0.95)
 merged_geo_hum_obs_df$rich_perc <- merged_geo_hum_obs_df$richness_hum_obs_sampbias_corrected > quantile(merged_geo_hum_obs_df$richness_hum_obs_sampbias_corrected, probs = 0.95)
+
+# exporting for results section plotting
+write_csv(merged_geo_hum_obs_df, here("data/dataframes_for_plots/hum_obs_hotspots.csv"))
 ```
 
 #### plotting
@@ -1513,4 +1527,224 @@ ggplot() +
                               ) + 
   theme_minimal() +
   theme(legend.position = "bottom")
+```
+
+## Short-range species
+
+### Pre-processing
+
+```{r}
+# getting species with range size of 10000 m2 or less (<401 grid cells)
+short_range_spp_hum_obs <- colnames(comm_merged_hum_obs[,which(colSums(comm_merged_hum_obs)<401)])
+
+# Extract POLYGONs from GEOMETRYCOLLECTIONs
+species_polys_clean_sr_hum_obs <- species_polys_hum_obs_clean |> 
+  filter(species %in% short_range_spp_hum_obs)
+  
+# Combine into one large spatial dataframe
+combinedShp_sr_hum_obs <- terra::vect(species_polys_clean_sr_hum_obs)
+
+#projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+combinedShp_equalarea_sr_hum_obs <- project(combinedShp_sr_hum_obs, "EPSG:9473") 
+
+
+```
+
+### Calculate Community Matrix
+
+Convert raw input distribution data to community at 0.05 decimal degrees
+`trace = 1` is passed to `mean_dist()` which generates mean pairwise distance matrix from a set many pairwise distance matrices. Note: all matrices should be of the same dimension. `trace` "traces" the function; trace = 2 or higher will be more voluminous
+
+```{r}
+# community matrix for species with alpha hulls (at least 3 records)
+comm.poly_sr_hum_obs <- phyloregion::polys2comm(dat = combinedShp_equalarea_sr_hum_obs, trace=1, res = 5000)
+
+## for species without alpha hulls
+## seems like phyloregion::polys2comm() also works for point data if in spatvector format
+myg_spiders_cleaned_points_hum_obs <- myg_spiders_cleaned |>
+  filter(scientificName %in% species_points_clean$species) |>
+  dplyr::select(species, decimalLongitude, decimalLatitude) |>
+  sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") |>
+  sf::st_transform(crs = "EPSG:9473") #projecting to Albers Equal Area projection (EPSG:9473 (GDA2020 / Australian Albers))
+
+combinedShp_points_equalarea <- terra::vect(myg_spiders_cleaned_points)
+
+comm.point <- phyloregion::polys2comm(dat = combinedShp_points_equalarea, trace = 1, res = 5000)
+```
+
+### Calculate weighted endemism 
+
+```{r}
+comm_merged_short_range_spp_hum_obs <- comm_merged_hum_obs[,which(colSums(comm_merged_hum_obs)<401)]
+
+Endm.mygalomorph_sr_hum_obs <- phyloregion::weighted_endemism(comm_merged_short_range_spp_hum_obs)
+
+# merging alpha hull- and point-based maps, ensuring that richness is summed in overlapping cells
+comm_overlapping_sr_hum_obs <- merge(comm.poly_sr_hum_obs$map, comm.point_hum_obs$map, by = "grids", all.x = TRUE)
+comm_overlapping_sr_hum_obs$richness <- ifelse(is.na(comm_overlapping_sr_hum_obs$richness.x), 0, comm_overlapping_sr_hum_obs$richness.x) + ifelse(is.na(comm_overlapping_sr_hum_obs$richness.y), 0, comm_overlapping_sr_hum_obs$richness.y)
+
+non_overlapping_sr_hum_obs <- comm.point_hum_obs$map[which(!values(comm.point_hum_obs$map)[1]$grids %in% values(comm.poly_sr_hum_obs$map)[1]$grids),]
+
+comm_merged_map_sr_hum_obs <- rbind(comm_overlapping_sr_hum_obs, non_overlapping_sr_hum_obs)
+
+## Join endemism results back to spatial community data matrix
+m1.poly_merged_sr_hum_obs <- merge(comm_merged_map_sr_hum_obs, data.frame(grids=names(Endm.mygalomorph_sr_hum_obs), WE=Endm.mygalomorph_sr_hum_obs), by="grids")
+
+# Drop NA in WE
+m1.poly_sr_hum_obs <- m1.poly_merged_sr_hum_obs[!is.na(m1.poly_merged_sr_hum_obs$WE),]
+
+m1.poly_sr_hum_obs
+```
+
+
+### Calulate corrected weighted endemism
+
+Weighted endemism tally per cell divided by the species richness of that cell
+
+```{r}
+m1.poly_sr_hum_obs$corrected_endemism <- m1.poly_sr_hum_obs$WE/m1.poly_sr_hum_obs$richness
+```
+
+### Assigning hotspots based on percentile
+
+```{r}
+m1.poly_sr_hum_obs$rich_perc <- m1.poly_sr_hum_obs$richness > quantile(m1.poly_sr_hum_obs$richness, probs = 0.95)
+m1.poly_sr_hum_obs$WE_perc <- m1.poly_sr_hum_obs$WE > quantile(m1.poly_sr_hum_obs$WE, probs = 0.95)
+m1.poly_sr_hum_obs$CWE_perc <- m1.poly_sr_hum_obs$corrected_endemism > quantile(m1.poly_sr_hum_obs$corrected_endemism, probs = 0.95)
+```
+
+### Create a endemism map
+
+Convert to `sf` 
+
+```{r}
+crs(m1.poly_sr_hum_obs) <- "EPSG:9473"
+
+# projecting back to WGS84 for visualisation
+m1_sf_sr_hum_obs <- 
+  sf::st_as_sf(m1.poly_sr_hum_obs) |> 
+  sf::st_transform(4326)
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_sr_hum_obs, aes(fill = WE), col = NA) + 
+  geom_sf(data = subset(m1_sf_sr_hum_obs, WE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_sr_hum_obs, aes(fill = corrected_endemism), col = NA) + 
+  geom_sf(data = subset(m1_sf_sr_hum_obs, CWE_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_sf(data = m1_sf_sr_hum_obs, aes(fill = richness), col = NA) + 
+  geom_sf(data = subset(m1_sf_sr_hum_obs, rich_perc), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155), 
+           ylim = c(-10, -45)) + 
+  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+### Correcting for sampling bias
+
+#### converting biodiversity metrics to raster to perform corrections
+
+```{r}
+# testing as raster
+m1.poly_sr_hum_obs_rast <- rast(m1.poly_sr_hum_obs, res = 5000)
+
+# transferring from m1.poly attributes into a SpatRaster with multiple layers
+m1.poly_sr_hum_obs_raster <- rast(lapply(names(m1.poly_sr_hum_obs)[c(6,8,9)], function(att) {
+  rasterize(m1.poly_sr_hum_obs, m1.poly_sr_hum_obs_rast, field = att)
+}))
+
+# setting crs
+crs(m1.poly_sr_hum_obs_raster) <- crs(sampling_rate_raster_ea)
+
+m1.poly_sr_hum_obs_raster <- resample(m1.poly_sr_hum_obs_raster, tot_samp_bias_norm)
+
+
+# correcting biodiversity metrics based on (log+1) estimated sampling rate (dividing by sampling rate)
+WE_sr_hum_obs_samp_bias <- terra::app(x = c(m1.poly_sr_hum_obs_raster$WE, tot_samp_bias_norm), 
+                           fun = function(x){return(x[1]/x[2])})
+CWE_sr_hum_obs_samp_bias <- terra::app(x = c(m1.poly_sr_hum_obs_raster$corrected_endemism, tot_samp_bias_norm), 
+                                 fun = function(x){return(x[1]/x[2])})
+richness_sr_hum_obs_samp_bias <- terra::app(x = c(m1.poly_sr_hum_obs_raster$richness, tot_samp_bias_norm), 
+                                 fun = function(x){return(x[1]/x[2])})
+
+merged_sr_hum_obs <- c(WE_sr_hum_obs_samp_bias, CWE_sr_hum_obs_samp_bias, richness_sr_hum_obs_samp_bias)
+names(merged_sr_hum_obs) <- c("WE_sr_hum_obs_sampbias_corrected", "CWE_sr_hum_obs_sampbias_corrected", "richness_sr_hum_obs_sampbias_corrected")
+
+# projecting back to WGS84 for visualisation
+merged_sr_hum_obs_geo <- project(merged_sr_hum_obs, "EPSG:4326")
+
+# #exporting for protected area analysis
+# writeRaster(merged_sr_hum_obs_geo, here("data/protected_areas/sr_hum_obs_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
+
+# converting to data frame for plotting
+merged_geo_sr_hum_obs_df <- as.data.frame(merged_sr_hum_obs_geo, xy = TRUE, na.rm = TRUE)
+
+# Assigning hotspots based on percentile
+merged_geo_sr_hum_obs_df$WE_perc <- merged_geo_sr_hum_obs_df$WE_sr_hum_obs_sampbias_corrected > quantile(merged_geo_sr_hum_obs_df$WE_sr_hum_obs_sampbias_corrected, probs = 0.95)
+merged_geo_sr_hum_obs_df$CWE_perc <- merged_geo_sr_hum_obs_df$CWE_sr_hum_obs_sampbias_corrected > quantile(merged_geo_sr_hum_obs_df$CWE_sr_hum_obs_sampbias_corrected, probs = 0.95)
+merged_geo_sr_hum_obs_df$rich_perc <- merged_geo_sr_hum_obs_df$richness_sr_hum_obs_sampbias_corrected > quantile(merged_geo_sr_hum_obs_df$richness_sr_hum_obs_sampbias_corrected, probs = 0.95)
+
+# exporting for results section plotting
+write_csv(merged_geo_sr_hum_obs_df, here("data/dataframes_for_plots/hum_obs_hotspots_sr.csv"))
+```
+
+#### plotting
+
+```{r}
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_sr_hum_obs_df, aes(x=x, y=y, fill = WE_sr_hum_obs_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_sr_hum_obs_df, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_sr_hum_obs_df, aes(x=x, y=y, fill = CWE_sr_hum_obs_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_sr_hum_obs_df, CWE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = merged_geo_sr_hum_obs_df, aes(x=x, y=y, fill = richness_sr_hum_obs_sampbias_corrected), col = NA) + 
+  geom_tile(data = subset(merged_geo_sr_hum_obs_df, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
 ```
