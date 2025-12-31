@@ -173,7 +173,7 @@ get_latest_cleaned_data()
 # Clean up the name
 file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2], "/")[10] |> str_remove(".parquet")
 
-saveRDS(all_myg_alpha_sf_land, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_", file_name, ".rds")))
+# saveRDS(all_myg_alpha_sf_land, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_", file_name, ".rds")))
 ```
 
 # Expert Only data
@@ -251,7 +251,7 @@ base_map  +
 # Clean up the name
 file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1], "/")[10] |> str_remove(".parquet")
 
-saveRDS(all_myg_alpha_sf_land_ex, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_expert_", file_name, ".rds")))
+# saveRDS(all_myg_alpha_sf_land_ex, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_expert_", file_name, ".rds")))
 ```
 
 
@@ -330,5 +330,5 @@ base_map  +
 # Clean up the name
 file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[1], "/")[10] |> str_remove(".parquet")
 
-saveRDS(all_myg_alpha_sf_land_hum_obs, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_human_obs_", file_name, ".rds")))
+# saveRDS(all_myg_alpha_sf_land_hum_obs, here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_human_obs_", file_name, ".rds")))
 ```

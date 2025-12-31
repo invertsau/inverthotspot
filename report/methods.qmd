@@ -38,9 +38,9 @@ We downloaded data for this report on the `r get_latest_download(paste0(here("da
 The data retrieval workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/01_ala_data_retrieval_mygalomorph.Rmd)
 :::
 
-We used data from [Atlas of Living Australia (ALA)]() for this study. We downloaded occurrence records using the `galah` [R package]() using the following criterion:
+We used data from [Atlas of Living Australia (ALA)]() for this study. We downloaded occurrence records using the `galah` [R package]() using the following criteria:
 
-1.  Found in Australian mainland and Tasmania.
+1.  Found in Australian mainland or Tasmania.
 2.  Identified to a taxon rank of species.
 3.  Basis of record of either:
     i)  Preserved specimen
@@ -49,12 +49,12 @@ We used data from [Atlas of Living Australia (ALA)]() for this study. We downloa
     iv) Human observation
 4.  Coordinate uncertainty of less than 1000 meters or has a value of NA (citizen science records or human observations are typically entered as NA)
 
-We also used ALA's data quality assertions to further refine our download. We excluded occurrence records using the following criterion:
+We also used ALA's data quality assertions to further refine our download. We excluded occurrence records using the following criteria:
 
 1.  Coordinates are equal to 0
 2.  Coordinates are presumed swapped e.g. when latitude is entered as longitude
 3.  Latitude and longitude values are presumed negated
-4.  Coordinates our out of range
+4.  Coordinates are out of range
 5.  Taxon excluded by the ALA
 6.  Taxon considered as a questionable species
 
@@ -328,7 +328,7 @@ We investigated a range of spatial assertions and deemed the following safe to b
 -   `COORDINATE_ROUNDED`\
     The original coordinates were rounded to six decimals (\~ 1 m precision) to simplify processing. The level of precision lost will not affect the endemism analysis.
 
-The following will be used to refine the data download as they indicate coordinates outside of the given country (records flagged as TRUE will be excluded):
+The following were used to refine the data download as they indicate coordinates outside of the given country (records flagged as TRUE were excluded):
 
 -   `COORDINATE_OUT_OF_RANGE`
 -   `PRESUMED_NEGATED_LONGITUDE`
@@ -349,10 +349,10 @@ The full data cleaning report can be found [here](https://posit.cloud/content/77
 :::
 
 ::: {.callout-tip title="Source code"}
-The data overview workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/03_ala_data_clean_mygalomorph.Rmd)
+The data cleaning workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/03_ala_data_clean_mygalomorph.Rmd)
 :::
 
-The following criterion were used to identify and remove records for the endemism analyses:
+The following criterion were used to identify and remove records for the biodiversity analyses:
 
 -   Taxonomic errors, invalid species names or synonyms
 -   Species introduced to Australia
@@ -569,43 +569,15 @@ Using this method, we excluded `r nrow(dups)` from the dataset (`r ((nrow(dups)/
 After deduplication, we have `r nrow(deduplicated_myg_spiders)` observations after the exclusion, `r unique(deduplicated_myg_spiders$scientificName) |> length()` species.
 :::
 
-### Minimum number of observations
-
-The final step in our data cleaning workflow is to exclude any species that have fewer than three observations as this is a key requirement for the generation of alpha hulls.
-
-```{r, include=FALSE}
-# Which ones have less than or equal 3 
-less_than_3_obs <- deduplicated_myg_spiders |> 
-  group_by(scientificName) |> 
-  summarise(n = n()) |> 
-  filter(n <= 3) |> 
-  pull(scientificName)
-
-deficient <- deduplicated_myg_spiders |> filter(scientificName %in% less_than_3_obs)
-
-myg_sp_enoughobs <- deduplicated_myg_spiders |> 
-  filter(!scientificName %in% less_than_3_obs)
-```
-
-::: callout-important
-We identified `r length(less_than_3_obs)` species with fewer than three observations. This resulted in an exclusion of `r deduplicated_myg_spiders |> filter(scientificName %in% less_than_3_obs) |> nrow()` observations (`r (( nrow(deficient) / nrow(myg_spiders) )*100) |> round(2)`%).
-:::
-
-::: callout-note
-After removing data-deficient taxa, we have `r nrow(myg_sp_enoughobs)` observations after the exclusion, `r unique(myg_sp_enoughobs$scientificName) |> length()` species.
-:::
-
 ### Citizen science data
 
-While citizen science is an increasingly important source of data that informs research, it's accuracy and quality impact statistical inference. This is likely due to improper species identification.
-
-As such, we decided to conduct the endemism analysis using the cleaned data that includes citizen science data (e.g. basis of record = `"HUMAN_OBSERVATION"`), as well as a dataset with we exclude citizen science data (e.g. basis of record = `"PRESERVED_SPECIMEN"`)
+While citizen science is an increasingly important source of data that informs research and management, it is impacted by high sampling bias and other data quality issues such as improper species identification. As such, we decided to conduct the analysis using multiple datasets: preserved specimen-only data (basis of record = `"PRESERVED_SPECIMEN"`), citizen science data (basis of record = `"HUMAN_OBSERVATION"`), and the full (cleaned) dataset. 
 
 ```{r, include = FALSE}
-expert_records <- myg_sp_enoughobs |> 
+expert_records <- myg_spiders_cleaned |> 
   filter(!basisOfRecord == "HUMAN_OBSERVATION")
 
-citsci <- myg_sp_enoughobs |> 
+citsci <- myg_spiders_cleaned |> 
   filter(basisOfRecord == "HUMAN_OBSERVATION")
 ```
 
@@ -613,11 +585,7 @@ citsci <- myg_sp_enoughobs |>
 There were `r nrow(citsci)` records that were flagged with basis of record = `"HUMAN_OBSERVATION"`. This resulted in an exclusion of `r (( nrow(citsci) / nrow(myg_spiders) )*100) |> round(2)`% of the original data) in the "preserved specimen only" dataset.
 :::
 
-::: callout-note
-After removing data-deficient taxa, we have `r nrow(expert_records)` observations after the exclusion, `r unique(expert_records$scientificName) |> length()` species.
-:::
-
-## Generation of $\alpha$ hulls
+## Generating species distributions
 
 ::: {.callout-tip title="Source code"}
 The alpha-hull workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd)
@@ -625,60 +593,19 @@ The alpha-hull workflow can be found [here](https://github.com/invertsau/inverth
 
 Spatial data for invertebrates are typically sparse, often resulting in exclusion of entire species when using advanced spatial modelling methods such as species distribution models.
 
-One way to retain as many species as possible in a spatial analysis is to represent species range with alpha-hulls, a form of spatial polygon. An alpha-hull can be computed using a minimum of three data points, which allows the inclusion of data-deficient invertebrates in our endemism analysis
+One way to retain as many species as possible in a spatial analysis is to represent species range with alpha-hulls, a form of spatial polygon. An alpha-hull can be computed using a minimum of three data points, which allows the inclusion of data-deficient invertebrates in spatial analyses. 
 
 Using the cleaned data, we applied the `EOO.computing()` function from R package [`ConR`](https://github.com/gdauby/ConR) to quantify alpha-hulls for all species that had at least 3 records (n = `r # myg_spiders_cleaned$species |> unique() |> length()`). We used an alpha value of 2 and a buffer size of 0.000001 (which approximates to \~100m). The alpha-hull workflow is laid out in [this document](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd).
 
-Alpha-hulls were converted into `SpatialPolgyon` objects using the [`sp`](https://cran.r-project.org/package=sp) R package and exported for endemism analysis
-
-## Biodiversity metrics
-
-::: {.callout-tip title="Source code"}
-The biodiversity metrics workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/05_endemism_mygalomorph.Rmd)
-:::
-
-In order to quantify patterns of species richness and endemism, we need to convert our point based (i.e. coordinates for each occurrence of a species) into a community matrix, whereby each row in the matrix corresponds to a different site, while each column represents a different species. The entries in the matrix indicate whether a species is present at a particular site (often with a 1 for presence and 0 for absence) or how abundant the species is at that site. See [here](https://cran.r-project.org/web//packages/phyloregion/vignettes/phyloregion-intro.html) for further information.
-
-We converted our alpha-hulls into a community matrix using the `poly2comm()` function in the `phyloregion` R package. The resolution or grid size is set at 0.05 decimal degrees. The `poly2comm()` also computes abundance (the number of individuals in each cell) and species rich (number of species in each cell).
-
-```{r, include=FALSE}
-
-pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis)
-
-species_polys <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2024-03-13_ALA.rds"))
-
-# Extract POLYGONs from GEOMETRYCOLLECTIONs
-species_polys_clean <- species_polys |>
-  st_collection_extract() |>
-  group_by(species) |>
-  summarise(geometry = st_union(x))
-
-combinedShp <- terra::vect(species_polys_clean)
-
-aus <- st_transform(ozmaps::ozmap_country, 4326)
-
-# Base map 
-base_map <- ggplot() + 
-  geom_sf(data = aus, fill = "white", colour = "black") + 
-  theme_minimal()
-
-```
+Alpha-hulls were converted into `SpatialPolgyon` objects using the [`sf`](https://cran.r-project.org/web/packages/sf/index.html) R package. Species with less than three records were then added as `MULTIPOINT` objects and the data exported for biodiversity analysis.
 
 ```{r, echo=FALSE}
 #| fig-cap: 
-#|   - "Alpha-hulls of Mygalomorphae spiders from our cleaned dataset"
+#|   - "Alpha-hulls of Mygalomorph spiders from our cleaned dataset, with point-based records (species with < 3 records) included as black points"
 
 ## alpha hulls
-base_map  + 
-  geom_sf(data = species_polys, 
-          aes(geometry = x),
-          fill = "grey",
-          alpha = 0.5,
-          colour = "darkgrey") + 
-  geom_sf(data = aus, fill = NA, colour = "black") + 
-  coord_sf(c(110, 155)) +
-  theme_minimal() |> 
-  theme(legend.position = "none")
+ahulls_w_points
+
 
 # ## Community Matrix
 # #|   #| fig-cap: 
@@ -687,41 +614,93 @@ base_map  +
 # plot(comm.poly$map)
 ```
 
-### Quantifying endemism
+## Biodiversity metrics
 
-Endemism is a measure of rarity relative to other species (refs). There are multiple metrics to assess which areas are of importance for Mygal spiders, each have their own caveats. In order to get a fuller picture of the distribution of species and importantly, rare species that are limited in their range, we need to use a combination of endemism metrics.
+::: {.callout-tip title="Source code"}
+The biodiversity metrics workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/05_endemism_mygalomorph.Rmd)
+:::
 
-#### Weighted endemism
+The alphahull polygons and point-based records were transformed to Albers equal area projection (EPSG:9473) using the `project()` function from the `terra` package. In order to quantify patterns of species richness and endemism, these species distributuion data were converted into a community matrix, whereby each row in the matrix corresponds to a different site (spatial cell), while each column represents a different species. This was done using the `polys2comm()` function in the `phyloregion` R package. The entries in the matrix indicate whether a species is present in a particular cell, with a 1 for presence and 0 for absence. The resolution or grid size was set at 5 x 5 km. See [here](https://cran.r-project.org/web//packages/phyloregion/vignettes/phyloregion-intro.html) for further information.
 
-Weighted endemism is species richness inversely weighted by species ranges(Crisp et al. 2001),(Laffan and Crisp 2003),(Barnabas H. Daru et al. 2020). It gives higher weight to species with smaller ranges, emphasizing areas with many range-restricted species. WE highlights areas with a high concentration of rare species, which can be crucial for conservation efforts, however regions with high species richness can have inflated WE values simply because they have more species, not necessarily more endemics (https://www.jstor.org/stable/3554498).
+There are multiple metrics to assess which areas are of importance for Mygalomorph spiders, each with their own caveats. In order to get a fuller picture of biodiversity and, importantly, rare species that are limited in their range, it is helpful to use a combination of metrics.
 
-We calculated WE using the `weighted_endemism()` from `phyloregion` package. WE was fourth-root transformed prior to mapping to aid visualization.
+### Species richness
 
-#### Corrected weighted endemism
+Species richness simply refers to the total number of species in an area. The `polys2comm()` function computes species richness for each cell.
 
-Corrected weighted endemism accounts for species richness in each cell. This correction accounts for the fact that areas with more species are likely to have more endemics by chance alone (Crisp and Laffan). It provides a balanced measure, considering rarity and richness and range sizes.
+### Endemism
 
-We calculated CWE by dividing the WE in each grid cell by species richness. CWE was fourth-root transformed prior to mapping to aid visualization.
+Endemism refers to the level of range restriction of species in an area, and numerous measures exist (refs). Weighted endemism is species richness inversely weighted by species ranges (Crisp et al. 2001),(Laffan and Crisp 2003),(Barnabas H. Daru et al. 2020). It gives higher weight to species with smaller ranges, emphasizing areas with many range-restricted species. WE highlights areas with a high concentration of rare species, which can be crucial for conservation efforts. There is a caveat that regions with high species richness can have inflated WE values simply because they have more species, not necessarily more endemics (https://www.jstor.org/stable/3554498). However, WE is a good measure for identification and research into the distribution and conservation of endemism hotspots (Shipley and McGuire 2022). 
 
-### Statistical inference
+WE was calculated using the `weighted_endemism()` function from the `phyloregion` R package. WE was fourth-root transformed prior to mapping to aid visualization.
 
-We calculated the Moran's I test statistic, to determine whether spatial patterns of species richness, abundance and endemism for Mygalomorphs are distributed in a way that is not expected by random chance. Moran's I is a statistical measure used to assess spatial autocorrelation, which is the degree to which a set of spatial features e.g occurrences or polygons are clustered, dispersed, or randomly distributed across a geographic area [@moran50].
+```{r, include=FALSE}
 
-Moran's I ranges from -1 to 1:
+pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis)
 
--   1: Perfect positive spatial autocorrelation (values are highly clustered).
--   0: No spatial autocorrelation (random distribution).
--   -1: Perfect negative spatial autocorrelation (values are perfectly dispersed).
+species_polys_points_expert <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_expert_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds"))
 
-Calculation of Moran's I requires a list of neighbours for each spatial unit, along with weights denoting the spatial proximity between units. Neighbouring spatial units (cells) were identified as those within a 20 km radius.
+# separating polygons and points for plotting
+polys_ex <- species_polys_points_expert |>
+  filter(st_geometry_type(conr_ahull_sf) %in% c("POLYGON", "MULTIPOLYGON"))
+points_ex <- species_polys_points_expert |>
+  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
 
-The significance of Moran's I test statistic was assessed by Monte Carlo randomisation, where the values of the biodiversity metric in question (e.g. weighted endemism) are randomly reassigned among the spatial units and Moran's I is calculated. This is repeated numerous times to create a randomisation distribution for Moran's I, against which the observed value is compared. We used 9999 Monte Carlo simulations.
+# plotting alpha hulls and points
+aus <- st_transform(ozmaps::ozmap_country, 4326)
 
-<!-- After testing for spatial autocorrelation across the whole study region (Australia), Getis-Ord Gi* [@getis92] was used to assess the significance of clustering of high values around each spatial unit, thereby allowing specific hotspots to be identified. To account for multiple comparisons, a significance level of P \<= 0.0001 was used [@anselin95]. -->
+## Base map 
+base_map <- ggplot() + 
+  geom_sf(data = aus, fill = "white", colour = "black") + 
+  theme_minimal()
 
-### Hotspots
+## alphahulls and points
+ahulls_w_points <- base_map  + 
+  geom_sf(data = polys_ex, 
+          aes(geometry = conr_ahull_sf),
+          fill = "grey",
+          alpha = 0.5,
+          colour = "darkgrey",
+          ) +
+  geom_sf(data = points_ex,
+             aes(geometry = conr_ahull_sf),
+             colour = "black",
+             fill = "black") +
+  geom_sf(data = aus, fill = NA, colour = "black") + 
+  coord_sf(c(110, 155)) +
+  theme_minimal() |> 
+  theme(legend.position = "none")
+
+```
+
+## Correcting for sampling bias
+
+Sampling bias was estimated using a combination of sampling rate obtained from the `sampbias` package, and population density for the 2023-24 financial year (Australian Bureau of Statistics. (2023-24). Regional population. ABS. https://www.abs.gov.au/statistics/people/population/regional-population/2023-24.). Based on an input of species observation data, the `calculate_bias()` function from `sampbias` estimates sampling rate as a function of distance to geographic features including roads, cities, airports, and waterbodies. We included all of these features in the analysis and used a resolution of 0.05 decimal degrees. The sampling rate estimates were mapped using the `project_bias()` and `map_bias()` functions from `sampbias`. The sampling rate data were then extracted and log(+1) transformed to reduce skewness, before converting to a raster using the `rast()` function from the `terra` package. The community matrix created earlier was also converted to a raster.
+
+The sampling rate estimates from `sampbias` showed the influence of regional centres such as Alice Springs being similar to large metropolitan areas such as Sydney. This is unlikely, so the effect of population density was also incorporated. Sampling rate and population density were transformed to Albers equal area projection (EPSG:9473) using the `project()` function from `terra`. Sampling rate and population density were then aligned to the community matrix raster using the `resample()` function from `terra` with bilinear interpolation. Population density was also log(+1) transformed to reduce skewness. The influence of population density was estimated using a gaussian smoothing kernel with a sigma value of 50 km (influence becomes near zero at 3*sigma), which was implemented via the `focal()` function in `terra`. The sampling rate from `sampbias` and population density effect were then each standardised by subtracting the mean and dividing by the standard deviation. The two measures were then combined into a single measure of sampling bias by taking the average. Finally, this total sampling bias measure was normalised to a range between 1-10. To correct for sampling bias, for each spatial cell, the biodiversity measures (richness and endemism) were divided by this final sampling bias estimate.
+
+```{r, echo = FALSE}
+#| fig-cap: 
+#|   - "Maps of sampling bias estimates"
+
+pop_density_influence <- readRDS(here("output/sampling_bias/pop_density_influence.rds"))
+sampbias_sampling_rate <- readRDS(here("output/sampling_bias/sampbias_sampling_rate.rds"))
+final_sampling_bias <- readRDS(here("output/sampling_bias/final_sampling_bias.rds"))
+
+plot(c(sampbias_sampling_rate, pop_density_influence, final_sampling_bias))
+```
+
+## Hotspots
 
 'Hotspots' were identified for each of the biodiversity metrics as the cells with values greater than the 95th percentile.
+
+## Short-range species
+
+The above analyses provide a quantification of endemism across all mygalomorph spiders, however, there is the potential for the influence of high-endemism species to be masked by the influence of widely distributed species. As short-range endemics are of particular conservation concern due to their higher susceptibility to threats such as habitat loss, the analyses were repeated including only species with a range size less than or equal to 10,000 km2 (i.e. occupying < 401 cells).
+
+## Current protection
+
+To assess the current level of protection of mygalomorph spider biodiversity, the overlap between hotspots and protected areas was calculated. Spatial polygons of protected areas in Australia were downloaded and cleaned using the `wdpar` R package. The proportion of species richness and endemism hotspots overlapping protected areas was then calculated and mapped. All maps were created using the `ggplot2` R package.
 
 ## Data and code availability
 

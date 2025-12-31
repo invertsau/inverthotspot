@@ -10,7 +10,7 @@ editor_options:
 
 ```{r setup, include=FALSE, eval=TRUE}
 ## Setting up
- pacman::p_load(arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2,sp, purrr, ConR, dplyr, DT, zoomerjoin, gt, patchwork, tmap, spdep)
+ pacman::p_load(arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2,sp, purrr, ConR, dplyr, DT, zoomerjoin, gt, patchwork, tmap, spdep, raster, terra)
 
 tmap_mode("view")
 
@@ -23,402 +23,689 @@ myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = 
 myg_spiders_hum_obs <- myg_spiders_cleaned |>
   filter(basisOfRecord == "HUMAN_OBSERVATION")
 
-species_polys_points <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2025-08-14_ALA.rds")
-species_polys_points_expert <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_expert_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds")
-species_polys_points_hum_obs <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_human_obs_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds")
+species_polys_points <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2025-08-14_ALA.rds"))
+species_polys_points_expert <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_expert_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds"))
+species_polys_points_hum_obs <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_human_obs_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds"))
 ```
 
-## Alpha hulls
+## Preserved specimen-only data 
 
-### Pre-processing
+### All species
 
-#### full dataset
-
-```{r, include = FALSE}
-# Extract POLYGONs from GEOMETRYCOLLECTIONs
-species_polys_clean <- species_polys |>
-  st_collection_extract() |>
-  group_by(species) |>
-  summarise(geometry = st_union(x))
-
-combinedShp <- terra::vect(species_polys_clean)
-
-### Calculate Community Matrix
-comm.poly <- phyloregion::polys2comm(dat = combinedShp , trace=1, res = 0.05)
-str(comm.poly)
-plot(comm.poly$map)
-
-### Calulate weighted endemism 
-Endm.mygalomorph.poly <- phyloregion::weighted_endemism(comm.poly$comm_dat)
-str(Endm.mygalomorph.poly)
-
-## Join results back to spatial community data matrix
-m1.poly <- merge(comm.poly$map, data.frame(grids=names(Endm.mygalomorph.poly), WE=Endm.mygalomorph.poly), by="grids")
-
-# Drop NA in WE
-m1.poly <- m1.poly[!is.na(m1.poly$WE),]
-
-m1.poly
-
-### Calulate corrected weighted endemism
-m1.poly$corrected_endemism <- m1.poly$WE/m1.poly$richness
-
-### Assigning hotspots based on percentile
-m1.poly$rich_perc <- m1.poly$richness > quantile(m1.poly$richness, probs = 0.95)
-m1.poly$WE_perc <- m1.poly$WE > quantile(m1.poly$WE, probs = 0.95)
-m1.poly$CWE_perc <- m1.poly$corrected_endemism > quantile(m1.poly$corrected_endemism, probs = 0.95)
-
-# Creating sf object
-m1_sf <- 
-  sf::st_as_sf(m1.poly) |> 
-  sf::st_transform(4326)
-```
-
-#### expert-only data
-```{r, include = FALSE}
-# Extract POLYGONs from GEOMETRYCOLLECTIONs
-species_polys_expert_clean <- species_polys_expert |>
-  st_collection_extract() |>
-  group_by(species) |>
-  summarise(geometry = st_union(x))
-  
-combinedShp_ex <- terra::vect(species_polys_expert_clean)
-
-### Calculate Community Matrix
-comm.poly_ex <- phyloregion::polys2comm(dat = combinedShp_ex, species = "species", trace=1, res = 0.05)
-str(comm.poly_ex)
-plot(comm.poly_ex$map)
-
-### Calulate weighted endemism 
-Endm.mygalomorph.poly_ex <- phyloregion::weighted_endemism(comm.poly_ex$comm_dat)
-str(Endm.mygalomorph.poly_ex)
-
-## Join results back to spatial community data matrix
-m1.poly_ex <- merge(comm.poly_ex$map, data.frame(grids=names(Endm.mygalomorph.poly_ex), WE=Endm.mygalomorph.poly_ex), by="grids")
-
-# Drop NA in WE
-m1.poly_ex <- m1.poly_ex[!is.na(m1.poly_ex$WE),]
-
-### Calulate corrected weighted endemism
-m1.poly_ex$corrected_endemism <- m1.poly_ex$WE/m1.poly_ex$richness
-
-### Assigning hotspots based on percentile
-m1.poly_ex$rich_perc <- m1.poly_ex$richness > quantile(m1.poly_ex$richness, probs = 0.95)
-m1.poly_ex$WE_perc <- m1.poly_ex$WE > quantile(m1.poly_ex$WE, probs = 0.95)
-m1.poly_ex$CWE_perc <- m1.poly_ex$corrected_endemism > quantile(m1.poly_ex$corrected_endemism, probs = 0.95)
-
-# creating sf object
-m1_sf_ex <- 
-  sf::st_as_sf(m1.poly_ex) |> 
-  sf::st_transform(4326)
-```
-
-### Species richness
+#### Hotspots
 
 ```{r, include = FALSE}
-# All data
+expert_hotspots <- read_csv(here("data/dataframes_for_plots/expert_hotspots.csv"))
+
+# Expert richness
 fig1a <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = richness), col = NA) + 
+  geom_tile(data = expert_hotspots, aes(x=x, y=y, fill = richness_ex_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Citizen science + Preserved specimen data")
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Species richness")
 
-# Expert Richness
+# Expert endemism
 fig1b <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = richness), col = NA) + 
+  geom_tile(data = expert_hotspots, aes(x=x, y=y, fill = WE_ex_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
-  theme(legend.position = "bottom") +
-  ggtitle("Preserved specimen data only")
-```
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Weighted endemism")
 
-```{r}
-#| fig-width: 8
-#| fig-cap: 
-#|   - "Figure 1: Map showing species richness of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
-fig1a + fig1b + 
-  plot_layout(guides = 'collect') &
-  theme(legend.position='bottom')
-```
-
-::: {.callout-note}
-There was **no evidence** for spatial clustering in **species richness** in either the combined dataset or in the preserved specimen only dataset (Table 1).
-:::
-
-Table 1. Summary statistics for species richness in both datasets
-
-```{r}
-tibble(dataset = c("Citizen Science + Preserved Specimen",
-                   "Preserved Specimen only"),
-       `z-statistic` = c(R_I$statistic |> signif(2),
-                     R_I_ex$statistic |> signif(2)),
-       `p-value` = c(R_I$p.value  |> signif(2),
-             R_I_ex$p.value  |> signif(2)),
-       `n species` = c(myg_spiders_cleaned$scientificName |> unique() |> length(),
-                       myg_spiders_cleaned_expert$scientificName |> unique() |> length()),
-       `n observations` = c(nrow(myg_spiders_cleaned),
-                            nrow(myg_spiders_cleaned_expert))) |> 
-  clean_names(case = "sentence") |> 
-  gt()
-```
-
-#### Hotspots
-
-```{r}
-# All data
+# Expert richness hotspots
 fig1c <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = richness), col = NA) + 
-  geom_sf(data = subset(m1_sf, rich_perc), fill = "red", col = NA) +
+  geom_tile(data = expert_hotspots, aes(x=x, y=y, fill = richness_ex_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
+  geom_tile(data = subset(expert_hotspots, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Citizen science + Preserved specimen data")
+  theme(legend.position = "bottom")
 
-# Expert Richness
+# Expert endemism hotspots
 fig1d <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = richness), col = NA) + 
-  geom_sf(data = subset(m1_sf_ex, rich_perc), fill = "red", col = NA) +
+  geom_tile(data = expert_hotspots, aes(x=x, y=y, fill = WE_ex_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
+  geom_tile(data = subset(expert_hotspots, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
-  theme(legend.position = "bottom") +
-  ggtitle("Preserved specimen data only")
+  theme(legend.position = "bottom") 
 ```
 
 ```{r}
-#| fig-width: 8
+#| fig-width: 12
+#| fig-height: 12
 #| fig-cap: 
-#|   - "Figure 2: Map showing hotspots of species richness of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
-fig1c + fig1d + 
-  plot_layout(guides = 'collect') &
+#|   - "Figure 1: Maps showing species richness (left) and weighted endemism (right) of Mygalmorph spiders. The top row shows just the raw values and the bottom row has hotspots overlaid in red. Weighted endemism values were highly skewed so a fourth-root transformation was applied to aid visualisation."
+fig1a + fig1b + fig1c + fig1d +
+  plot_layout(ncol = 2,
+              guides = 'collect') &
   theme(legend.position='bottom')
 ```
 
-### Weighted endemism
+#### Current protection
+```{r, include = FALSE}
+aus_pa_data <- readRDS(here("data/protected_areas/aus_pa_data.rds"))
 
-```{r, include=FALSE}
-# All data
+# clipping PA data to Aus coastline
+wdpa_crs <- "+proj=cea +lon_0=0 +lat_ts=30 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs"
+
+aus <- st_transform(ozmaps::ozmap_country, crs = st_crs(wdpa_crs))
+
+aus_pa_data <-
+  aus_pa_data %>%
+  filter(MARINE == "terrestrial") %>%
+  st_intersection(aus) 
+
+# bringing in hotspot raster
+merged_geo_ex <- rast(here("data/protected_areas/ex_bias_corrected_hotspots_spatraster.tif"))
+
+# hotspots (95th percentiles)
+rich_q95_ex <- global(merged_geo_ex[["richness_ex_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_ex$rich_perc <- merged_geo_ex[["richness_ex_sampbias_corrected"]] > rich_q95_ex
+
+WE_q95_ex <- global(merged_geo_ex[["WE_ex_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_ex$WE_perc <- merged_geo_ex[["WE_ex_sampbias_corrected"]] > WE_q95_ex
+
+
+v <- vect(aus_pa_data)
+v <- project(v, merged_geo_ex)
+
+aus_pa_raster <- rasterize(v, merged_geo_ex, touches = TRUE)
+
+values(aus_pa_raster)[is.nan(values(aus_pa_raster))] <- NA
+
+
+# getting cells where hotspots overlap with PA's
+overlap_ex <- (!is.na(aus_pa_raster)) & (merged_geo_ex[["rich_perc"]] > 0)
+names(overlap_ex) <- "richness"
+overlap_ex$WE <- (!is.na(aus_pa_raster)) & (merged_geo_ex[["WE_perc"]] > 0)
+
+
+# converting to data frame for plotting
+aus_pa_raster_df <- as.data.frame(aus_pa_raster, xy = TRUE, na.rm = TRUE)
+merged_geo_ex_df <- as.data.frame(merged_geo_ex, xy = TRUE, na.rm = TRUE)
+overlap_ex_df <- as.data.frame(overlap_ex, xy = TRUE, na.rm = TRUE)
+
+
+rich_hot_pa <- freq(overlap_ex$richness)[2,3]/freq(merged_geo_ex$rich_perc)[2,3]*100 # percentage of richness hotspots within PA's
+we_hot_pa <- freq(overlap_ex$WE)[2,3]/freq(merged_geo_ex$WE_perc)[2,3]*100 # percentage of WE hotspots within PA's
+
+# combining layers into one df for plotting
+richness_tiles_df <- dplyr::bind_rows(
+  dplyr::mutate(
+    subset(merged_geo_ex_df, rich_perc),
+    layer = "Hotspot"
+  ),
+  dplyr::mutate(
+    aus_pa_raster_df,
+    layer = "Protected area"
+  ),
+  dplyr::mutate(
+    subset(overlap_ex_df, richness),
+    layer = "Overlap"
+  )
+)
+
+WE_tiles_df <- dplyr::bind_rows(
+  dplyr::mutate(
+    subset(merged_geo_ex_df, WE_perc),
+    layer = "Hotspot"
+  ),
+  dplyr::mutate(
+    aus_pa_raster_df,
+    layer = "Protected area"
+  ),
+  dplyr::mutate(
+    subset(overlap_ex_df, WE),
+    layer = "Overlap"
+  )
+)
+
 fig2a <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = WE^0.25), col = NA) + 
+  geom_tile(data = richness_tiles_df, aes(x=x, y=y, fill = layer), col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
-                              ) + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  scale_fill_manual(
+    name = "",
+    values = c(
+      "Hotspot"     = "red",
+      "Protected area" = "grey",
+      "Overlap"        = "darkgreen"
+    )) +
   theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Citizen science + Preserved specimen data")
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Species richness")
 
-
-# Expert data
 fig2b <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = WE^0.25), col = NA) + 
+  geom_tile(data = WE_tiles_df, aes(x=x, y=y, fill = layer), col = NA) +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
-                              ) + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  scale_fill_manual(
+    name = "",
+    values = c(
+      "Hotspot"     = "red",
+      "Protected area" = "grey",
+      "Overlap"        = "darkgreen"
+    )) +
   theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Preserved specimen data only")
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Weighted endemism")
 ```
 
 ```{r}
-#| fig-width: 8
+#| fig-width: 12
+#| fig-height: 6
 #| fig-cap: 
-#|   - "Figure 3: Map showing weighted endemism of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
-
-fig2a + fig2b + 
-  plot_layout(guides = 'collect') &
+#|   - "Figure 2: Maps showing overlap between hotspots of mygalomorph spider species richness (left) and weighted endemism (right) with protected areas in Australia."
+fig2a + fig2b +
+  plot_layout(ncol = 2,
+              guides = 'collect') &
   theme(legend.position='bottom')
 ```
 
-::: {.callout-note}
-There was **some evidence** for spatial clustering in **weighted endemism** in the preserved specimen only dataset (Table 2).
+::: callout-note
+`r rich_hot_pa |> round(2)`% of the total species richness hotspot area and `r we_hot_pa |> round(2)`% of the total weighted endemism hotspot area are located within protected areas.
 :::
 
-```{r,include=FALSE}
-WE_I
-
-WE_I_ex
-```
-
-Table 2. Test statistic and p value for weighted endemsim
-
-```{r}
-tibble(dataset = c("Citizen Science + Preserved Specimen",
-                   "Preserved Specimen only"),
-       `z-statistic` = c(WE_I$statistic |> signif(2),
-                     WE_I_ex$statistic |> signif(2)),
-       `p-value` = c(WE_I$p.value  |> signif(2),
-             WE_I_ex$p.value  |> signif(2)),
-       `n species` = c(myg_spiders_cleaned$scientificName |> unique() |> length(),
-                       myg_spiders_cleaned_expert$scientificName |> unique() |> length()),
-       `n observations` = c(nrow(myg_spiders_cleaned),
-                            nrow(myg_spiders_cleaned_expert))) |> 
-  clean_names(case = "sentence") |> 
-  gt()
-```
+### Short-range species
 
 #### Hotspots
 
-```{r}
-# All data
-fig2c <- ggplot() +
-  geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = WE^0.25), col = NA) + 
-  geom_sf(data = subset(m1_sf, WE_perc), fill = "red", col = NA) +
-  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
-                              ) + 
-  theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Citizen science + Preserved specimen data")
+```{r, include = FALSE}
+expert_hotspots_sr <- read_csv(here("data/dataframes_for_plots/expert_hotspots_sr.csv"))
 
-# Expert data
-fig2d <- ggplot() +
-  geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = WE^0.25), col = NA) + 
-  geom_sf(data = subset(m1_sf_ex, WE_perc), fill = "red", col = NA) +
-  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
-                              ) + 
-  theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Preserved specimen data only")
-```
-
-```{r}
-#| fig-width: 8
-#| fig-cap: 
-#|   - "Figure 4: Map showing hotspots of weighted endemism of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
-fig2c + fig2d + 
-  plot_layout(guides = 'collect') &
-  theme(legend.position='bottom')
-```
-
-### Corrected weighted endemism
-
-```{r}
-# All data
+# Expert richness
 fig3a <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = corrected_endemism^0.25), col = NA) + 
+  geom_tile(data = expert_hotspots_sr, aes(x=x, y=y, fill = richness_sr_ex_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Citizen science + Preserved specimen data")
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Species richness")
 
-# "Expert Correct Endemism"
+# Expert endemism
 fig3b <- ggplot() +
   geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism^0.25), col = NA) + 
+  geom_tile(data = expert_hotspots_sr, aes(x=x, y=y, fill = WE_sr_ex_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
   theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Preserved specimen data only")
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Weighted endemism")
+
+# Expert richness hotspots
+fig3c <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = expert_hotspots_sr, aes(x=x, y=y, fill = richness_sr_ex_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
+  geom_tile(data = subset(expert_hotspots_sr, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Expert endemism hotspots
+fig3d <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = expert_hotspots_sr, aes(x=x, y=y, fill = WE_sr_ex_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
+  geom_tile(data = subset(expert_hotspots_sr, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  viridis::scale_fill_viridis(option = "G",direction = -1#, values = c(0,0.01,0.1,1)
+                              ) + 
+  theme_minimal() +
+  theme(legend.position = "bottom") 
 ```
 
 ```{r}
-#| fig-width: 8
+#| fig-width: 12
+#| fig-height: 12
 #| fig-cap: 
-#|   - "Figure 5: Map showing corrected weighted endemism estimated of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
-
-fig3a + fig3b + 
-  plot_layout(guides = 'collect') &
+#|   - "Figure 1: Maps showing species richness (left) and weighted endemism (right) of Mygalmorph spiders with short ranges (< 10,000 km2). The top row shows just the raw values and the bottom row has hotspots overlaid in red. Weighted endemism values were highly skewed so a fourth-root transformation was applied to aid visualisation."
+fig3a + fig3b + fig3c + fig3d +
+  plot_layout(ncol = 2,
+              guides = 'collect') &
   theme(legend.position='bottom')
 ```
 
-```{r,include=FALSE}
-CWE_I
+#### Current protection
 
-CWE_I_ex
+```{r, include = FALSE}
+aus_pa_data <- readRDS(here("data/protected_areas/aus_pa_data.rds"))
+
+# clipping PA data to Aus coastline
+wdpa_crs <- "+proj=cea +lon_0=0 +lat_ts=30 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs"
+
+aus <- st_transform(ozmaps::ozmap_country, crs = st_crs(wdpa_crs))
+
+aus_pa_data <-
+  aus_pa_data %>%
+  filter(MARINE == "terrestrial") %>%
+  st_intersection(aus) 
+
+# bringing in hotspot raster
+merged_geo_sr_ex <- rast(here("data/protected_areas/sr_ex_bias_corrected_hotspots_spatraster.tif"))
+
+# hotspots (95th percentiles)
+rich_q95_sr_ex <- global(merged_geo_sr_ex[["richness_sr_ex_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_sr_ex$rich_perc <- merged_geo_sr_ex[["richness_sr_ex_sampbias_corrected"]] > rich_q95_sr_ex
+
+WE_q95_sr_ex <- global(merged_geo_sr_ex[["WE_sr_ex_sampbias_corrected"]], quantile, probs = 0.95, na.rm = TRUE)[1, 1]
+merged_geo_sr_ex$WE_perc <- merged_geo_sr_ex[["WE_sr_ex_sampbias_corrected"]] > WE_q95_sr_ex
+
+
+v <- vect(aus_pa_data)
+v <- project(v, merged_geo_sr_ex)
+
+aus_pa_raster <- rasterize(v, merged_geo_sr_ex, touches = TRUE)
+
+values(aus_pa_raster)[is.nan(values(aus_pa_raster))] <- NA
+
+
+# getting cells where hotspots overlap with PA's
+overlap_sr_ex <- (!is.na(aus_pa_raster)) & (merged_geo_sr_ex[["rich_perc"]] > 0)
+names(overlap_sr_ex) <- "richness"
+overlap_sr_ex$WE <- (!is.na(aus_pa_raster)) & (merged_geo_sr_ex[["WE_perc"]] > 0)
+
+
+# converting to data frame for plotting
+aus_pa_raster_df <- as.data.frame(aus_pa_raster, xy = TRUE, na.rm = TRUE)
+merged_geo_sr_ex_df <- as.data.frame(merged_geo_sr_ex, xy = TRUE, na.rm = TRUE)
+overlap_sr_ex_df <- as.data.frame(overlap_sr_ex, xy = TRUE, na.rm = TRUE)
+
+
+sr_rich_hot_pa <- freq(overlap_sr_ex$richness)[2,3]/freq(merged_geo_sr_ex$rich_perc)[2,3]*100 # percentage of richness hotspots within PA's
+sr_we_hot_pa <- freq(overlap_sr_ex$WE)[2,3]/freq(merged_geo_sr_ex$WE_perc)[2,3]*100 # percentage of WE hotspots within PA's
+
+
+# combining layers into one df for plotting
+richness_sr_tiles_df <- dplyr::bind_rows(
+  dplyr::mutate(
+    subset(merged_geo_sr_ex_df, rich_perc),
+    layer = "Hotspot"
+  ),
+  dplyr::mutate(
+    aus_pa_raster_df,
+    layer = "Protected area"
+  ),
+  dplyr::mutate(
+    subset(overlap_sr_ex_df, richness),
+    layer = "Overlap"
+  )
+)
+
+WE_sr_tiles_df <- dplyr::bind_rows(
+  dplyr::mutate(
+    subset(merged_geo_sr_ex_df, WE_perc),
+    layer = "Hotspot"
+  ),
+  dplyr::mutate(
+    aus_pa_raster_df,
+    layer = "Protected area"
+  ),
+  dplyr::mutate(
+    subset(overlap_sr_ex_df, WE),
+    layer = "Overlap"
+  )
+)
+
+fig4a <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = richness_sr_tiles_df, aes(x=x, y=y, fill = layer), col = NA) +
+   geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  scale_fill_manual(
+    name = "",
+    values = c(
+      "Hotspot"     = "red",
+      "Protected area" = "grey",
+      "Overlap"        = "darkgreen"
+    )) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Species richness")
+
+fig4b <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = WE_sr_tiles_df, aes(x=x, y=y, fill = layer), col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  scale_fill_manual(
+    name = "",
+    values = c(
+      "Hotspot"     = "red",
+      "Protected area" = "grey",
+      "Overlap"        = "darkgreen"
+    )) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Weighted endemism")
 ```
 
-::: {.callout-note}
-There was **some evidence** for spatial clustering in **corrected weighted endemism** in the preserved specimen only dataset (Table 3).
+```{r}
+#| fig-width: 12
+#| fig-height: 6
+#| fig-cap: 
+#|   - "Figure 2: Maps showing overlap between hotspots of short-range (< 10,000 km2) mygalomorph spider species richness (left) and weighted endemism (right) with protected areas in Australia."
+fig4a + fig4b +
+  plot_layout(ncol = 2,
+              guides = 'collect') &
+  theme(legend.position='bottom')
+```
+
+::: callout-note
+`r sr_rich_hot_pa |> round(2)`% of the species richness hotspot area and `r sr_we_hot_pa |> round(2)`% of the weighted endemism hotspot area for short-range species (< 10,000 km2) are located within protected areas.
 :::
 
-Table 3. Test statistic and p value for corrected weighted endemsim
+## Data source comparison
 
-```{r}
-tibble(dataset = c("Citizen Science + Preserved Specimen",
-                   "Preserved Specimen only"),
-       `z-statistic` = c(CWE_I$statistic |> signif(2),
-                     CWE_I_ex$statistic |> signif(2)),
-       `p-value` = c(CWE_I$p.value  |> signif(2),
-             CWE_I_ex$p.value  |> signif(2)),
-       `n species` = c(myg_spiders_cleaned$scientificName |> unique() |> length(),
-                       myg_spiders_cleaned_expert$scientificName |> unique() |> length()),
-       `n observations` = c(nrow(myg_spiders_cleaned),
-                            nrow(myg_spiders_cleaned_expert))) |> 
-  clean_names(case = "sentence") |> 
-  gt()
+### All species
+
+```{r, include = FALSE}
+expert_hotspots <- read_csv(here("data/dataframes_for_plots/expert_hotspots.csv"))
+human_obs_hotspots <- read_csv(here("data/dataframes_for_plots/hum_obs_hotspots.csv"))
+full_dataset_hotspots <- read_csv(here("data/dataframes_for_plots/full_dataset_hotspots.csv"))
+
+#defining a common richness scale for plotting
+rich_limits <- range(
+  expert_hotspots$richness_ex_sampbias_corrected,
+  human_obs_hotspots$richness_hum_obs_sampbias_corrected,
+  full_dataset_hotspots$richness_sampbias_corrected,
+  na.rm = TRUE
+)
+
+richness_scale <-
+  viridis::scale_fill_viridis(
+    name = "Species richness (bias corrected)",
+    option = "G",
+    direction = -1,
+    limits = rich_limits
+  )
+
+endemism_scale <-
+  viridis::scale_fill_viridis(
+    name = "Weighted endemism (bias corrected, fourth-root)",
+    option = "G",
+    direction = -1
+  )
+
+# Expert richness hotspots
+fig5a <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = expert_hotspots, aes(x=x, y=y, fill = richness_ex_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
+  geom_tile(data = subset(expert_hotspots, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  richness_scale +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Species richness")
+
+# Expert endemism hotspots
+fig5b <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = expert_hotspots, aes(x=x, y=y, fill = WE_ex_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
+  geom_tile(data = subset(expert_hotspots, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  endemism_scale +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Weighted endemism")
+
+
+# human observation richness hotspots
+fig5c <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = human_obs_hotspots, aes(x=x, y=y, fill = richness_hum_obs_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
+  geom_tile(data = subset(human_obs_hotspots, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  richness_scale +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# human observation endemism hotspots
+fig5d <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = human_obs_hotspots, aes(x=x, y=y, fill = WE_hum_obs_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
+  geom_tile(data = subset(human_obs_hotspots, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  endemism_scale +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+# full dataset richness hotspots
+fig5e <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = full_dataset_hotspots, aes(x=x, y=y, fill = richness_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
+  geom_tile(data = subset(full_dataset_hotspots, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  richness_scale +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# full dataset endemism hotspots
+fig5f <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = full_dataset_hotspots, aes(x=x, y=y, fill = WE_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
+  geom_tile(data = subset(full_dataset_hotspots, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  endemism_scale +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
 
-#### Hotspots
-
 ```{r}
-# All data
-fig3c <- ggplot() +
-  geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf, aes(fill = corrected_endemism^0.25), col = NA) + 
-  geom_sf(data = subset(m1_sf, CWE_perc), fill = "red", col = NA) +
-  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
-  theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Citizen science + Preserved specimen data")
-
-# "Expert Correct Endemism"
-fig3d <- ggplot() +
-  geom_sf(data = ozmap_states, fill = "white") + 
-  geom_sf(data = m1_sf_ex, aes(fill = corrected_endemism^0.25), col = NA) + 
-  geom_sf(data = subset(m1_sf_ex, CWE_perc), fill = "red", col = NA) +
-  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
-  coord_sf(xlim = c(110, 155), 
-           ylim = c(-10, -45)) + 
-  viridis::scale_fill_viridis(option = "G",direction = -1) + 
-  theme_minimal() +
-  theme(legend.position = "bottom") + 
-  ggtitle("Preserved specimen data only")
-```
-
-```{r}
-#| fig-width: 8
+#| fig-width: 12
+#| fig-height: 18
 #| fig-cap: 
-#|   - "Figure 6: Map showing hotspots of corrected weighted endemism of Mygalmorphae spiders. Left: All data from the cleaned dataset is used i.e contains citizen science data (basis of record == `HUMAN_OBSERVATION`) Right: Only expert data is used (basis of record == `PRESERVED_SPECIMEN` only)"
-fig3c + fig3d + 
-  plot_layout(guides = 'collect') &
+#|   - "Figure 5: Maps showing species richness (left) and weighted endemism (right) of Mygalmorph spiders based on different datasets: Expert data (basis of record == PRESERVED SPECIMEN) (top row); Citizen science (basis of record == HUMAN OBSERVATION) (middle row); Full dataset (bottom row). Hotspots are overlaid in red. Weighted endemism values were highly skewed so a fourth-root transformation was applied to aid visualisation."
+fig5a + fig5b + fig5c + fig5d + fig5e + fig5f +
+  plot_layout(ncol = 2,
+              guides = 'collect') &
+  theme(legend.position='bottom')
+```
+
+### Short-range species
+
+```{r, include = FALSE}
+expert_hotspots_sr <- read_csv(here("data/dataframes_for_plots/expert_hotspots_sr.csv"))
+human_obs_hotspots_sr <- read_csv(here("data/dataframes_for_plots/hum_obs_hotspots_sr.csv"))
+full_dataset_hotspots_sr <- read_csv(here("data/dataframes_for_plots/full_dataset_hotspots_sr.csv"))
+
+#defining common scales for plotting
+rich_limits_sr <- range(
+  expert_hotspots_sr$richness_sr_ex_sampbias_corrected,
+  human_obs_hotspots_sr$richness_sr_hum_obs_sampbias_corrected,
+  full_dataset_hotspots_sr$richness_sr_sampbias_corrected,
+  na.rm = TRUE
+)
+
+richness_scale_sr <-
+  viridis::scale_fill_viridis(
+    name = "Species richness (bias corrected)",
+    option = "G",
+    direction = -1,
+    limits = rich_limits_sr
+  )
+
+WE_limits_sr <- range(
+  expert_hotspots_sr$WE_sr_ex_sampbias_corrected,
+  human_obs_hotspots_sr$WE_sr_hum_obs_sampbias_corrected,
+  full_dataset_hotspots_sr$WE_sr_sampbias_corrected,
+  na.rm = TRUE
+)
+
+endemism_scale_sr <-
+  viridis::scale_fill_viridis(
+    name = "Weighted endemism (bias corrected, fourth-root)",
+    option = "G",
+    direction = -1,
+    limits = WE_limits_sr
+  )
+
+# Expert richness hotspots
+fig6a <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = expert_hotspots_sr, aes(x=x, y=y, fill = richness_sr_ex_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
+  geom_tile(data = subset(expert_hotspots_sr, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  richness_scale_sr +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Species richness")
+
+# Expert endemism hotspots
+fig6b <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = expert_hotspots_sr, aes(x=x, y=y, fill = WE_sr_ex_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
+  geom_tile(data = subset(expert_hotspots_sr, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  endemism_scale_sr +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 18)) +
+  ggtitle("Weighted endemism")
+
+
+# human observation richness hotspots
+fig6c <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = human_obs_hotspots_sr, aes(x=x, y=y, fill = richness_sr_hum_obs_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
+  geom_tile(data = subset(human_obs_hotspots_sr, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  richness_scale_sr +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# human observation endemism hotspots
+fig6d <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = human_obs_hotspots_sr, aes(x=x, y=y, fill = WE_sr_hum_obs_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
+  geom_tile(data = subset(human_obs_hotspots_sr, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  endemism_scale_sr +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+# full dataset richness hotspots
+fig6e <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = full_dataset_hotspots_sr, aes(x=x, y=y, fill = richness_sr_sampbias_corrected), col = NA) + 
+  labs(fill = "Species richness (bias corrected)") +
+  geom_tile(data = subset(full_dataset_hotspots_sr, rich_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  richness_scale_sr +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# full dataset endemism hotspots
+fig6f <- ggplot() +
+  geom_sf(data = ozmap_states, fill = "white") + 
+  geom_tile(data = full_dataset_hotspots_sr, aes(x=x, y=y, fill = WE_sr_sampbias_corrected^0.25), col = NA) + 
+  labs(fill = "Weighted endemism (bias corrected)^0.25") +
+  geom_tile(data = subset(full_dataset_hotspots_sr, WE_perc), aes(x=x, y=y), fill = "red", col = NA) +
+  geom_sf(data = ozmap_states, fill = NA, colour = "black") + 
+  coord_sf(xlim = c(110, 155),
+          ylim = c(-10, -45)) +
+  endemism_scale_sr +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+#| fig-width: 12
+#| fig-height: 18
+#| fig-cap: 
+#|   - "Figure 6: Maps showing species richness (left) and weighted endemism (right) of short-range (< 10,000 km2) Mygalmorph spiders based on different datasets: Expert data (basis of record == PRESERVED SPECIMEN) (top row); Citizen science (basis of record == HUMAN OBSERVATION) (middle row); Full dataset (bottom row). Hotspots are overlaid in red. Weighted endemism values were highly skewed so a fourth-root transformation was applied to aid visualisation."
+fig6a + fig6b + fig6c + fig6d + fig6e + fig6f +
+  plot_layout(ncol = 2,
+              guides = 'collect') &
   theme(legend.position='bottom')
 ```

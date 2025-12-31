@@ -299,12 +299,21 @@ sampling_rate_raster_ea_resample_std <- (sampling_rate_raster_ea_resample -
 #combining the two bias sources
 tot_samp_bias <- mean(decay_std, sampling_rate_raster_ea_resample_std)
 names(tot_samp_bias) <- "total_sampling_bias"
-plot(c(decay_std, sampling_rate_raster_ea_resample_std, tot_samp_bias))
 
 # normalising to a range of 1-10
 tot_samp_bias_min <- global(tot_samp_bias, "min", na.rm = TRUE)[1,1]
 tot_samp_bias_max <- global(tot_samp_bias, "max", na.rm = TRUE)[1,1]
 tot_samp_bias_norm <- ((tot_samp_bias - tot_samp_bias_min)/(tot_samp_bias_max - tot_samp_bias_min))*(10-1)+1 
+
+names(decay_std) <- "population density influence"
+names(sampling_rate_raster_ea_resample_std) <- "log sampling rate (sampbias)"
+names(tot_samp_bias_norm) <- "final sampling bias"
+
+plot(c(decay_std, sampling_rate_raster_ea_resample_std, tot_samp_bias_norm))
+
+# saveRDS(decay_std, "output/sampling_bias/pop_density_influence.rds")
+# saveRDS(sampling_rate_raster_ea_resample_std, "output/sampling_bias/sampbias_sampling_rate.rds")
+# saveRDS(tot_samp_bias_norm, "output/sampling_bias/final_sampling_bias.rds")
 
 ```
 

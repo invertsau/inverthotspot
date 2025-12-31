@@ -11,6 +11,7 @@ book:
     - intro.qmd
     - methods.qmd
     - results.qmd
+    - results_percentile_hotspots.qmd
     - discussion.qmd
     - conclusions.qmd
     - references.qmd
