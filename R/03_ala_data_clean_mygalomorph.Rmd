@@ -509,9 +509,7 @@ tabyl(lat_long_species_dups) # Number of records with lat, long, date, and speci
 # Deduplicating
 deduplicated_myg_spiders <- myg_spiders_geo_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |> 
-   group_by(scientificName, decimalLatitude, decimalLongitude, eventDate) |> 
-   filter(n() == 1) |> 
-  ungroup()
+   distinct(scientificName, decimalLatitude, decimalLongitude, eventDate, .keep_all = TRUE)
 ```
 
 ## Narrow down to species with enough observations

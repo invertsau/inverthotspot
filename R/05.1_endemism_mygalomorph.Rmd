@@ -31,11 +31,14 @@ myg_spiders_hum_obs <- myg_spiders_cleaned |>
 This is a massive list, each element is a spatial polygon dataframe
 
 ```{r}
-species_polys_points <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2025-08-14_ALA.rds")
+file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2], "/")[10] |> str_remove(".parquet")
 
-species_polys_points_expert <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_expert_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds")
 
-species_polys_points_hum_obs <- readRDS("output/spatial/Spatial_alpha_hulls_sf_class_human_obs_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds")
+species_polys_points <- readRDS(here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_", file_name, ".rds")))
+
+species_polys_points_expert <- readRDS(here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_expert_", file_name, ".rds")))
+
+species_polys_points_hum_obs <- readRDS(here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_human_obs_", file_name, ".rds")))
 ```
 
 ## ALL DATA
@@ -311,9 +314,9 @@ names(tot_samp_bias_norm) <- "final sampling bias"
 
 plot(c(decay_std, sampling_rate_raster_ea_resample_std, tot_samp_bias_norm))
 
-# saveRDS(decay_std, "output/sampling_bias/pop_density_influence.rds")
-# saveRDS(sampling_rate_raster_ea_resample_std, "output/sampling_bias/sampbias_sampling_rate.rds")
-# saveRDS(tot_samp_bias_norm, "output/sampling_bias/final_sampling_bias.rds")
+saveRDS(decay_std, "output/sampling_bias/pop_density_influence.rds")
+saveRDS(sampling_rate_raster_ea_resample_std, "output/sampling_bias/sampbias_sampling_rate.rds")
+saveRDS(tot_samp_bias_norm, "output/sampling_bias/final_sampling_bias.rds")
 
 ```
 
@@ -334,8 +337,8 @@ names(merged) <- c("WE_sampbias_corrected", "CWE_sampbias_corrected", "richness_
 # projecting back to WGS84 for visualisation
 merged_geo <- project(merged, "EPSG:4326")
 
-# #exporting for protected area analysis
-# writeRaster(merged_geo, here("data/protected_areas/bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
+#exporting for protected area analysis
+writeRaster(merged_geo, here("data/protected_areas/bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
 
 # converting to data frame for plotting
 merged_geo_df <- as.data.frame(merged_geo, xy = TRUE, na.rm = TRUE)
@@ -545,8 +548,8 @@ names(merged_sr) <- c("WE_sr_sampbias_corrected", "CWE_sr_sampbias_corrected", "
 # projecting back to WGS84 for visualisation
 merged_sr_geo <- project(merged_sr, "EPSG:4326")
 
-# #exporting for protected area analysis
-# writeRaster(merged_sr_geo, here("data/protected_areas/sr_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
+#exporting for protected area analysis
+writeRaster(merged_sr_geo, here("data/protected_areas/sr_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
 
 # converting to data frame for plotting
 merged_geo_sr_df <- as.data.frame(merged_sr_geo, xy = TRUE, na.rm = TRUE)
@@ -902,8 +905,8 @@ names(merged_ex) <- c("WE_ex_sampbias_corrected",
 # projecting back to WGS84 for visualisation
 merged_ex_geo <- project(merged_ex, "EPSG:4326")
 
-# #exporting for protected area analysis
-# writeRaster(merged_ex_geo, here("data/protected_areas/ex_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
+#exporting for protected area analysis
+writeRaster(merged_ex_geo, here("data/protected_areas/ex_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
 
 # converting to data frame for plotting
 merged_geo_ex_df <- as.data.frame(merged_ex_geo, xy = TRUE, na.rm = TRUE)
@@ -1180,8 +1183,8 @@ names(merged_sr_ex) <- c("WE_sr_ex_sampbias_corrected", "CWE_sr_ex_sampbias_corr
 # projecting back to WGS84 for visualisation
 merged_sr_ex_geo <- project(merged_sr_ex, "EPSG:4326")
 
-# #exporting for protected area analysis
-# writeRaster(merged_sr_ex_geo, here("data/protected_areas/sr_ex_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
+#exporting for protected area analysis
+writeRaster(merged_sr_ex_geo, here("data/protected_areas/sr_ex_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
 
 # converting to data frame for plotting
 merged_geo_sr_ex_df <- as.data.frame(merged_sr_ex_geo, xy = TRUE, na.rm = TRUE)
@@ -1483,8 +1486,8 @@ names(merged_hum_obs) <- c("WE_hum_obs_sampbias_corrected", "CWE_hum_obs_sampbia
 # projecting back to WGS84 for visualisation
 merged_hum_obs_geo <- project(merged_hum_obs, "EPSG:4326")
 
-# #exporting for protected area analysis
-# writeRaster(merged_hum_obs_geo, here("data/protected_areas/hum_obs_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
+#exporting for protected area analysis
+writeRaster(merged_hum_obs_geo, here("data/protected_areas/hum_obs_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
 
 # converting to data frame for plotting
 merged_geo_hum_obs_df <- as.data.frame(merged_hum_obs_geo, xy = TRUE, na.rm = TRUE)
@@ -1702,8 +1705,8 @@ names(merged_sr_hum_obs) <- c("WE_sr_hum_obs_sampbias_corrected", "CWE_sr_hum_ob
 # projecting back to WGS84 for visualisation
 merged_sr_hum_obs_geo <- project(merged_sr_hum_obs, "EPSG:4326")
 
-# #exporting for protected area analysis
-# writeRaster(merged_sr_hum_obs_geo, here("data/protected_areas/sr_hum_obs_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
+#exporting for protected area analysis
+writeRaster(merged_sr_hum_obs_geo, here("data/protected_areas/sr_hum_obs_bias_corrected_hotspots_spatraster.tif"), datatype = "FLT8S", overwrite=TRUE)
 
 # converting to data frame for plotting
 merged_geo_sr_hum_obs_df <- as.data.frame(merged_sr_hum_obs_geo, xy = TRUE, na.rm = TRUE)

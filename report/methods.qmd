@@ -551,9 +551,7 @@ Duplicate records can affect statistical analyses by pseudoreplication (increasi
 ```{r, include=FALSE}
 deduplicated_myg_spiders <- myg_spiders_geo_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |> 
-   group_by(scientificName, decimalLatitude, decimalLongitude, eventDate) |> 
-   filter(n() == 1) |> 
-  ungroup()
+   distinct(scientificName, decimalLatitude, decimalLongitude, eventDate, .keep_all = TRUE)
 
 dups <- myg_spiders_geo_clean |> 
   filter(!is.na(decimalLatitude) & !is.na(decimalLongitude)) |> 
@@ -562,11 +560,11 @@ dups <- myg_spiders_geo_clean |>
 ```
 
 ::: callout-important
-Using this method, we excluded `r nrow(dups)` from the dataset (`r ((nrow(dups)/nrow(myg_spiders)) *100 )|> round(2)`%).
+Using this method, we excluded `r nrow(myg_spiders_geo_clean) - nrow(deduplicated_myg_spiders)` records from the dataset (`r (nrow(myg_spiders_geo_clean) - nrow(deduplicated_myg_spiders))/nrow(myg_spiders_geo_clean) *100 |> round(2)`%).
 :::
 
 ::: callout-note
-After deduplication, we have `r nrow(deduplicated_myg_spiders)` observations after the exclusion, `r unique(deduplicated_myg_spiders$scientificName) |> length()` species.
+After deduplication, we have `r nrow(deduplicated_myg_spiders)` observations and `r unique(deduplicated_myg_spiders$scientificName) |> length()` species.
 :::
 
 ### Citizen science data
@@ -598,6 +596,47 @@ One way to retain as many species as possible in a spatial analysis is to repres
 Using the cleaned data, we applied the `EOO.computing()` function from R package [`ConR`](https://github.com/gdauby/ConR) to quantify alpha-hulls for all species that had at least 3 records (n = `r # myg_spiders_cleaned$species |> unique() |> length()`). We used an alpha value of 2 and a buffer size of 0.000001 (which approximates to \~100m). The alpha-hull workflow is laid out in [this document](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd).
 
 Alpha-hulls were converted into `SpatialPolgyon` objects using the [`sf`](https://cran.r-project.org/web/packages/sf/index.html) R package. Species with less than three records were then added as `MULTIPOINT` objects and the data exported for biodiversity analysis.
+
+```{r, include=FALSE}
+
+pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis)
+
+file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2], "/")[10] |> str_remove(".parquet")
+
+species_polys_points_expert <- readRDS(here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_expert_", file_name, ".rds")))
+
+# separating polygons and points for plotting
+polys_ex <- species_polys_points_expert |>
+  filter(st_geometry_type(conr_ahull_sf) %in% c("POLYGON", "MULTIPOLYGON"))
+points_ex <- species_polys_points_expert |>
+  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
+
+# plotting alpha hulls and points
+aus <- st_transform(ozmaps::ozmap_country, 4326)
+
+## Base map 
+base_map <- ggplot() + 
+  geom_sf(data = aus, fill = "white", colour = "black") + 
+  theme_minimal()
+
+## alphahulls and points
+ahulls_w_points <- base_map  + 
+  geom_sf(data = polys_ex, 
+          aes(geometry = conr_ahull_sf),
+          fill = "grey",
+          alpha = 0.5,
+          colour = "darkgrey",
+          ) +
+  geom_sf(data = points_ex,
+             aes(geometry = conr_ahull_sf),
+             colour = "black",
+             fill = "black") +
+  geom_sf(data = aus, fill = NA, colour = "black") + 
+  coord_sf(c(110, 155)) +
+  theme_minimal() |> 
+  theme(legend.position = "none")
+
+```
 
 ```{r, echo=FALSE}
 #| fig-cap: 
@@ -633,45 +672,6 @@ Species richness simply refers to the total number of species in an area. The `p
 Endemism refers to the level of range restriction of species in an area, and numerous measures exist (refs). Weighted endemism is species richness inversely weighted by species ranges (Crisp et al. 2001),(Laffan and Crisp 2003),(Barnabas H. Daru et al. 2020). It gives higher weight to species with smaller ranges, emphasizing areas with many range-restricted species. WE highlights areas with a high concentration of rare species, which can be crucial for conservation efforts. There is a caveat that regions with high species richness can have inflated WE values simply because they have more species, not necessarily more endemics (https://www.jstor.org/stable/3554498). However, WE is a good measure for identification and research into the distribution and conservation of endemism hotspots (Shipley and McGuire 2022). 
 
 WE was calculated using the `weighted_endemism()` function from the `phyloregion` R package. WE was fourth-root transformed prior to mapping to aid visualization.
-
-```{r, include=FALSE}
-
-pacman::p_load(phyloregion, terra, sf, sp, tidyverse, ggplot2, ozmaps, tmap, viridis)
-
-species_polys_points_expert <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_expert_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds"))
-
-# separating polygons and points for plotting
-polys_ex <- species_polys_points_expert |>
-  filter(st_geometry_type(conr_ahull_sf) %in% c("POLYGON", "MULTIPOLYGON"))
-points_ex <- species_polys_points_expert |>
-  filter(st_geometry_type(conr_ahull_sf) %in% c("POINT", "MULTIPOINT"))
-
-# plotting alpha hulls and points
-aus <- st_transform(ozmaps::ozmap_country, 4326)
-
-## Base map 
-base_map <- ggplot() + 
-  geom_sf(data = aus, fill = "white", colour = "black") + 
-  theme_minimal()
-
-## alphahulls and points
-ahulls_w_points <- base_map  + 
-  geom_sf(data = polys_ex, 
-          aes(geometry = conr_ahull_sf),
-          fill = "grey",
-          alpha = 0.5,
-          colour = "darkgrey",
-          ) +
-  geom_sf(data = points_ex,
-             aes(geometry = conr_ahull_sf),
-             colour = "black",
-             fill = "black") +
-  geom_sf(data = aus, fill = NA, colour = "black") + 
-  coord_sf(c(110, 155)) +
-  theme_minimal() |> 
-  theme(legend.position = "none")
-
-```
 
 ## Correcting for sampling bias
 

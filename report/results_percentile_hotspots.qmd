@@ -23,9 +23,12 @@ myg_spiders_expert <- read_parquet(get_latest_cleaned_data(path_to_clean_data = 
 myg_spiders_hum_obs <- myg_spiders_cleaned |>
   filter(basisOfRecord == "HUMAN_OBSERVATION")
 
-species_polys_points <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_cleaned_Mygalomorphae_withassertions_2025-08-14_ALA.rds"))
-species_polys_points_expert <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_expert_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds"))
-species_polys_points_hum_obs <- readRDS(here("output/spatial/Spatial_alpha_hulls_sf_class_human_obs_cleaned_expert_recordsMygalomorphae_withassertions_2025-08-14_ALA.rds"))
+
+file_name <- str_split_1(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2], "/")[10] |> str_remove(".parquet")
+
+species_polys_points <- readRDS(here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_", file_name, ".rds")))
+species_polys_points_expert <- readRDS(here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_expert_", file_name, ".rds")))
+species_polys_points_hum_obs <- readRDS(here("output/spatial", paste0("Spatial_alpha_hulls_sf_class_human_obs_", file_name, ".rds")))
 ```
 
 ## Preserved specimen-only data 

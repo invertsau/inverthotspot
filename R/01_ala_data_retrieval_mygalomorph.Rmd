@@ -3,6 +3,8 @@ title: "ALA Data Retrieval"
 author: "Fonti Kar and Ashley Browse"
 date: "2023-07-20"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -71,7 +73,8 @@ fields_we_want <- c(
   "decimalLatitude", "decimalLongitude", "raw_decimalLatitude", "raw_decimalLongitude", "verbatimCoordinates",
   "basisOfRecord", "institutionCode", "datasetName", "collectionCode", "recordedBy", "catalogNumber",
   "isDuplicateOf", "outlierLayerCount", "outlierLayer", 
-  "recordID", "recordedBy", "collectionID", "institutionCode", "dataProviderName", "dataResourceName")
+  "recordID", "recordedBy", "collectionID", "institutionCode", "dataProviderName", "dataResourceName", "countryConservation",
+  "stateConservation")
 ```
 
 ### Submit query to ALA

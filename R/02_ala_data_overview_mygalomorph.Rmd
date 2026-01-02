@@ -51,8 +51,9 @@ myg_spiders_all <- open_dataset(here(get_latest_download()))
 
 ## Subset columns we want for ALA data overview
 myg_spiders <- myg_spiders_all |> 
-  select(decimalLatitude:collectionCode) |> 
+  select(decimalLatitude:collectionCode, countryConservation, stateConservation) |> 
   collect()
+
 ```
 
 # Data Overview
@@ -597,6 +598,12 @@ myg_spiders |>
 `HUMAN_OBSERVATION`: An occurrence record describing an observation made by one or more people.\
 `MATERIAL_SAMPLE`: An occurrence record based on samples taken from other specimens or the environment.\
 `MACHINE_OBSERVATION`: An occurrence record describing an observation made by a machine.
+
+### Species of conservation significance
+```{r}
+conservation_sig <- myg_spiders |> filter(!is.na(countryConservation) | !is.na(stateConservation))
+tabyl(conservation_sig$species)
+```
 
 ## Overview of assertions
 

@@ -51,11 +51,11 @@ pacman::p_load(galah, arrow, here, tidyverse, janitor, ozmaps, sf, ggplot2, wesa
 # Load helper functions
 source(here("R/utils.R"))
 
-## Read in parquet
-myg_spiders_all <- read_parquet(here(get_latest_cleaned_data()[2]))
+# load cleaned data
+myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data = paste0(here("output/data/"), "/"))[2])
 
 ## Subset columns we want for ALA data overview
-myg_spiders_spatial_bias <- myg_spiders_all |> 
+myg_spiders_spatial_bias <- myg_spiders_cleaned |> 
   dplyr::select(species, decimalLongitude, decimalLatitude) |>
   as.data.frame() 
   #sf::st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326") 
