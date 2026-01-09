@@ -21,11 +21,11 @@ myg_spiders_cleaned <- read_parquet(get_latest_cleaned_data(path_to_clean_data =
 # Collect data for overview and cleaning
 ## Subset columns we want for ALA data overview
 myg_spiders <- myg_spiders_all |> 
-  select(scientificName, decimalLatitude:collectionCode) |> 
+  dplyr::select(scientificName, decimalLatitude:collectionCode) |> 
   collect()
 
 # AFD parquet used for Data cleaning
-afd <- open_dataset(here("data/afd_05-2023_clean.parquet"))
+afd_myg <- read_csv(here("data/afd_myg_08-01-2026.csv"))
 ```
 
 ## Data retrieval
@@ -361,26 +361,26 @@ The following criterion were used to identify and remove records for the biodive
 -   Any subspecies level identifications were reclassified to species level
 -   Duplicates
 
-### Taxonomic Errors
+### Taxonomic errors
 
-#### Invalid names
+Here we clean the data for taxonomic errors, such as misspelt and outdated names. We verified that all records have species level taxonomic data.
 
-The [(AFD)](https://biodiversity.org.au/afd/home) is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories.
-
-The Australian Faunal Directory (AFD) was used to cross validate the records from ALA to ensure all records had valid species names.
-
-A list of valid species names was downloaded from the AFD and was compared to the species names in our dataset, subsetting any records that did not have a matching valid name.
+The [Australian Faunal Directory (AFD)](https://biodiversity.org.au/afd/home) is an online catalogue of taxonomic and biological information on all animal species known to occur within Australia and its territories. We used AFD data to ensure all species names in the ALA dataset are valid.
 
 ```{r, include=FALSE}
-# Filter down to Arachnida 
-arachnids <- afd |> 
-  filter(CLASS == "ARACHNIDA") |> 
-  collect()
+# how many species in ALA data matched species in the AFD?
+afd_myg_valid <- afd_myg |> filter(!is.na(SPECIES),
+                                   NAME_TYPE == "Valid Name")
 
-# Subset species in ALA data that DID NOT match with the AFD
-AFD_unmatched <- myg_spiders |> 
-  filter(! scientificName %in% arachnids$FULL_NAME) |> 
-  pull(scientificName) |> 
+AFD_matched <- myg_spiders |>
+  filter(scientificName %in% word(afd_myg_valid$SCIENTIFIC_NAME, 1,2, sep = " ")) |>
+  pull(scientificName) |>
+  unique() |>
+  length()
+
+AFD_unmatched <- myg_spiders |>
+  filter(!scientificName %in% word(afd_myg_valid$SCIENTIFIC_NAME, 1,2, sep = " ")) |>
+  pull(scientificName) |>
   unique()
 
 # Compute reporting stats
@@ -388,42 +388,16 @@ length(AFD_unmatched)
 unique(myg_spiders$scientificName) |> length()
 ```
 
-The AFD lists any applicable synonyms for each species within their database. The `r length(AFD_unmatched)` unmatched species might be synonyms of valid species.
-
-```{r, include=F}
-afd_synonyms <- word(arachnids$SYNONYMS, 1, 2)[complete.cases(word(arachnids$SYNONYMS, 1, 2))]
-
-fuzzy_matched <- AFD_unmatched |> 
-  jaccard_left_join(afd_synonyms, n_bands = 20, band_width = 6, threshold = .8) |> 
-  rename(ALA_names = value.x,
-         AFD_synonyms = value.y)
-
-issynonym_count = is.na(fuzzy_matched$AFD_synonyms) |> table() |> _[1]
-```
-
-The potential synonym matches are as follows:
-
-```{r, echo=FALSE}
-fuzzy_matched |> gt()
-```
-
-These will be verified by experts to determine how to best handle them. For now,taxa in our dataset that are not matched in the AFD will be excluded.
+We identified `r length(AFD_unmatched)`/`r unique(myg_spiders$scientificName) |> length()` species in the ALA that did not match with names in the AFD (`r ( length(AFD_unmatched) / unique(myg_spiders$scientificName) |> length() )*100 |> round(2)`%). This species, *Teyl* sp. (MYG693), although not formally named, is listed as critically endangered in Western Australia, and has been retained in the analysis.
 
 ```{r, include=FALSE}
- myg_spiders_no_unmatched<- myg_spiders |> 
-  filter(! scientificName %in% AFD_unmatched)
-
-unmatched_excluded <- myg_spiders |> 
-  filter(scientificName %in% AFD_unmatched)
+ #After consulting experts and checking the [World Spider Catalogue (WSC)](https://wsc.nmbe.ch/) it was determined that *Selenocosmia crassipes* is the correct name, and all *Phlogius crassipes* records were changed in the ALA dataset.
+myg_spiders_no_unmatched <- myg_spiders |> 
+  mutate(case_when(scientificName == "Phlogius crassipes" ~ "Selenocosmia crassipes",
+                   .default = scientificName),
+         case_when(species == "Phlogius crassipes" ~ "Selenocosmia crassipes",
+                   .default = species))
 ```
-
-::: callout-important
-As such, we decide to exclude these `r length(AFD_unmatched)` taxa from our dataset (`r nrow(unmatched_excluded)` observations, `r signif(nrow(unmatched_excluded)/nrow(myg_spiders),1)`% of raw dataset).
-:::
-
-::: callout-note
-After removing the taxonomic errors, we have `r nrow(myg_spiders_no_unmatched)` observations after the exclusion, `r unique(myg_spiders_no_unmatched$scientificName) |> length()` species.
-:::
 
 ### Introduced Species
 
@@ -432,7 +406,7 @@ Any species which are not native to Australia were removed from our dataset. To 
 The (WSC) is a comprehensive online database of spiders from around the world, with detailed taxonomic information, distribution maps, references and images.
 
 ```{r, include=FALSE}
-wsc <- read_csv(here("data/wsc/species_export_20230929.csv"))
+wsc <- read_csv(here("data/wsc/species_export_20250814.csv"))
 
 introduced_taxa <- wsc |> 
   filter(str_detect(distribution, pattern = "Introduced to.*Australia")) 

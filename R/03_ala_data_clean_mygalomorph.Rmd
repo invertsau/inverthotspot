@@ -69,7 +69,7 @@ myg_spiders_all <- open_dataset(here(get_latest_download()))
 
 ```{r, eval=TRUE, echo=FALSE}
 myg_spiders <- myg_spiders_all |> 
-  select(recordID:outlierLayer) |> 
+  dplyr::select(recordID:outlierLayer) |> 
   collect()
 
 unique_species <- unique(myg_spiders$species) |> length()
@@ -109,7 +109,7 @@ We used AFD data to ensure all species names in the ALA dataset are valid.
 #   filter(CLASS == "ARACHNIDA") |>
 #   collect()
 
-afd_myg <- read_csv(here("data/afd_myg_14-08-2025.csv"))
+afd_myg <- read_csv(here("data/afd_myg_08-01-2026.csv"))
 ```
 
 <!-- Where is Mygalomorphae in the AFD? -->
@@ -296,7 +296,7 @@ length(which(wormsOutput$match_type %in% "exact"))
 wormsOutput$match_type %in% "near"
 wormsOutput$scientificname
 wormsOutput$search_term
-wormsOutput |> select(scientificname, search_term, match_type)
+wormsOutput |> dplyr::select(scientificname, search_term, match_type)
 names(wormsOutput)
 
 ```
@@ -436,7 +436,7 @@ base_map +
 
 flagged_alltests |> 
   filter(.sea == FALSE) |> 
-  select(scientificName) |> 
+  dplyr::select(scientificName) |> 
   distinct()
 ```
 
