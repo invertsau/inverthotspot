@@ -51,7 +51,7 @@ myg_spiders_all <- open_dataset(here(get_latest_download()))
 
 ## Subset columns we want for ALA data overview
 myg_spiders <- myg_spiders_all |> 
-  select(decimalLatitude:collectionCode, countryConservation, stateConservation) |> 
+  dplyr::select(decimalLatitude:collectionCode, countryConservation, stateConservation) |> 
   collect()
 
 ```
@@ -671,7 +671,7 @@ The following assertions were used to identify taxonomic discrepancies in the da
 # List of species (adjusted name) and raw names (names given in observation)
 fuzzy_taxa <- myg_spiders_all |>
   filter(TAXON_MATCH_FUZZY == TRUE) |>
-  select(species, scientificName, raw_scientificName) |>
+  dplyr::select(species, scientificName, raw_scientificName) |>
   collect() |>
   unique() |>
   print(n = Inf)

@@ -26,6 +26,9 @@ myg_spiders <- myg_spiders_all |>
 
 # AFD parquet used for Data cleaning
 afd_myg <- read_csv(here("data/afd_myg_08-01-2026.csv"))
+
+# species with 3 or more records
+ahull_spp <- myg_spiders_cleaned |> group_by(species) |> filter(n()>2)
 ```
 
 ## Data retrieval
@@ -38,7 +41,7 @@ We downloaded data for this report on the `r get_latest_download(paste0(here("da
 The data retrieval workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/01_ala_data_retrieval_mygalomorph.Rmd)
 :::
 
-We used data from [Atlas of Living Australia (ALA)]() for this study. We downloaded occurrence records using the `galah` [R package]() using the following criteria:
+We used data from [Atlas of Living Australia (ALA)]() for this study. We downloaded occurrence records of spiders in the infraorder Mygalomorphae using the `galah` [R package]() with the following criteria:
 
 1.  Found in Australian mainland or Tasmania.
 2.  Identified to a taxon rank of species.
@@ -352,7 +355,7 @@ The full data cleaning report can be found [here](https://posit.cloud/content/77
 The data cleaning workflow can be found [here](https://github.com/invertsau/inverthotspot/blob/main/R/03_ala_data_clean_mygalomorph.Rmd)
 :::
 
-The following criterion were used to identify and remove records for the biodiversity analyses:
+The following criteria were used to identify and remove records for the biodiversity analyses:
 
 -   Taxonomic errors, invalid species names or synonyms
 -   Species introduced to Australia
@@ -467,7 +470,7 @@ base_map <- ggplot() +
   theme_minimal()
 ```
 
-Biodiversity data, especially citizen science data can have various geographic imperfections. For example, occurrence records may include data from institutions such as botanic gardens or zoos which may not be reflective of a specie's natural range. There may be data entry errors where the default location of a taxa is assumed to be the center of particular region. For these reasons, we used the R package [`CoordinateCleaner`](https://docs.ropensci.org/CoordinateCleaner/index.html) to investigate potential errors in our dataset.
+Biodiversity data, especially citizen science data can have various geographic imperfections. For example, occurrence records may include data from institutions such as botanic gardens or zoos which may not be reflective of a species' natural range. There may be data entry errors where the default location of a taxa is assumed to be the center of a particular region. We used the R package [`CoordinateCleaner`](https://docs.ropensci.org/CoordinateCleaner/index.html) to investigate potential errors in our dataset.
 
 We used the `clean_coordinates()` function and tested whether any of our coordinates were the following:
 
@@ -495,18 +498,16 @@ tibble(Test = names(cc_summary),
   gt()
 ```
 
-CoordinateCleaner, identified a large number of duplicates which we have a separate workflow in @sec-dups so we decided to ignore the duplicates flagged by CoordinateCleaner.
+`CoordinateCleaner` identified a large number of duplicates, for which we have a separate workflow in @sec-dups so we decided to ignore the duplicates flagged by `CoordinateCleaner`.
 
 After some consideration:
 
--   `r cc_summary[".cap"] |> as.vector()` records excluded due to being near a capital vicinity (`r (( cc_summary[".cap"] |> as.vector() / nrow(myg_spiders)) *100 ) |> round(2)`%)
--   `r cc_summary[".inst"] |> as.vector()` records excluded due to being in the vicinity of biodiversity institutions (`r (( cc_summary[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
--   `r cc_summary[".sea"] |> as.vector()` records excluded due to being in sea (`r (( cc_summary[".sea"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
+-   `r cc_summary[".inst"] |> as.vector()` records were excluded due to being in the vicinity of biodiversity institutions (`r (( cc_summary[".inst"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
+-   `r cc_summary[".sea"] |> as.vector()` records were excluded due to being in the sea (`r (( cc_summary[".sea"] |> as.vector() / nrow(myg_spiders)) *100 )|> round(2)`%).
 
 ```{r, include=FALSE}
 myg_spiders_geo_clean <- cc_tests |> 
-  filter(!.cap == FALSE,
-         !.inst == FALSE, 
+  filter(!.inst == FALSE, 
          !.sea == FALSE)
 ```
 
@@ -567,7 +568,7 @@ Spatial data for invertebrates are typically sparse, often resulting in exclusio
 
 One way to retain as many species as possible in a spatial analysis is to represent species range with alpha-hulls, a form of spatial polygon. An alpha-hull can be computed using a minimum of three data points, which allows the inclusion of data-deficient invertebrates in spatial analyses. 
 
-Using the cleaned data, we applied the `EOO.computing()` function from R package [`ConR`](https://github.com/gdauby/ConR) to quantify alpha-hulls for all species that had at least 3 records (n = `r # myg_spiders_cleaned$species |> unique() |> length()`). We used an alpha value of 2 and a buffer size of 0.000001 (which approximates to \~100m). The alpha-hull workflow is laid out in [this document](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd).
+Using the cleaned data, we applied the `EOO.computing()` function from R package [`ConR`](https://github.com/gdauby/ConR) to quantify alpha-hulls for all species that had at least 3 records (n = `r ahull_spp$species |> unique() |> length()`). We used an alpha value of 2 and a buffer size of 0.000001 (which approximates to \~100m). The alpha-hull workflow is laid out in [this document](https://github.com/invertsau/inverthotspot/blob/main/R/04_alphahulls_mygalomorph.Rmd).
 
 Alpha-hulls were converted into `SpatialPolgyon` objects using the [`sf`](https://cran.r-project.org/web/packages/sf/index.html) R package. Species with less than three records were then added as `MULTIPOINT` objects and the data exported for biodiversity analysis.
 
